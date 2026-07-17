@@ -1,42 +1,35 @@
 import Link from "next/link";
-import { registrarFiado } from "./actions";
+import { crearVenta } from "./actions";
 import { db } from "@/lib/db";
 
 export const dynamic = "force-dynamic";
 
 const money = new Intl.NumberFormat("es-MX", { currency: "MXN", style: "currency" });
 
-export default async function FiadosPage() {
-  const [clientes, productos, ventasFiadas] = await Promise.all([
+export default async function VentasPage() {
+  const [clientes, productos, ventas] = await Promise.all([
     db.cliente.findMany({ where: { activo: true }, orderBy: { nombre: "asc" } }),
     db.producto.findMany({ where: { activo: true }, orderBy: { nombre: "asc" } }),
     db.venta.findMany({
-      where: { estado: { in: ["FIADA", "PARCIAL"] } },
-      include: { cliente: true, detalles: { include: { producto: true } }, pagos: true },
-      orderBy: { fecha: "desc" }
+      include: { cliente: true, detalles: { include: { producto: true } } },
+      orderBy: { fecha: "desc" },
+      take: 8
     })
   ]);
-
-  const pendientes = ventasFiadas
-    .map((venta) => {
-      const pagado = venta.pagos.reduce((total, pago) => total + Number(pago.monto), 0);
-      return { ...venta, pendiente: Number(venta.total) - pagado };
-    })
-    .filter((venta) => venta.pendiente > 0);
 
   return (
     <main className="app-page">
       <header className="flex items-start justify-between gap-4">
         <div>
-          <p className="ui-label">Fiados</p>
-          <h1 className="text-4xl font-bold text-[var(--brand)]">Registrar deuda</h1>
+          <p className="ui-label">Ventas</p>
+          <h1 className="text-4xl font-bold text-[var(--brand)]">Nueva venta</h1>
         </div>
         <Link className="ui-button-secondary min-h-11 px-4" href="/">
           Inicio
         </Link>
       </header>
 
-      <form action={registrarFiado} className="ui-card grid gap-4">
+      <form action={crearVenta} className="ui-card grid gap-4">
         <div>
           <label className="ui-label" htmlFor="clienteId">
             Cliente
@@ -53,10 +46,10 @@ export default async function FiadosPage() {
 
         <div>
           <label className="ui-label" htmlFor="productoId">
-            Tipo de postre
+            Producto
           </label>
           <select className="ui-input mt-2" id="productoId" name="productoId" required>
-            <option value="">Selecciona postre</option>
+            <option value="">Selecciona producto</option>
             {productos.map((producto) => (
               <option key={producto.id} value={producto.id}>
                 {producto.nombre} - {money.format(Number(producto.precioVenta))}
@@ -77,17 +70,40 @@ export default async function FiadosPage() {
           <input className="ui-input mt-2" id="piezas" inputMode="numeric" min="1" name="piezas" placeholder="1" required type="number" />
         </div>
 
+        <fieldset className="grid grid-cols-2 gap-3">
+          <label className="ui-button-secondary">
+            <input className="mr-2" defaultChecked name="estado" type="radio" value="PAGADA" />
+            Pagada
+          </label>
+          <label className="ui-button-secondary">
+            <input className="mr-2" name="estado" type="radio" value="FIADA" />
+            Fiada
+          </label>
+        </fieldset>
+
+        <fieldset className="grid grid-cols-2 gap-3">
+          <legend className="ui-label col-span-2">Forma de pago</legend>
+          <label className="ui-button-secondary">
+            <input className="mr-2" defaultChecked name="metodoPago" type="radio" value="EFECTIVO" />
+            Efectivo
+          </label>
+          <label className="ui-button-secondary">
+            <input className="mr-2" name="metodoPago" type="radio" value="TRANSFERENCIA" />
+            Transferencia
+          </label>
+        </fieldset>
+
         <button className="ui-button-primary" type="submit">
-          Guardar fiado
+          Guardar venta
         </button>
       </form>
 
-      <section className="grid gap-3" aria-label="Fiados pendientes">
-        <h2 className="text-xl font-bold text-[var(--brand)]">Pendientes</h2>
-        {pendientes.length === 0 ? (
-          <p className="ui-card ui-label">Todavia no hay fiados registrados.</p>
+      <section className="grid gap-3" aria-label="Ultimas ventas">
+        <h2 className="text-xl font-bold text-[var(--brand)]">Ultimas ventas</h2>
+        {ventas.length === 0 ? (
+          <p className="ui-card ui-label">Todavia no hay ventas registradas.</p>
         ) : (
-          pendientes.map((venta) => (
+          ventas.map((venta) => (
             <article className="ui-card" key={venta.id}>
               <div className="flex items-start justify-between gap-4">
                 <div>
@@ -95,16 +111,13 @@ export default async function FiadosPage() {
                   <p className="ui-label">
                     {venta.detalles[0]
                       ? `${venta.detalles[0].producto.nombre} x ${venta.detalles[0].cantidad}`
-                      : venta.observaciones || "Fiado"}
+                      : venta.observaciones || "Venta"}
                   </p>
                 </div>
                 <p className="rounded-full bg-[var(--primary-soft)] px-3 py-1 text-sm font-bold text-[var(--primary)]">
-                  {money.format(venta.pendiente)}
+                  {money.format(Number(venta.total))}
                 </p>
               </div>
-              <Link className="ui-button-secondary mt-4 min-h-10 w-fit px-4 text-sm ml-auto" href={`/fiados/${venta.id}/pago`}>
-                Registrar pago
-              </Link>
             </article>
           ))
         )}

@@ -53,9 +53,9 @@ export default async function HomePage() {
           <h2 className="text-2xl font-bold text-[var(--brand)]">Que vamos a registrar?</h2>
         </div>
         <div className="grid gap-3 sm:grid-cols-2">
-          <button className="ui-button-primary justify-start" type="button">
+          <Link className="ui-button-primary justify-start" href="/ventas">
             Nueva venta
-          </button>
+          </Link>
           <Link className="ui-button-secondary justify-start" href="/productos">
             Productos
           </Link>

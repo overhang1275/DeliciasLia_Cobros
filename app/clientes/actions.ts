@@ -16,3 +16,15 @@ export async function crearCliente(formData: FormData) {
   revalidatePath("/clientes");
   redirect("/clientes");
 }
+
+export async function editarCliente(id: number, formData: FormData) {
+  const cliente = clienteSchema.parse({
+    nombre: formData.get("nombre"),
+    telefono: formData.get("telefono") || undefined,
+    notas: formData.get("notas") || undefined
+  });
+
+  await db.cliente.update({ where: { id }, data: cliente });
+  revalidatePath("/clientes");
+  redirect("/clientes");
+}
