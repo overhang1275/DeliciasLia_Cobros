@@ -153,12 +153,22 @@ export default async function FiadosPage({ searchParams }: { searchParams: Promi
                   {money.format(venta.pendiente)}
                 </p>
               </div>
-              <div className="mt-4 flex flex-wrap items-center justify-end gap-2">
-                <Link className="ui-button-secondary min-h-10 w-fit px-4 text-sm" href={`/fiados/${venta.id}/pago`}>
-                  Registrar pago
-                </Link>
+              <div className="mt-5 grid gap-2 lg:grid-cols-[auto_1fr]">
+                <div className="grid gap-2 sm:grid-cols-2 lg:flex">
+                  <Link className="ui-button-secondary min-h-10 px-4 text-sm" href={`/fiados/${venta.id}/pago`}>
+                    Registrar pago
+                  </Link>
+                  <Link
+                    className="ui-button-secondary min-h-10 px-4 text-sm"
+                    href={venta.cliente.estadoToken ? `/estado/${venta.cliente.estadoToken}` : `/clientes/${venta.clienteId}/estado`}
+                  >
+                    Estado de cuenta
+                  </Link>
+                </div>
+                <div className="lg:justify-self-end">
+                  <LiquidarDeudaForm clienteId={venta.clienteId} total={money.format(totalPorCliente.get(venta.clienteId) || venta.pendiente)} />
+                </div>
               </div>
-              <LiquidarDeudaForm clienteId={venta.clienteId} total={money.format(totalPorCliente.get(venta.clienteId) || venta.pendiente)} />
             </article>
           ))
         )}
