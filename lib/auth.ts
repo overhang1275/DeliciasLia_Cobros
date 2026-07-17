@@ -8,7 +8,7 @@ export async function setSession(usuario: string) {
     maxAge: SESSION_TTL_SECONDS,
     path: "/",
     sameSite: "lax",
-    secure: process.env.NODE_ENV === "production"
+    secure: process.env.AUTH_SECURE_COOKIE === "true"
   });
 }
 

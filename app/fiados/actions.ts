@@ -48,3 +48,33 @@ export async function registrarPagoFiado(formData: FormData) {
   revalidatePath("/fiados");
   redirect("/fiados");
 }
+
+export async function liquidarDeudaCliente(formData: FormData) {
+  const clienteId = Number(formData.get("clienteId"));
+  const metodo = formData.get("metodo");
+
+  if (!Number.isInteger(clienteId) || clienteId <= 0 || (metodo !== "EFECTIVO" && metodo !== "TRANSFERENCIA")) {
+    redirect("/fiados");
+  }
+
+  const ventas = await db.venta.findMany({
+    where: { clienteId, estado: { in: ["FIADA", "PARCIAL"] } },
+    include: { pagos: true }
+  });
+  const operaciones = ventas.flatMap((venta) => {
+    const pagado = venta.pagos.reduce((total, pago) => total + Number(pago.monto), 0);
+    const pendiente = Number(venta.total) - pagado;
+    if (pendiente <= 0) return [];
+    return [
+      db.pago.create({ data: { ventaId: venta.id, monto: pendiente, metodo } }),
+      db.venta.update({ where: { id: venta.id }, data: { estado: "PAGADA" } })
+    ];
+  });
+
+  if (operaciones.length > 0) await db.$transaction(operaciones);
+
+  revalidatePath("/");
+  revalidatePath("/fiados");
+  revalidatePath("/clientes");
+  redirect("/fiados");
+}

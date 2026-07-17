@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { EstadoVenta } from "@prisma/client";
 import { registrarFiado } from "./actions";
+import { LiquidarDeudaForm } from "@/components/LiquidarDeudaForm";
 import { Pagination } from "@/components/Pagination";
 import { db } from "@/lib/db";
 
@@ -45,6 +46,20 @@ export default async function FiadosPage({ searchParams }: { searchParams: Promi
       return { ...venta, pendiente: Number(venta.total) - pagado };
     })
     .filter((venta) => venta.pendiente > 0);
+  const clienteIds = [...new Set(pendientes.map((venta) => venta.clienteId))];
+  const ventasPendientesPorCliente =
+    clienteIds.length > 0
+      ? await db.venta.findMany({
+          where: { clienteId: { in: clienteIds }, estado: { in: [EstadoVenta.FIADA, EstadoVenta.PARCIAL] } },
+          include: { pagos: true }
+        })
+      : [];
+  const totalPorCliente = new Map<number, number>();
+  for (const venta of ventasPendientesPorCliente) {
+    const pagado = venta.pagos.reduce((total, pago) => total + Number(pago.monto), 0);
+    const pendiente = Math.max(0, Number(venta.total) - pagado);
+    totalPorCliente.set(venta.clienteId, (totalPorCliente.get(venta.clienteId) || 0) + pendiente);
+  }
   const totalPages = Math.max(1, Math.ceil(total / pageSize));
 
   return (
@@ -138,9 +153,12 @@ export default async function FiadosPage({ searchParams }: { searchParams: Promi
                   {money.format(venta.pendiente)}
                 </p>
               </div>
-              <Link className="ui-button-secondary mt-4 min-h-10 w-fit px-4 text-sm ml-auto" href={`/fiados/${venta.id}/pago`}>
-                Registrar pago
-              </Link>
+              <div className="mt-4 flex flex-wrap items-center justify-end gap-2">
+                <Link className="ui-button-secondary min-h-10 w-fit px-4 text-sm" href={`/fiados/${venta.id}/pago`}>
+                  Registrar pago
+                </Link>
+              </div>
+              <LiquidarDeudaForm clienteId={venta.clienteId} total={money.format(totalPorCliente.get(venta.clienteId) || venta.pendiente)} />
             </article>
           ))
         )}

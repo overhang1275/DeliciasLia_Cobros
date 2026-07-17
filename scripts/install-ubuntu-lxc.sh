@@ -46,9 +46,11 @@ if [ -z "$ADMIN_PASSWORD" ]; then
 fi
 
 AUTH_SECRET="${AUTH_SECRET:-$(openssl rand -hex 32)}"
+AUTH_SECURE_COOKIE="${AUTH_SECURE_COOKIE:-false}"
 cat > "$APP_DIR/.env" <<ENV
 DATABASE_URL="file:../database/database.sqlite"
 AUTH_SECRET="${AUTH_SECRET}"
+AUTH_SECURE_COOKIE="${AUTH_SECURE_COOKIE}"
 ADMIN_PASSWORD="${ADMIN_PASSWORD}"
 ENV
 chown "$APP_USER:$APP_USER" "$APP_DIR/.env"
