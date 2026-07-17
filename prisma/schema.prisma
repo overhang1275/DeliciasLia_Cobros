@@ -1,0 +1,124 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+model Cliente {
+  id        Int      @id @default(autoincrement())
+  nombre    String
+  telefono  String?
+  notas     String?
+  activo    Boolean  @default(true)
+  fechaAlta DateTime @default(now())
+
+  ventas Venta[]
+
+  @@index([nombre])
+}
+
+model Producto {
+  id          Int      @id @default(autoincrement())
+  nombre      String
+  descripcion String?
+  categoria   String?
+  precioVenta Decimal
+  costo       Decimal
+  stock       Int      @default(0)
+  stockMinimo Int      @default(0)
+  activo      Boolean  @default(true)
+
+  detalles    DetalleVenta[]
+  movimientos MovimientoInventario[]
+
+  @@index([nombre])
+  @@index([categoria])
+}
+
+model Venta {
+  id            Int         @id @default(autoincrement())
+  fecha         DateTime    @default(now())
+  clienteId     Int
+  estado        EstadoVenta
+  subtotal      Decimal
+  descuento     Decimal     @default(0)
+  total         Decimal
+  costoTotal    Decimal
+  utilidadTotal Decimal
+  observaciones String?
+
+  cliente  Cliente        @relation(fields: [clienteId], references: [id])
+  detalles DetalleVenta[]
+  pagos    Pago[]
+
+  @@index([fecha])
+  @@index([clienteId])
+  @@index([estado])
+}
+
+model DetalleVenta {
+  id             Int     @id @default(autoincrement())
+  ventaId        Int
+  productoId     Int
+  cantidad       Int
+  precioUnitario Decimal
+  costoUnitario  Decimal
+  subtotal       Decimal
+
+  venta    Venta    @relation(fields: [ventaId], references: [id])
+  producto Producto @relation(fields: [productoId], references: [id])
+
+  @@index([ventaId])
+  @@index([productoId])
+}
+
+model Pago {
+  id      Int        @id @default(autoincrement())
+  ventaId Int
+  fecha   DateTime   @default(now())
+  monto   Decimal
+  metodo  MetodoPago
+
+  venta Venta @relation(fields: [ventaId], references: [id])
+
+  @@index([ventaId])
+  @@index([fecha])
+}
+
+model MovimientoInventario {
+  id            Int                @id @default(autoincrement())
+  productoId    Int
+  tipo          TipoMovimiento
+  cantidad      Int
+  fecha         DateTime           @default(now())
+  observaciones String?
+
+  producto Producto @relation(fields: [productoId], references: [id])
+
+  @@index([productoId])
+  @@index([fecha])
+  @@index([tipo])
+}
+
+enum EstadoVenta {
+  PAGADA
+  FIADA
+  PARCIAL
+  CANCELADA
+}
+
+enum MetodoPago {
+  EFECTIVO
+  TRANSFERENCIA
+  TARJETA
+  OTRO
+}
+
+enum TipoMovimiento {
+  ENTRADA
+  VENTA
+  AJUSTE
+}
