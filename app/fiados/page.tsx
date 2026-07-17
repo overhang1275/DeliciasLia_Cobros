@@ -1,20 +1,41 @@
 import Link from "next/link";
+import { EstadoVenta } from "@prisma/client";
 import { registrarFiado } from "./actions";
+import { Pagination } from "@/components/Pagination";
 import { db } from "@/lib/db";
 
 export const dynamic = "force-dynamic";
+const pageSize = 6;
 
 const money = new Intl.NumberFormat("es-MX", { currency: "MXN", style: "currency" });
 
-export default async function FiadosPage() {
-  const [clientes, productos, ventasFiadas] = await Promise.all([
+export default async function FiadosPage({ searchParams }: { searchParams: Promise<{ page?: string; q?: string }> }) {
+  const params = await searchParams;
+  const q = (params.q || "").trim();
+  const page = Math.max(1, Number(params.page) || 1);
+  const where = {
+    estado: { in: [EstadoVenta.FIADA, EstadoVenta.PARCIAL] },
+    ...(q
+      ? {
+          OR: [
+            { cliente: { nombre: { contains: q } } },
+            { detalles: { some: { producto: { nombre: { contains: q } } } } },
+            { observaciones: { contains: q } }
+          ]
+        }
+      : {})
+  };
+  const [clientes, productos, ventasFiadas, total] = await Promise.all([
     db.cliente.findMany({ where: { activo: true }, orderBy: { nombre: "asc" } }),
     db.producto.findMany({ where: { activo: true }, orderBy: { nombre: "asc" } }),
     db.venta.findMany({
-      where: { estado: { in: ["FIADA", "PARCIAL"] } },
+      where,
       include: { cliente: true, detalles: { include: { producto: true } }, pagos: true },
-      orderBy: { fecha: "desc" }
-    })
+      orderBy: { fecha: "desc" },
+      skip: (page - 1) * pageSize,
+      take: pageSize
+    }),
+    db.venta.count({ where })
   ]);
 
   const pendientes = ventasFiadas
@@ -23,6 +44,7 @@ export default async function FiadosPage() {
       return { ...venta, pendiente: Number(venta.total) - pagado };
     })
     .filter((venta) => venta.pendiente > 0);
+  const totalPages = Math.max(1, Math.ceil(total / pageSize));
 
   return (
     <main className="app-page">
@@ -84,6 +106,12 @@ export default async function FiadosPage() {
 
       <section className="grid gap-3" aria-label="Fiados pendientes">
         <h2 className="text-xl font-bold text-[var(--brand)]">Pendientes</h2>
+        <form className="ui-card flex gap-3" action="/fiados">
+          <input className="ui-input" defaultValue={q} name="q" placeholder="Buscar fiado" />
+          <button className="ui-button-secondary px-4" type="submit">
+            Filtrar
+          </button>
+        </form>
         {pendientes.length === 0 ? (
           <p className="ui-card ui-label">Todavia no hay fiados registrados.</p>
         ) : (
@@ -108,6 +136,7 @@ export default async function FiadosPage() {
             </article>
           ))
         )}
+        <Pagination basePath="/fiados" page={page} q={q} totalPages={totalPages} />
       </section>
     </main>
   );
