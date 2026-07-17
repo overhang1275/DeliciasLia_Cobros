@@ -18,17 +18,35 @@ export default async function ClientesPage({ searchParams }: { searchParams: Pro
         }
       : {})
   };
-  const [clientes, total] = await Promise.all([
-    db.cliente.findMany({
+  const clientesOrdenados = (
+    await db.cliente.findMany({
       where,
       orderBy: [{ nombre: "asc" }],
-      include: { _count: { select: { ventas: true } } },
-      skip: (page - 1) * pageSize,
-      take: pageSize
-    }),
-    db.cliente.count({ where })
-  ]);
-  const totalPages = Math.max(1, Math.ceil(total / pageSize));
+      include: {
+        _count: { select: { ventas: true } },
+        ventas: {
+          where: { estado: { in: ["FIADA", "PARCIAL"] } },
+          include: { pagos: true }
+        }
+      }
+    })
+  )
+    .map((cliente) => {
+      const saldo = cliente.ventas.reduce((total, venta) => {
+        const pagado = venta.pagos.reduce((sum, pago) => sum + Number(pago.monto), 0);
+        return total + Math.max(0, Number(venta.total) - pagado);
+      }, 0);
+      const deudaMasVieja = cliente.ventas.filter((venta) => Number(venta.total) - venta.pagos.reduce((sum, pago) => sum + Number(pago.monto), 0) > 0).sort((a, b) => a.fecha.getTime() - b.fecha.getTime())[0]?.fecha;
+      return { ...cliente, deudaMasVieja, saldo };
+    })
+    .sort((a, b) => {
+      if (a.saldo > 0 && b.saldo <= 0) return -1;
+      if (a.saldo <= 0 && b.saldo > 0) return 1;
+      if (a.deudaMasVieja && b.deudaMasVieja) return a.deudaMasVieja.getTime() - b.deudaMasVieja.getTime();
+      return a.nombre.localeCompare(b.nombre);
+    });
+  const totalPages = Math.max(1, Math.ceil(clientesOrdenados.length / pageSize));
+  const clientes = clientesOrdenados.slice((Math.min(page, totalPages) - 1) * pageSize, Math.min(page, totalPages) * pageSize);
 
   return (
     <main className="app-page">
@@ -80,44 +98,51 @@ export default async function ClientesPage({ searchParams }: { searchParams: Pro
         {clientes.length === 0 ? (
           <p className="ui-card ui-label">Todavia no hay clientes registrados.</p>
         ) : (
-          clientes.map((cliente) => (
-            <article className="ui-card relative pb-14" key={cliente.id}>
-              <div className="flex items-start justify-between gap-4">
-                <div>
-                  <h3 className="font-bold text-[var(--text-main)]">{cliente.nombre}</h3>
-                  <p className="ui-label">{cliente.telefono || "Sin telefono"}</p>
+          clientes.map((cliente) => {
+            return (
+              <article className="ui-card relative pb-14" key={cliente.id}>
+                <div className="flex items-start justify-between gap-4">
+                  <div>
+                    <h3 className="font-bold text-[var(--text-main)]">{cliente.nombre}</h3>
+                    <p className="ui-label">{cliente.telefono || "Sin telefono"}</p>
+                  </div>
+                  <div className="flex flex-wrap justify-end gap-2">
+                    <p className="rounded-full bg-[var(--primary-soft)] px-3 py-1 text-sm font-bold text-[var(--primary)]">
+                      {cliente._count.ventas} compras
+                    </p>
+                    <p className={`rounded-full px-3 py-1 text-sm font-bold ${cliente.saldo > 0 ? "bg-red-50 text-red-700" : "bg-green-50 text-green-700"}`}>
+                      {cliente.saldo > 0 ? "Debe" : "No debe"}
+                    </p>
+                  </div>
                 </div>
-                <p className="rounded-full bg-[var(--primary-soft)] px-3 py-1 text-sm font-bold text-[var(--primary)]">
-                  {cliente._count.ventas} compras
-                </p>
-              </div>
-              {cliente.notas ? <p className="mt-3 text-sm text-[var(--text-muted)]">{cliente.notas}</p> : null}
-              <Link
-                aria-label={`Estado de cuenta de ${cliente.nombre}`}
-                className="absolute bottom-4 right-16 grid size-10 place-items-center rounded-full bg-[var(--primary-soft)] text-[var(--primary)]"
-                href={cliente.estadoToken ? `/estado/${cliente.estadoToken}` : `/clientes/${cliente.id}/estado`}
-              >
-                <svg aria-hidden="true" className="size-5" fill="none" stroke="currentColor" strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" viewBox="0 0 24 24">
-                  <path d="M8 6h13" />
-                  <path d="M8 12h13" />
-                  <path d="M8 18h13" />
-                  <path d="M3 6h.01" />
-                  <path d="M3 12h.01" />
-                  <path d="M3 18h.01" />
-                </svg>
-              </Link>
-              <Link
-                aria-label={`Editar ${cliente.nombre}`}
-                className="absolute bottom-4 right-4 grid size-10 place-items-center rounded-full bg-[var(--primary-soft)] text-[var(--primary)]"
-                href={`/clientes/${cliente.id}/editar`}
-              >
-                <svg aria-hidden="true" className="size-5" fill="none" stroke="currentColor" strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" viewBox="0 0 24 24">
-                  <path d="M12 20h9" />
-                  <path d="m16.5 3.5 4 4L7 21H3v-4L16.5 3.5z" />
-                </svg>
-              </Link>
-            </article>
-          ))
+                {cliente.notas ? <p className="mt-3 text-sm text-[var(--text-muted)]">{cliente.notas}</p> : null}
+                <Link
+                  aria-label={`Estado de cuenta de ${cliente.nombre}`}
+                  className="absolute bottom-4 right-16 grid size-10 place-items-center rounded-full bg-[var(--primary-soft)] text-[var(--primary)]"
+                  href={cliente.estadoToken ? `/estado/${cliente.estadoToken}` : `/clientes/${cliente.id}/estado`}
+                >
+                  <svg aria-hidden="true" className="size-5" fill="none" stroke="currentColor" strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" viewBox="0 0 24 24">
+                    <path d="M8 6h13" />
+                    <path d="M8 12h13" />
+                    <path d="M8 18h13" />
+                    <path d="M3 6h.01" />
+                    <path d="M3 12h.01" />
+                    <path d="M3 18h.01" />
+                  </svg>
+                </Link>
+                <Link
+                  aria-label={`Editar ${cliente.nombre}`}
+                  className="absolute bottom-4 right-4 grid size-10 place-items-center rounded-full bg-[var(--primary-soft)] text-[var(--primary)]"
+                  href={`/clientes/${cliente.id}/editar`}
+                >
+                  <svg aria-hidden="true" className="size-5" fill="none" stroke="currentColor" strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" viewBox="0 0 24 24">
+                    <path d="M12 20h9" />
+                    <path d="m16.5 3.5 4 4L7 21H3v-4L16.5 3.5z" />
+                  </svg>
+                </Link>
+              </article>
+            );
+          })
         )}
         <Pagination basePath="/clientes" page={page} q={q} totalPages={totalPages} />
       </section>
