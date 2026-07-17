@@ -1,4 +1,5 @@
 import Link from "next/link";
+import Image from "next/image";
 import { logout } from "@/app/login/actions";
 import { getConfiguracion } from "@/lib/configuracion";
 import { db } from "@/lib/db";
@@ -40,7 +41,7 @@ export default async function HomePage() {
         </div>
         <div className="grid justify-items-end gap-2">
           {config.logoDataUrl ? (
-            <img alt={config.negocioNombre} className="size-14 rounded-2xl object-cover shadow-sm" src={config.logoDataUrl} />
+            <Image alt={config.negocioNombre} className="size-14 rounded-2xl object-cover shadow-sm" height={56} src={config.logoDataUrl} unoptimized width={56} />
           ) : (
             <div aria-label="Sin logo configurado" className="grid size-14 place-items-center rounded-2xl bg-white text-[var(--text-muted)] shadow-sm">
               <svg aria-hidden="true" className="size-6" fill="none" stroke="currentColor" strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" viewBox="0 0 24 24">

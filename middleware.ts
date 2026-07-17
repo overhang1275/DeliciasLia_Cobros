@@ -9,6 +9,8 @@ export async function middleware(request: NextRequest) {
   if (
     pathname === "/login" ||
     publicPath.test(pathname) ||
+    pathname === "/api/logo" ||
+    pathname === "/robots.txt" ||
     pathname.startsWith("/_next/") ||
     pathname === "/manifest.webmanifest" ||
     pathname === "/sw.js" ||

@@ -1,4 +1,5 @@
 import { cookies } from "next/headers";
+import Image from "next/image";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { CopyButton } from "@/components/CopyButton";
@@ -44,7 +45,7 @@ export default async function EstadoPublicoPage({ params }: { params: Promise<{ 
       <header className="ui-card">
         <div className="flex items-start gap-4">
           <div className="flex min-w-0 items-center gap-3">
-            {config.logoDataUrl ? <img alt={config.negocioNombre} className="size-16 shrink-0 rounded-2xl object-cover" src={config.logoDataUrl} /> : null}
+            {config.logoDataUrl ? <Image alt={config.negocioNombre} className="size-16 shrink-0 rounded-2xl object-cover" height={64} src={config.logoDataUrl} unoptimized width={64} /> : null}
             <div className="min-w-0">
               <p className="ui-label">{config.negocioNombre}</p>
               <h1 className="break-words text-3xl font-bold text-[var(--brand)]">{cliente.nombre}</h1>
@@ -72,7 +73,7 @@ export default async function EstadoPublicoPage({ params }: { params: Promise<{ 
             <p className="ui-label">Datos para deposito</p>
             <h2 className="mt-1 text-2xl font-bold text-[var(--brand)]">{config.banco}</h2>
           </div>
-          {config.logoDataUrl ? <img alt="" className="size-12 rounded-xl object-cover opacity-90" src={config.logoDataUrl} /> : null}
+          {config.logoDataUrl ? <Image alt="" className="size-12 rounded-xl object-cover opacity-90" height={48} src={config.logoDataUrl} unoptimized width={48} /> : null}
         </div>
         {[
           ["A nombre de", config.titular],

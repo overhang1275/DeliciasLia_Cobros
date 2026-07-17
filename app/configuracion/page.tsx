@@ -1,4 +1,5 @@
 import Link from "next/link";
+import Image from "next/image";
 import { guardarConfiguracion } from "./actions";
 import { getConfiguracion } from "@/lib/configuracion";
 
@@ -20,7 +21,7 @@ export default async function ConfiguracionPage() {
       </header>
 
       <form action={guardarConfiguracion} className="ui-card grid gap-4">
-        {config.logoDataUrl ? <img alt="Logo del negocio" className="size-24 rounded-2xl object-cover" src={config.logoDataUrl} /> : null}
+        {config.logoDataUrl ? <Image alt="Logo del negocio" className="size-24 rounded-2xl object-cover" height={96} src={config.logoDataUrl} unoptimized width={96} /> : null}
 
         <div>
           <label className="ui-label" htmlFor="logo">

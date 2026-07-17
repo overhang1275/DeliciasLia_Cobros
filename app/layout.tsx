@@ -6,7 +6,12 @@ export const metadata: Metadata = {
   title: "Delicias Lia",
   description: "Ventas, fiados e inventario para Delicias Lia",
   applicationName: "Delicias Lia",
-  manifest: "/manifest.webmanifest"
+  manifest: "/manifest.webmanifest",
+  icons: {
+    apple: "/api/logo",
+    icon: "/api/logo",
+    shortcut: "/api/logo"
+  }
 };
 
 export const viewport: Viewport = {
