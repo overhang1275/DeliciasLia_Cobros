@@ -13,6 +13,7 @@ model Cliente {
   telefono  String?
   notas     String?
   activo    Boolean  @default(true)
+  estadoToken String? @unique
   fechaAlta DateTime @default(now())
 
   ventas Venta[]
@@ -112,6 +113,14 @@ model Configuracion {
   clabe          String   @default("014320140430961714")
   cuenta         String   @default("14043096171")
   actualizadoEn  DateTime @updatedAt
+}
+
+model Usuario {
+  id           Int      @id @default(autoincrement())
+  usuario      String   @unique
+  passwordHash String
+  activo       Boolean  @default(true)
+  creadoEn     DateTime @default(now())
 }
 
 enum EstadoVenta {

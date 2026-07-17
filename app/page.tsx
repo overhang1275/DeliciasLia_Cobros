@@ -1,4 +1,6 @@
 import Link from "next/link";
+import { logout } from "@/app/login/actions";
+import { getConfiguracion } from "@/lib/configuracion";
 import { db } from "@/lib/db";
 
 export const dynamic = "force-dynamic";
@@ -6,7 +8,8 @@ export const dynamic = "force-dynamic";
 const money = new Intl.NumberFormat("es-MX", { currency: "MXN", style: "currency" });
 
 export default async function HomePage() {
-  const [clientes, productos, ventasFiadas] = await Promise.all([
+  const [config, clientes, productos, ventasFiadas] = await Promise.all([
+    getConfiguracion(),
     db.cliente.count({ where: { activo: true } }),
     db.producto.count({ where: { activo: true } }),
     db.venta.findMany({
@@ -33,9 +36,26 @@ export default async function HomePage() {
       <header className="flex items-center justify-between gap-4">
         <div>
           <p className="ui-label">Administracion local</p>
-          <h1 className="text-4xl font-bold text-[var(--brand)]">Delicias Lia</h1>
+          <h1 className="text-4xl font-bold text-[var(--brand)]">{config.negocioNombre}</h1>
         </div>
-        <div className="grid size-14 place-items-center rounded-2xl bg-white text-2xl shadow-sm">DL</div>
+        <div className="grid justify-items-end gap-2">
+          {config.logoDataUrl ? (
+            <img alt={config.negocioNombre} className="size-14 rounded-2xl object-cover shadow-sm" src={config.logoDataUrl} />
+          ) : (
+            <div aria-label="Sin logo configurado" className="grid size-14 place-items-center rounded-2xl bg-white text-[var(--text-muted)] shadow-sm">
+              <svg aria-hidden="true" className="size-6" fill="none" stroke="currentColor" strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" viewBox="0 0 24 24">
+                <rect height="18" rx="2" ry="2" width="18" x="3" y="3" />
+                <circle cx="9" cy="9" r="2" />
+                <path d="m21 15-3.1-3.1a2 2 0 0 0-2.8 0L6 21" />
+              </svg>
+            </div>
+          )}
+          <form action={logout}>
+            <button className="text-sm font-bold text-[var(--primary)]" type="submit">
+              Salir
+            </button>
+          </form>
+        </div>
       </header>
 
       <section className="grid grid-cols-2 gap-3 md:grid-cols-6" aria-label="Resumen del dia">
@@ -67,6 +87,9 @@ export default async function HomePage() {
           </Link>
           <Link className="ui-button-secondary justify-start" href="/reportes">
             Reportes
+          </Link>
+          <Link className="ui-button-secondary justify-start" href="/configuracion">
+            Configuracion
           </Link>
         </div>
       </section>

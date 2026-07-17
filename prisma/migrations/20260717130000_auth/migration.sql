@@ -1,0 +1,9 @@
+CREATE TABLE "Usuario" (
+  "id" INTEGER NOT NULL PRIMARY KEY AUTOINCREMENT,
+  "usuario" TEXT NOT NULL,
+  "passwordHash" TEXT NOT NULL,
+  "activo" BOOLEAN NOT NULL DEFAULT true,
+  "creadoEn" DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP
+);
+
+CREATE UNIQUE INDEX "Usuario_usuario_key" ON "Usuario"("usuario");
