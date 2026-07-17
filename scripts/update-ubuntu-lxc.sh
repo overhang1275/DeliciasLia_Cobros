@@ -15,6 +15,13 @@ if [ ! -d "$APP_DIR/.git" ]; then
   exit 1
 fi
 
+git config --global --add safe.directory "$APP_DIR"
+git -C "$APP_DIR" fetch --quiet
+if [ "$(git -C "$APP_DIR" rev-parse HEAD)" = "$(git -C "$APP_DIR" rev-parse @{u})" ]; then
+  echo "No hay actualizaciones disponibles."
+  exit 0
+fi
+
 if [ -f "$APP_DIR/database/database.sqlite" ]; then
   cp -a "$APP_DIR/database/database.sqlite" "$APP_DIR/database/database.backup-before-update-$(date +%Y%m%d-%H%M%S).sqlite"
 fi
