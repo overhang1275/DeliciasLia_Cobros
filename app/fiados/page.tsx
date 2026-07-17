@@ -1,0 +1,111 @@
+import Link from "next/link";
+import { registrarFiado } from "./actions";
+import { db } from "@/lib/db";
+
+export const dynamic = "force-dynamic";
+
+const money = new Intl.NumberFormat("es-MX", { currency: "MXN", style: "currency" });
+
+export default async function FiadosPage() {
+  const [clientes, productos, ventasFiadas] = await Promise.all([
+    db.cliente.findMany({ where: { activo: true }, orderBy: { nombre: "asc" } }),
+    db.producto.findMany({ where: { activo: true }, orderBy: { nombre: "asc" } }),
+    db.venta.findMany({
+      where: { estado: { in: ["FIADA", "PARCIAL"] } },
+      include: { cliente: true, detalles: { include: { producto: true } }, pagos: true },
+      orderBy: { fecha: "desc" }
+    })
+  ]);
+
+  const pendientes = ventasFiadas
+    .map((venta) => {
+      const pagado = venta.pagos.reduce((total, pago) => total + Number(pago.monto), 0);
+      return { ...venta, pendiente: Number(venta.total) - pagado };
+    })
+    .filter((venta) => venta.pendiente > 0);
+
+  return (
+    <main className="app-page">
+      <header className="flex items-start justify-between gap-4">
+        <div>
+          <p className="ui-label">Fiados</p>
+          <h1 className="text-4xl font-bold text-[var(--brand)]">Registrar deuda</h1>
+        </div>
+        <Link className="ui-button-secondary min-h-11 px-4" href="/">
+          Inicio
+        </Link>
+      </header>
+
+      <form action={registrarFiado} className="ui-card grid gap-4">
+        <div>
+          <label className="ui-label" htmlFor="clienteId">
+            Cliente
+          </label>
+          <select className="ui-input mt-2" id="clienteId" name="clienteId" required>
+            <option value="">Selecciona cliente</option>
+            {clientes.map((cliente) => (
+              <option key={cliente.id} value={cliente.id}>
+                {cliente.nombre}
+              </option>
+            ))}
+          </select>
+        </div>
+
+        <div>
+          <label className="ui-label" htmlFor="productoId">
+            Tipo de postre
+          </label>
+          <select className="ui-input mt-2" id="productoId" name="productoId" required>
+            <option value="">Selecciona postre</option>
+            {productos.map((producto) => (
+              <option key={producto.id} value={producto.id}>
+                {producto.nombre} - {money.format(Number(producto.precioVenta))}
+              </option>
+            ))}
+          </select>
+          {productos.length === 0 ? (
+            <Link className="mt-2 inline-block text-sm font-bold text-[var(--primary)]" href="/productos">
+              Agregar productos
+            </Link>
+          ) : null}
+        </div>
+
+        <div>
+          <label className="ui-label" htmlFor="piezas">
+            Piezas
+          </label>
+          <input className="ui-input mt-2" id="piezas" inputMode="numeric" min="1" name="piezas" placeholder="1" required type="number" />
+        </div>
+
+        <button className="ui-button-primary" type="submit">
+          Guardar fiado
+        </button>
+      </form>
+
+      <section className="grid gap-3" aria-label="Fiados pendientes">
+        <h2 className="text-xl font-bold text-[var(--brand)]">Pendientes</h2>
+        {pendientes.length === 0 ? (
+          <p className="ui-card ui-label">Todavia no hay fiados registrados.</p>
+        ) : (
+          pendientes.map((venta) => (
+            <article className="ui-card" key={venta.id}>
+              <div className="flex items-start justify-between gap-4">
+                <div>
+                  <h3 className="font-bold text-[var(--text-main)]">{venta.cliente.nombre}</h3>
+                  <p className="ui-label">
+                    {venta.detalles[0]
+                      ? `${venta.detalles[0].producto.nombre} x ${venta.detalles[0].cantidad}`
+                      : venta.observaciones || "Fiado"}
+                  </p>
+                </div>
+                <p className="rounded-full bg-[var(--primary-soft)] px-3 py-1 text-sm font-bold text-[var(--primary)]">
+                  {money.format(venta.pendiente)}
+                </p>
+              </div>
+            </article>
+          ))
+        )}
+      </section>
+    </main>
+  );
+}

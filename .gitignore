@@ -1,0 +1,8 @@
+.next
+node_modules
+.env
+*.sqlite
+*.sqlite-journal
+*.log
+public/sw.js
+public/workbox-*.js
