@@ -42,7 +42,7 @@ export default async function EstadoPublicoPage({ params }: { params: Promise<{ 
   return (
     <main className="app-page">
       <header className="ui-card">
-        <div className="flex items-start justify-between gap-4">
+        <div className="flex items-start gap-4">
           <div className="flex min-w-0 items-center gap-3">
             {config.logoDataUrl ? <img alt={config.negocioNombre} className="size-16 shrink-0 rounded-2xl object-cover" src={config.logoDataUrl} /> : null}
             <div className="min-w-0">
@@ -50,20 +50,20 @@ export default async function EstadoPublicoPage({ params }: { params: Promise<{ 
               <h1 className="break-words text-3xl font-bold text-[var(--brand)]">{cliente.nombre}</h1>
             </div>
           </div>
-          {isAdmin ? (
-            <div className="flex shrink-0 flex-col gap-2">
-              <ShareStatementButton cliente={cliente.nombre} />
-              <Link className="ui-button-secondary min-h-11 px-4" href="/clientes">
-                Volver
-              </Link>
-            </div>
-          ) : null}
         </div>
         <div className="mt-5 rounded-2xl bg-[var(--primary-soft)] p-4">
           <p className="text-sm font-bold text-[var(--primary)]">Saldo por cobrar</p>
           <p className="mt-1 text-4xl font-bold text-[var(--brand)]">{money.format(saldo)}</p>
           {cliente.telefono ? <p className="mt-2 text-sm text-[var(--text-muted)]">Telefono: {cliente.telefono}</p> : null}
         </div>
+        {isAdmin ? (
+          <div className="mt-4 grid gap-3 sm:grid-cols-2">
+            <ShareStatementButton cliente={cliente.nombre} telefono={cliente.telefono} />
+            <Link className="ui-button-secondary min-h-11 px-4" href="/clientes">
+              Volver
+            </Link>
+          </div>
+        ) : null}
       </header>
 
       <section className="ui-card">

@@ -2,15 +2,21 @@
 
 import { useState } from "react";
 
-export function ShareStatementButton({ cliente }: { cliente: string }) {
+function whatsappPhone(phone?: string | null) {
+  const digits = (phone || "").replace(/\D/g, "");
+  return digits.length === 10 ? `52${digits}` : digits;
+}
+
+export function ShareStatementButton({ cliente, telefono }: { cliente: string; telefono?: string | null }) {
   const [done, setDone] = useState(false);
 
   async function share() {
     const url = window.location.href;
-    const text = `Estado de cuenta de ${cliente}: ${url}`;
+    const text = `Hola ${cliente}.\n\nTe dejo tu estado de cuenta:\n${url}\n\nCualquier duda, favor de mandar mensaje.`;
+    const phone = whatsappPhone(telefono);
 
-    if (navigator.share) {
-      await navigator.share({ text, title: "Estado de cuenta", url });
+    if (phone) {
+      window.open(`https://wa.me/${phone}?text=${encodeURIComponent(text)}`, "_blank", "noopener,noreferrer");
     } else {
       await navigator.clipboard.writeText(url);
       setDone(true);
@@ -27,7 +33,7 @@ export function ShareStatementButton({ cliente }: { cliente: string }) {
         <path d="m8.6 13.5 6.8 4" />
         <path d="m15.4 6.5-6.8 4" />
       </svg>
-      {done ? "Copiado" : "Compartir"}
+      {done ? "Copiado" : "WhatsApp"}
     </button>
   );
 }
