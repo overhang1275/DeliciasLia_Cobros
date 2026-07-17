@@ -65,6 +65,9 @@ export default async function HomePage() {
           <Link className="ui-button-secondary justify-start" href="/fiados">
             Fiados
           </Link>
+          <Link className="ui-button-secondary justify-start" href="/reportes">
+            Reportes
+          </Link>
         </div>
       </section>
 
