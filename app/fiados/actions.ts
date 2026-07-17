@@ -11,6 +11,7 @@ export async function registrarFiado(formData: FormData) {
     clienteId: formData.get("clienteId"),
     productoId: formData.get("productoId"),
     piezas: formData.get("piezas"),
+    fecha: formData.get("fecha")
   });
 
   await registrarVenta({ ...fiado, estado: "FIADA" });

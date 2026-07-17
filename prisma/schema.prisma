@@ -103,6 +103,17 @@ model MovimientoInventario {
   @@index([tipo])
 }
 
+model Configuracion {
+  id            Int      @id @default(1)
+  negocioNombre String   @default("Delicias Lia")
+  logoDataUrl    String?
+  banco          String   @default("Santander")
+  titular        String   @default("ALONDRA MONTSERRAT VAZQUEZ LOPEZ")
+  clabe          String   @default("014320140430961714")
+  cuenta         String   @default("14043096171")
+  actualizadoEn  DateTime @updatedAt
+}
+
 enum EstadoVenta {
   PAGADA
   FIADA

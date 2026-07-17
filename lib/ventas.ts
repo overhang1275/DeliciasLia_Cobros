@@ -6,9 +6,10 @@ type RegistrarVentaInput = {
   piezas: number;
   estado: "PAGADA" | "FIADA";
   metodoPago?: "EFECTIVO" | "TRANSFERENCIA";
+  fecha?: Date;
 };
 
-export async function registrarVenta({ clienteId, productoId, piezas, estado, metodoPago = "EFECTIVO" }: RegistrarVentaInput) {
+export async function registrarVenta({ clienteId, productoId, piezas, estado, metodoPago = "EFECTIVO", fecha }: RegistrarVentaInput) {
   const producto = await db.producto.findUniqueOrThrow({ where: { id: productoId } });
   const precioUnitario = Number(producto.precioVenta);
   const costoUnitario = Number(producto.costo);
@@ -18,6 +19,7 @@ export async function registrarVenta({ clienteId, productoId, piezas, estado, me
   return db.venta.create({
     data: {
       clienteId,
+      fecha,
       estado,
       subtotal: total,
       total,

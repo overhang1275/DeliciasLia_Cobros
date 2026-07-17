@@ -93,6 +93,20 @@ export default async function ClientesPage({ searchParams }: { searchParams: Pro
               </div>
               {cliente.notas ? <p className="mt-3 text-sm text-[var(--text-muted)]">{cliente.notas}</p> : null}
               <Link
+                aria-label={`Estado de cuenta de ${cliente.nombre}`}
+                className="absolute bottom-4 right-16 grid size-10 place-items-center rounded-full bg-[var(--primary-soft)] text-[var(--primary)]"
+                href={`/clientes/${cliente.id}/estado`}
+              >
+                <svg aria-hidden="true" className="size-5" fill="none" stroke="currentColor" strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" viewBox="0 0 24 24">
+                  <path d="M8 6h13" />
+                  <path d="M8 12h13" />
+                  <path d="M8 18h13" />
+                  <path d="M3 6h.01" />
+                  <path d="M3 12h.01" />
+                  <path d="M3 18h.01" />
+                </svg>
+              </Link>
+              <Link
                 aria-label={`Editar ${cliente.nombre}`}
                 className="absolute bottom-4 right-4 grid size-10 place-items-center rounded-full bg-[var(--primary-soft)] text-[var(--primary)]"
                 href={`/clientes/${cliente.id}/editar`}

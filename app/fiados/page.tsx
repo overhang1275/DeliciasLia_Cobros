@@ -8,6 +8,7 @@ export const dynamic = "force-dynamic";
 const pageSize = 6;
 
 const money = new Intl.NumberFormat("es-MX", { currency: "MXN", style: "currency" });
+const today = new Date().toISOString().slice(0, 10);
 
 export default async function FiadosPage({ searchParams }: { searchParams: Promise<{ page?: string; q?: string }> }) {
   const params = await searchParams;
@@ -97,6 +98,13 @@ export default async function FiadosPage({ searchParams }: { searchParams: Promi
             Piezas
           </label>
           <input className="ui-input mt-2" id="piezas" inputMode="numeric" min="1" name="piezas" placeholder="1" required type="number" />
+        </div>
+
+        <div>
+          <label className="ui-label" htmlFor="fecha">
+            Fecha de venta
+          </label>
+          <input className="ui-input mt-2" defaultValue={today} id="fecha" name="fecha" required type="date" />
         </div>
 
         <button className="ui-button-primary" type="submit">
