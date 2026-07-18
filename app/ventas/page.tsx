@@ -1,5 +1,7 @@
 import Link from "next/link";
 import { crearVenta } from "./actions";
+import { CambioPendienteFields } from "./CambioPendienteFields";
+import { DarCambioButton } from "./DarCambioButton";
 import { db } from "@/lib/db";
 
 export const dynamic = "force-dynamic";
@@ -16,6 +18,11 @@ export default async function VentasPage() {
       take: 8
     })
   ]);
+  const productosOptions = productos.map((producto) => ({
+    id: producto.id,
+    label: `${producto.nombre} - ${money.format(Number(producto.precioVenta))}`,
+    precioVenta: Number(producto.precioVenta)
+  }));
 
   return (
     <main className="app-page">
@@ -44,54 +51,7 @@ export default async function VentasPage() {
           </select>
         </div>
 
-        <div>
-          <label className="ui-label" htmlFor="productoId">
-            Producto
-          </label>
-          <select className="ui-input mt-2" id="productoId" name="productoId" required>
-            <option value="">Selecciona producto</option>
-            {productos.map((producto) => (
-              <option key={producto.id} value={producto.id}>
-                {producto.nombre} - {money.format(Number(producto.precioVenta))}
-              </option>
-            ))}
-          </select>
-          {productos.length === 0 ? (
-            <Link className="mt-2 inline-block text-sm font-bold text-[var(--primary)]" href="/productos">
-              Agregar productos
-            </Link>
-          ) : null}
-        </div>
-
-        <div>
-          <label className="ui-label" htmlFor="piezas">
-            Piezas
-          </label>
-          <input className="ui-input mt-2" id="piezas" inputMode="numeric" min="1" name="piezas" placeholder="1" required type="number" />
-        </div>
-
-        <fieldset className="grid grid-cols-2 gap-3">
-          <label className="ui-button-secondary">
-            <input className="mr-2" defaultChecked name="estado" type="radio" value="PAGADA" />
-            Pagada
-          </label>
-          <label className="ui-button-secondary">
-            <input className="mr-2" name="estado" type="radio" value="FIADA" />
-            Fiada
-          </label>
-        </fieldset>
-
-        <fieldset className="grid grid-cols-2 gap-3">
-          <legend className="ui-label col-span-2">Forma de pago</legend>
-          <label className="ui-button-secondary">
-            <input className="mr-2" defaultChecked name="metodoPago" type="radio" value="EFECTIVO" />
-            Efectivo
-          </label>
-          <label className="ui-button-secondary">
-            <input className="mr-2" name="metodoPago" type="radio" value="TRANSFERENCIA" />
-            Transferencia
-          </label>
-        </fieldset>
+        <CambioPendienteFields productos={productosOptions} />
 
         <button className="ui-button-primary" type="submit">
           Guardar venta
@@ -118,6 +78,12 @@ export default async function VentasPage() {
                   {money.format(Number(venta.total))}
                 </p>
               </div>
+              {venta.cambioPendiente && Number(venta.cambioMonto) > 0 ? (
+                <div className="mt-3 flex flex-wrap items-center justify-between gap-2 rounded-full bg-red-50 px-3 py-1 text-sm font-bold text-red-700">
+                  <span>Cambio pendiente: {money.format(Number(venta.cambioMonto))}</span>
+                  <DarCambioButton ventaId={venta.id} total={money.format(Number(venta.cambioMonto))} />
+                </div>
+              ) : null}
             </article>
           ))
         )}

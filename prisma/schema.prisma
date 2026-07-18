@@ -49,6 +49,8 @@ model Venta {
   total         Decimal
   costoTotal    Decimal
   utilidadTotal Decimal
+  cambioPendiente Boolean @default(false)
+  cambioMonto     Decimal @default(0)
   observaciones String?
 
   cliente  Cliente        @relation(fields: [clienteId], references: [id])
