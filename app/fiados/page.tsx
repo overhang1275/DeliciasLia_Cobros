@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { EstadoVenta } from "@prisma/client";
 import { registrarFiado } from "./actions";
+import { ClienteSearchField } from "@/components/ClienteSearchField";
 import { LiquidarDeudaForm } from "@/components/LiquidarDeudaForm";
 import { Pagination } from "@/components/Pagination";
 import { db } from "@/lib/db";
@@ -75,19 +76,7 @@ export default async function FiadosPage({ searchParams }: { searchParams: Promi
       </header>
 
       <form action={registrarFiado} className="ui-card grid gap-4">
-        <div>
-          <label className="ui-label" htmlFor="clienteId">
-            Cliente
-          </label>
-          <select className="ui-input mt-2" id="clienteId" name="clienteId" required>
-            <option value="">Selecciona cliente</option>
-            {clientes.map((cliente) => (
-              <option key={cliente.id} value={cliente.id}>
-                {cliente.nombre}
-              </option>
-            ))}
-          </select>
-        </div>
+        <ClienteSearchField clientes={clientes} />
 
         <div>
           <label className="ui-label" htmlFor="productoId">

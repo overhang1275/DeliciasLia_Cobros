@@ -2,6 +2,7 @@ import Link from "next/link";
 import { crearVenta } from "./actions";
 import { CambioPendienteFields } from "./CambioPendienteFields";
 import { DarCambioButton } from "./DarCambioButton";
+import { ClienteSearchField } from "@/components/ClienteSearchField";
 import { db } from "@/lib/db";
 
 export const dynamic = "force-dynamic";
@@ -37,19 +38,7 @@ export default async function VentasPage() {
       </header>
 
       <form action={crearVenta} className="ui-card grid gap-4">
-        <div>
-          <label className="ui-label" htmlFor="clienteId">
-            Cliente
-          </label>
-          <select className="ui-input mt-2" id="clienteId" name="clienteId" required>
-            <option value="">Selecciona cliente</option>
-            {clientes.map((cliente) => (
-              <option key={cliente.id} value={cliente.id}>
-                {cliente.nombre}
-              </option>
-            ))}
-          </select>
-        </div>
+        <ClienteSearchField clientes={clientes} />
 
         <CambioPendienteFields productos={productosOptions} />
 

@@ -32,7 +32,7 @@ export default async function ReportesPage({ searchParams }: { searchParams: Pro
   const days = Math.max(1, Math.min(60, Math.ceil((until.getTime() - since.getTime()) / 86400000) + 1));
   const range = { gte: since, lte: until };
 
-  const [ventas, pagos, detalles] = await Promise.all([
+  const [ventas, pagos, detalles, ventasPendientes] = await Promise.all([
     db.venta.findMany({
       where: { fecha: range, estado: { not: "CANCELADA" } },
       include: { pagos: true },
@@ -42,6 +42,10 @@ export default async function ReportesPage({ searchParams }: { searchParams: Pro
     db.detalleVenta.findMany({
       where: { venta: { fecha: range, estado: { not: "CANCELADA" } } },
       include: { producto: true }
+    }),
+    db.venta.findMany({
+      where: { estado: { in: ["FIADA", "PARCIAL"] } },
+      include: { cliente: true, pagos: true }
     })
   ]);
 
@@ -83,6 +87,15 @@ export default async function ReportesPage({ searchParams }: { searchParams: Pro
     total: pagos.filter((pago) => pago.metodo === metodo).reduce((sum, pago) => sum + Number(pago.monto), 0)
   }));
   const maxMetodo = Math.max(...pagosPorMetodo.map((item) => item.total), 0);
+  const deudores = new Map<string, number>();
+  for (const venta of ventasPendientes) {
+    const pagado = venta.pagos.reduce((sum, pago) => sum + Number(pago.monto), 0);
+    const pendiente = Math.max(0, Number(venta.total) - pagado);
+    if (pendiente > 0) deudores.set(venta.cliente.nombre, (deudores.get(venta.cliente.nombre) || 0) + pendiente);
+  }
+  const listaDeudores = [...deudores.entries()]
+    .map(([nombre, total]) => ({ nombre, total }))
+    .sort((a, b) => b.total - a.total);
 
   return (
     <main className="app-page">
@@ -181,6 +194,20 @@ export default async function ReportesPage({ searchParams }: { searchParams: Pro
             </div>
           ))}
         </article>
+      </section>
+
+      <section className="ui-card grid gap-3">
+        <h2 className="text-xl font-bold text-[var(--brand)]">Clientes con deuda</h2>
+        {listaDeudores.length === 0 ? (
+          <p className="ui-label">No hay clientes con deuda pendiente.</p>
+        ) : (
+          listaDeudores.map((cliente) => (
+            <div className="flex items-center justify-between gap-3 border-b border-[var(--border)] py-2 last:border-b-0" key={cliente.nombre}>
+              <span className="font-bold text-[var(--text-main)]">{cliente.nombre}</span>
+              <strong className="rounded-full bg-red-50 px-3 py-1 text-red-700">{money.format(cliente.total)}</strong>
+            </div>
+          ))
+        )}
       </section>
     </main>
   );
