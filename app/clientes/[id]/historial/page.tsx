@@ -113,16 +113,16 @@ export default async function HistorialClientePage({ params }: { params: Promise
 
       <section className="grid grid-cols-2 gap-3" aria-label="Resumen">
         {[
-          ["🧾", "Comprado", money.format(totalComprado)],
-          ["✅", "Pagado", money.format(totalPagado)],
-          ["📒", "Crédito", money.format(creditoPendiente)],
-          ["💸", "Cambios", money.format(cambiosPendientes)],
-          ["🗓️", "Pedidos", String(pedidosPendientes)]
-        ].map(([icono, label, value]) => (
+          ["🧾", "Comprado", money.format(totalComprado), ""],
+          ["✅", "Pagado", money.format(totalPagado), ""],
+          ["📒", "Crédito", money.format(creditoPendiente), ""],
+          ["💸", "Cambios", cambiosPendientes > 0 ? `-${money.format(cambiosPendientes)}` : money.format(0), "text-red-700"],
+          ["🗓️", "Pedidos", String(pedidosPendientes), ""]
+        ].map(([icono, label, value, tone]) => (
           <article className="rounded-[1.75rem] bg-white p-4 shadow-sm" key={label}>
             <span className="text-2xl" aria-hidden="true">{icono}</span>
             <p className="ui-label">{label}</p>
-            <p className="mt-2 text-2xl font-bold text-[var(--brand)]">{value}</p>
+            <p className={`mt-2 text-2xl font-bold ${tone || "text-[var(--brand)]"}`}>{value}</p>
           </article>
         ))}
       </section>
