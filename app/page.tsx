@@ -57,7 +57,11 @@ export default async function HomePage() {
         </div>
         <form action={logout}>
           <button className="grid size-11 place-items-center rounded-2xl bg-[var(--primary-soft)] text-xl text-[var(--primary)]" aria-label="Salir" title="Salir" type="submit">
-            <span aria-hidden="true">↗</span>
+            <svg aria-hidden="true" className="size-6" fill="none" stroke="currentColor" strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" viewBox="0 0 24 24">
+              <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4" />
+              <path d="M16 17l5-5-5-5" />
+              <path d="M21 12H9" />
+            </svg>
           </button>
         </form>
       </header>
