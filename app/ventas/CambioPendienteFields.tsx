@@ -30,11 +30,11 @@ export function CambioPendienteFields({ productos, defaultProductoId, defaultPie
       <fieldset className="grid grid-cols-2 gap-3">
         <label className="ui-button-secondary">
           <input className="mr-2" checked={estado === "PAGADA"} name="estado" type="radio" value="PAGADA" onChange={(event) => setEstado(event.target.value)} />
-          💵 Pagada
+          💵 Contado
         </label>
         <label className="ui-button-secondary">
           <input className="mr-2" checked={estado === "FIADA"} name="estado" type="radio" value="FIADA" onChange={() => router.push("/fiados")} />
-          📒 Saldo pendiente
+          📒 Crédito
         </label>
       </fieldset>
 
