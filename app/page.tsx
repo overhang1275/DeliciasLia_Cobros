@@ -9,13 +9,17 @@ export const dynamic = "force-dynamic";
 const money = new Intl.NumberFormat("es-MX", { currency: "MXN", style: "currency" });
 
 export default async function HomePage() {
-  const [config, clientes, productos, ventasFiadas] = await Promise.all([
+  const [config, clientes, productos, ventasFiadas, cambiosPendientes] = await Promise.all([
     getConfiguracion(),
     db.cliente.count({ where: { activo: true } }),
     db.producto.count({ where: { activo: true } }),
     db.venta.findMany({
       where: { estado: { in: ["FIADA", "PARCIAL"] } },
       include: { pagos: true }
+    }),
+    db.venta.aggregate({
+      where: { cambioPendiente: true },
+      _sum: { cambioMonto: true }
     })
   ]);
 
@@ -25,11 +29,10 @@ export default async function HomePage() {
   }, 0);
 
   const metrics = [
-    ["Ventas hoy", money.format(0)],
-    ["Cobrado", money.format(0)],
     ["Clientes", clientes.toString()],
     ["Productos", productos.toString()],
-    ["Fiados por cobrar", money.format(porCobrar)]
+    ["Fiados por cobrar", money.format(porCobrar)],
+    ["Cambios que debo", money.format(Number(cambiosPendientes._sum.cambioMonto || 0))]
   ];
 
   return (
@@ -59,9 +62,9 @@ export default async function HomePage() {
         </div>
       </header>
 
-      <section className="grid grid-cols-2 gap-3 md:grid-cols-6" aria-label="Resumen del dia">
-        {metrics.map(([label, value], index) => (
-          <div key={label} className={`ui-card ${index === 4 ? "col-span-2 md:col-span-2" : "md:col-span-1"}`}>
+      <section className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4" aria-label="Resumen del dia">
+        {metrics.map(([label, value]) => (
+          <div key={label} className="ui-card">
             <p className="ui-label">{label}</p>
             <p className="mt-2 text-2xl font-bold text-[var(--brand)]">{value}</p>
           </div>
