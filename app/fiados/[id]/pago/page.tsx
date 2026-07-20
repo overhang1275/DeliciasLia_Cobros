@@ -34,7 +34,7 @@ export default async function PagoFiadoPage({ params }: { params: Promise<{ id: 
           <h1 className="truncate text-3xl font-bold text-[var(--brand)]">Registrar pago</h1>
         </div>
         <Link className="grid size-11 place-items-center rounded-2xl bg-[var(--primary-soft)] text-xl text-[var(--primary)]" href="/fiados" aria-label="Volver">
-          <span aria-hidden="true">←</span>
+          <span aria-hidden="true">⬅️</span>
         </Link>
       </header>
 

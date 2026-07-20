@@ -106,7 +106,7 @@ export default async function ReportesPage({ searchParams }: { searchParams: Pro
           <h1 className="truncate text-3xl font-bold text-[var(--brand)]">Analisis</h1>
         </div>
         <Link className="grid size-11 place-items-center rounded-2xl bg-[var(--primary-soft)] text-xl text-[var(--primary)]" href="/" aria-label="Inicio">
-          <span aria-hidden="true">⌂</span>
+          <span aria-hidden="true">🏠</span>
         </Link>
       </header>
 
@@ -164,7 +164,7 @@ export default async function ReportesPage({ searchParams }: { searchParams: Pro
 
       <section className="grid gap-3 md:grid-cols-2">
         <article className="grid gap-3 rounded-[1.75rem] bg-white p-4 shadow-sm">
-          <h2 className="text-xl font-bold text-[var(--brand)]">🍮 Mejores productos</h2>
+          <h2 className="text-xl font-bold text-[var(--brand)]">📦 Mejores productos</h2>
           {topProductos.length === 0 ? (
             <p className="ui-label">Todavia no hay ventas.</p>
           ) : (

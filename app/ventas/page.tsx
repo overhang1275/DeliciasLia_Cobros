@@ -36,7 +36,7 @@ export default async function VentasPage() {
           <h1 className="truncate text-3xl font-bold text-[var(--brand)]">Nueva venta</h1>
         </div>
         <Link className="grid size-11 place-items-center rounded-2xl bg-[var(--primary-soft)] text-xl text-[var(--primary)]" href="/" aria-label="Inicio">
-          <span aria-hidden="true">⌂</span>
+          <span aria-hidden="true">🏠</span>
         </Link>
       </header>
 
@@ -69,7 +69,7 @@ export default async function VentasPage() {
               <div className="flex items-start justify-between gap-4">
                 <div className="flex min-w-0 gap-3">
                   <span className="grid size-11 shrink-0 place-items-center rounded-2xl bg-[var(--primary-soft)] text-2xl" aria-hidden="true">
-                    🍮
+                    📦
                   </span>
                   <div className="min-w-0">
                   <h3 className="font-bold text-[var(--text-main)]">{venta.cliente.nombre}</h3>

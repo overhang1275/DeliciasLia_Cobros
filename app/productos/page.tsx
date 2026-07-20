@@ -34,26 +34,26 @@ export default async function ProductosPage({ searchParams }: { searchParams: Pr
   return (
     <main className="app-page">
       <header className="flex items-center gap-4 rounded-[2rem] bg-white p-4 shadow-sm">
-        <span className="grid size-14 shrink-0 place-items-center rounded-2xl bg-[var(--primary-soft)] text-3xl" aria-hidden="true">🍮</span>
+        <span className="grid size-14 shrink-0 place-items-center rounded-2xl bg-[var(--primary-soft)] text-3xl" aria-hidden="true">📦</span>
         <div className="min-w-0 flex-1">
           <p className="ui-label">Catalogo</p>
           <h1 className="truncate text-3xl font-bold text-[var(--brand)]">Productos</h1>
         </div>
         <Link className="grid size-11 place-items-center rounded-2xl bg-[var(--primary-soft)] text-xl text-[var(--primary)]" href="/" aria-label="Inicio">
-          <span aria-hidden="true">⌂</span>
+          <span aria-hidden="true">🏠</span>
         </Link>
       </header>
 
       <form action={crearProducto} className="grid gap-4 rounded-[2rem] bg-white p-5 shadow-sm">
         <div>
           <p className="ui-label">Nuevo producto</p>
-          <h2 className="text-xl font-bold text-[var(--brand)]">Postre para vender</h2>
+          <h2 className="text-xl font-bold text-[var(--brand)]">Producto para vender</h2>
         </div>
         <div>
           <label className="ui-label" htmlFor="nombre">
-            Producto 🍮
+            Producto 📦
           </label>
-          <input className="ui-input mt-2" id="nombre" name="nombre" placeholder="Arroz 7oz" required minLength={2} />
+          <input className="ui-input mt-2" id="nombre" name="nombre" placeholder="Producto o servicio" required minLength={2} />
         </div>
 
         <div>
@@ -82,7 +82,7 @@ export default async function ProductosPage({ searchParams }: { searchParams: Pr
       <section className="grid gap-3" aria-label="Lista de productos">
         <div className="flex items-center justify-between">
           <h2 className="text-xl font-bold text-[var(--brand)]">Productos activos</h2>
-          <span className="text-2xl" aria-hidden="true">🧁</span>
+          <span className="text-2xl" aria-hidden="true">🏷️</span>
         </div>
         <form className="flex gap-3 rounded-[1.75rem] bg-white p-3 shadow-sm" action="/productos">
           <input className="ui-input" defaultValue={q} name="q" placeholder="Buscar producto" />
@@ -96,7 +96,7 @@ export default async function ProductosPage({ searchParams }: { searchParams: Pr
           productos.map((producto) => (
             <article className="flex items-center justify-between gap-4 rounded-[1.75rem] bg-white p-4 shadow-sm" key={producto.id}>
               <div className="flex min-w-0 items-center gap-3">
-                <span className="grid size-11 shrink-0 place-items-center rounded-2xl bg-[var(--primary-soft)] text-2xl" aria-hidden="true">🍮</span>
+                <span className="grid size-11 shrink-0 place-items-center rounded-2xl bg-[var(--primary-soft)] text-2xl" aria-hidden="true">📦</span>
                 <h3 className="truncate font-bold text-[var(--text-main)]">{producto.nombre}</h3>
               </div>
               <p className="rounded-full bg-[var(--primary-soft)] px-3 py-1 text-sm font-bold text-[var(--primary)]">

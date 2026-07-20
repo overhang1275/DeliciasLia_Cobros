@@ -75,7 +75,7 @@ export default async function FiadosPage({ searchParams }: { searchParams: Promi
           <h1 className="truncate text-3xl font-bold text-[var(--brand)]">Fiados</h1>
         </div>
         <Link className="grid size-11 place-items-center rounded-2xl bg-[var(--primary-soft)] text-xl text-[var(--primary)]" href="/" aria-label="Inicio">
-          <span aria-hidden="true">⌂</span>
+          <span aria-hidden="true">🏠</span>
         </Link>
       </header>
 
@@ -89,10 +89,10 @@ export default async function FiadosPage({ searchParams }: { searchParams: Promi
 
         <div>
           <label className="ui-label" htmlFor="productoId">
-            Tipo de postre 🍮
+            Producto 📦
           </label>
           <select className="ui-input mt-2" id="productoId" name="productoId" required>
-            <option value="">Selecciona postre</option>
+            <option value="">Selecciona producto</option>
             {productos.map((producto) => (
               <option key={producto.id} value={producto.id}>
                 {producto.nombre} - {money.format(Number(producto.precioVenta))}

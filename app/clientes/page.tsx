@@ -57,7 +57,7 @@ export default async function ClientesPage({ searchParams }: { searchParams: Pro
           <h1 className="truncate text-3xl font-bold text-[var(--brand)]">Clientes</h1>
         </div>
         <Link className="grid size-11 place-items-center rounded-2xl bg-[var(--primary-soft)] text-xl text-[var(--primary)]" href="/" aria-label="Inicio">
-          <span aria-hidden="true">⌂</span>
+          <span aria-hidden="true">🏠</span>
         </Link>
       </header>
 

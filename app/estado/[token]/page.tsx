@@ -77,7 +77,7 @@ export default async function EstadoPublicoPage({ params, searchParams }: { para
       <header className="rounded-[2rem] bg-white p-5 shadow-sm">
         <div className="flex items-start gap-4">
           <div className="flex min-w-0 items-center gap-3">
-            {config.logoDataUrl ? <Image alt={config.negocioNombre} className="size-16 shrink-0 rounded-3xl object-cover" height={64} src={config.logoDataUrl} unoptimized width={64} /> : <span className="grid size-16 shrink-0 place-items-center rounded-3xl bg-[var(--primary-soft)] text-3xl">🍮</span>}
+            {config.logoDataUrl ? <Image alt={config.negocioNombre} className="size-16 shrink-0 rounded-3xl object-cover" height={64} src={config.logoDataUrl} unoptimized width={64} /> : <span className="grid size-16 shrink-0 place-items-center rounded-3xl bg-[var(--primary-soft)] text-3xl">🏪</span>}
             <div className="min-w-0">
               <p className="ui-label">Estado de cuenta</p>
               <h1 className="break-words text-3xl font-bold text-[var(--brand)]">{cliente.nombre}</h1>

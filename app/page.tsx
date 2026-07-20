@@ -32,7 +32,7 @@ export default async function HomePage() {
     ["💰", "Fiados por cobrar", money.format(porCobrar), "Dinero pendiente por cobrar"],
     ["💸", "Cambios que debo", money.format(Number(cambiosPendientes._sum.cambioMonto || 0)), "Cambio pendiente por entregar"],
     ["👥", "Clientes activos", clientes.toString(), "Personas registradas"],
-    ["🍮", "Productos", productos.toString(), "Postres en catalogo"]
+    ["📦", "Productos", productos.toString(), "Articulos en catalogo"]
   ];
   const quickLinks = [
     ["📒", "Ver fiados", "Cobros pendientes", "/fiados"],
@@ -47,7 +47,7 @@ export default async function HomePage() {
             <Image alt={config.negocioNombre} className="size-16 object-cover" height={64} src={config.logoDataUrl} unoptimized width={64} />
           ) : (
             <span className="text-3xl" aria-label="Sin logo configurado">
-              🍮
+              🏪
             </span>
           )}
         </div>

@@ -54,7 +54,7 @@ export function CambioPendienteFields({ productos }: { productos: ProductoOption
 
       <div>
         <label className="ui-label" htmlFor="productoId">
-          Producto 🍮
+          Producto 📦
         </label>
         <select className="ui-input mt-2" id="productoId" name="productoId" required value={productoId} onChange={(event) => setProductoId(event.target.value)}>
           <option value="">Selecciona producto</option>

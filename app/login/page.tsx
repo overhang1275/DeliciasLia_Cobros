@@ -15,7 +15,7 @@ export default async function LoginPage({ searchParams }: { searchParams: Promis
               <Image alt={config.negocioNombre} className="size-20 object-cover" height={80} src={config.logoDataUrl} unoptimized width={80} />
             ) : (
               <span className="text-4xl" aria-hidden="true">
-                🍮
+                🏪
               </span>
             )}
           </div>

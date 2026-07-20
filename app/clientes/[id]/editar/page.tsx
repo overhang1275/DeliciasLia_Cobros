@@ -23,7 +23,7 @@ export default async function EditarClientePage({ params }: { params: Promise<{ 
           <h1 className="truncate text-3xl font-bold text-[var(--brand)]">Editar cliente</h1>
         </div>
         <Link className="grid size-11 place-items-center rounded-2xl bg-[var(--primary-soft)] text-xl text-[var(--primary)]" href="/clientes" aria-label="Volver">
-          <span aria-hidden="true">←</span>
+          <span aria-hidden="true">⬅️</span>
         </Link>
       </header>
 

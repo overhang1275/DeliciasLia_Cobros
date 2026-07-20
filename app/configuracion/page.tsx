@@ -17,13 +17,13 @@ export default async function ConfiguracionPage() {
           <h1 className="truncate text-3xl font-bold text-[var(--brand)]">Configuracion</h1>
         </div>
         <Link className="grid size-11 place-items-center rounded-2xl bg-[var(--primary-soft)] text-xl text-[var(--primary)]" href="/" aria-label="Inicio">
-          <span aria-hidden="true">⌂</span>
+          <span aria-hidden="true">🏠</span>
         </Link>
       </header>
 
       <form action={guardarConfiguracion} className="grid gap-4 rounded-[2rem] bg-white p-5 shadow-sm">
         <div className="flex items-center gap-4">
-          {config.logoDataUrl ? <Image alt="Logo del negocio" className="size-20 rounded-3xl object-cover" height={80} src={config.logoDataUrl} unoptimized width={80} /> : <span className="grid size-20 place-items-center rounded-3xl bg-[var(--primary-soft)] text-4xl">🍮</span>}
+          {config.logoDataUrl ? <Image alt="Logo del negocio" className="size-20 rounded-3xl object-cover" height={80} src={config.logoDataUrl} unoptimized width={80} /> : <span className="grid size-20 place-items-center rounded-3xl bg-[var(--primary-soft)] text-4xl">🏪</span>}
           <div>
             <p className="ui-label">Identidad</p>
             <h2 className="text-xl font-bold text-[var(--brand)]">Tu negocio</h2>
