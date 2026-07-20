@@ -5,7 +5,7 @@ export const dynamic = "force-dynamic";
 
 const fallback = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512">
   <rect width="512" height="512" rx="112" fill="#fff7ed"/>
-  <circle cx="256" cy="228" r="118" fill="#f6a6bc"/>
+  <circle cx="256" cy="228" r="118" fill="#d8e8e5"/>
   <path d="M145 306h222l-30 98H175z" fill="#4b2e2a"/>
   <path d="M183 221c25-47 121-50 146 0" fill="none" stroke="#fff" stroke-width="30" stroke-linecap="round"/>
 </svg>`;
