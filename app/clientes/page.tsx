@@ -25,7 +25,9 @@ export default async function ClientesPage({ searchParams }: { searchParams: Pro
       include: {
         _count: { select: { ventas: true } },
         ventas: {
-          where: { estado: { in: ["FIADA", "PARCIAL"] } },
+          where: {
+            OR: [{ estado: { in: ["FIADA", "PARCIAL"] } }, { cambioPendiente: true }]
+          },
           include: { pagos: true }
         }
       }
@@ -36,8 +38,9 @@ export default async function ClientesPage({ searchParams }: { searchParams: Pro
         const pagado = venta.pagos.reduce((sum, pago) => sum + Number(pago.monto), 0);
         return total + Math.max(0, Number(venta.total) - pagado);
       }, 0);
+      const cambioPendiente = cliente.ventas.reduce((total, venta) => total + (venta.cambioPendiente ? Number(venta.cambioMonto) : 0), 0);
       const deudaMasVieja = cliente.ventas.filter((venta) => Number(venta.total) - venta.pagos.reduce((sum, pago) => sum + Number(pago.monto), 0) > 0).sort((a, b) => a.fecha.getTime() - b.fecha.getTime())[0]?.fecha;
-      return { ...cliente, deudaMasVieja, saldo };
+      return { ...cliente, cambioPendiente, deudaMasVieja, saldo };
     })
     .sort((a, b) => {
       if (a.saldo > 0 && b.saldo <= 0) return -1;
@@ -125,6 +128,11 @@ export default async function ClientesPage({ searchParams }: { searchParams: Pro
                     <p className={`rounded-full px-3 py-1 text-sm font-bold ${cliente.saldo > 0 ? "bg-red-50 text-red-700" : "bg-green-50 text-green-700"}`}>
                       {cliente.saldo > 0 ? "Debe" : "No debe"}
                     </p>
+                    {cliente.cambioPendiente > 0 ? (
+                      <p className="rounded-full bg-amber-50 px-3 py-1 text-sm font-bold text-amber-700" title="Tienes cambio pendiente con este cliente">
+                        Dar cambio
+                      </p>
+                    ) : null}
                   </div>
                 </div>
                 {cliente.notas ? <p className="mt-3 text-sm text-[var(--text-muted)]">{cliente.notas}</p> : null}
