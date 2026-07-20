@@ -42,6 +42,10 @@ Crear `.env` con la base de datos local:
 
 ```env
 DATABASE_URL="file:../database/database.sqlite"
+ADMIN_PASSWORD="cambiar-esta-contrasena"
+AUTH_SECRET="cambiar-por-un-secreto-largo"
+AUTH_SECURE_COOKIE="false"
+PORT="3000"
 ```
 
 Generar Prisma Client, aplicar migraciones y sembrar datos iniciales:
@@ -123,6 +127,7 @@ Variables aceptadas por los scripts:
 - `ADMIN_PASSWORD`: contraseña inicial del usuario `admin` durante `npm run prisma:seed`. Si falta, se genera una temporal y se imprime en consola.
 - `AUTH_SECRET`: secreto para firmar la cookie de sesión. Si falta, el código usa `delicias-lia-dev-secret`, solo adecuado para desarrollo.
 - `AUTH_SECURE_COOKIE`: usa cookie segura cuando vale `true`.
+- `ALLOW_DEMO_RESET`: requerida con valor `1` para ejecutar `prisma/demo-seed.ts`; el script demo la escribe automáticamente.
 - `NODE_ENV`: usado por Next.js y para desactivar PWA en desarrollo.
 - `PORT`: usado por el servicio de producción en los scripts de despliegue.
 
@@ -132,4 +137,4 @@ No especificado en el repositorio.
 
 ## Estado
 
-Proyecto privado en versión `0.1.0`. Cuenta con migraciones Prisma, seed inicial, scripts de desarrollo, build, lint, migración, seed y despliegue Ubuntu/LXC. No se encontraron scripts de pruebas automatizadas.
+Proyecto privado en versión `0.1.0`. Cuenta con migraciones Prisma, seed inicial, seed demo, scripts de desarrollo, build, lint, migración, seed, despliegue Ubuntu/LXC y demo Ubuntu/LXC. No se encontraron scripts de pruebas automatizadas.
