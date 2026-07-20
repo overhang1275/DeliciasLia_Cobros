@@ -77,9 +77,11 @@ textarea {
   }
 
   .app-bottom-nav {
-    @apply fixed inset-x-0 bottom-0 z-50 mx-auto max-w-2xl border-t bg-white/95 px-3 pb-[max(0.75rem,env(safe-area-inset-bottom))] pt-2 backdrop-blur;
+    @apply fixed inset-x-0 bottom-0 z-50 mx-auto max-w-2xl rounded-t-[2rem] border-x border-t bg-white/95 px-3 pb-[max(0.75rem,env(safe-area-inset-bottom))] pt-2 backdrop-blur;
     border-color: var(--border-soft);
-    box-shadow: 0 -10px 28px rgb(28 24 20 / 0.08);
+    box-shadow:
+      0 -14px 34px rgb(28 24 20 / 0.08),
+      0 -3px 10px rgb(28 24 20 / 0.04);
   }
 
   .app-nav-item {
@@ -93,9 +95,11 @@ textarea {
   }
 
   .app-fab {
-    @apply mx-auto mb-4 grid size-16 place-items-center rounded-full text-white shadow-lg transition duration-150;
+    @apply mx-auto mb-4 grid size-16 place-items-center rounded-full border-4 border-white text-white transition duration-150;
     background: var(--primary);
-    box-shadow: 0 12px 30px rgb(8 127 128 / 0.32);
+    box-shadow:
+      0 18px 34px rgb(8 127 128 / 0.34),
+      0 6px 14px rgb(28 24 20 / 0.16);
   }
 
   .app-fab:active {
