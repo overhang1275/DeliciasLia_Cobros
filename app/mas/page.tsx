@@ -2,6 +2,7 @@ import Link from "next/link";
 import { logout } from "@/app/login/actions";
 
 const items = [
+  ["🗓️", "Pedidos", "Encargos para entregar despues", "/pedidos"],
   ["📦", "Productos", "Catalogo y precios de venta", "/productos"],
   ["📊", "Reportes", "Ventas, cobros y deudores", "/reportes"],
   ["⚙️", "Configuracion", "Logo, negocio y datos bancarios", "/configuracion"]

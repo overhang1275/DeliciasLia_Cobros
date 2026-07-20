@@ -9,7 +9,11 @@ export const dynamic = "force-dynamic";
 
 const money = new Intl.NumberFormat("es-MX", { currency: "MXN", style: "currency" });
 
-export default async function VentasPage() {
+export default async function VentasPage({ searchParams }: { searchParams: Promise<{ clienteId?: string; productoId?: string; piezas?: string }> }) {
+  const params = await searchParams;
+  const defaultClienteId = Number(params.clienteId) || undefined;
+  const defaultProductoId = Number(params.productoId) || undefined;
+  const defaultPiezas = Math.max(1, Number(params.piezas) || 1);
   const [clientes, productos, ventas] = await Promise.all([
     db.cliente.findMany({ where: { activo: true }, orderBy: { nombre: "asc" } }),
     db.producto.findMany({ where: { activo: true }, orderBy: { nombre: "asc" } }),
@@ -46,9 +50,9 @@ export default async function VentasPage() {
           <h2 className="text-xl font-bold text-[var(--brand)]">¿Qué se vendió?</h2>
         </div>
 
-        <ClienteSearchField clientes={clientes} />
+        <ClienteSearchField clientes={clientes} defaultClienteId={defaultClienteId} />
 
-        <CambioPendienteFields productos={productosOptions} />
+        <CambioPendienteFields productos={productosOptions} defaultProductoId={defaultProductoId} defaultPiezas={defaultPiezas} />
 
         <button className="ui-button-primary gap-2" type="submit">
           <span aria-hidden="true">✓</span>

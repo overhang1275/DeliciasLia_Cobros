@@ -13,10 +13,13 @@ const pageSize = 6;
 const money = new Intl.NumberFormat("es-MX", { currency: "MXN", style: "currency" });
 const today = new Date().toISOString().slice(0, 10);
 
-export default async function FiadosPage({ searchParams }: { searchParams: Promise<{ page?: string; q?: string }> }) {
+export default async function FiadosPage({ searchParams }: { searchParams: Promise<{ page?: string; q?: string; clienteId?: string; productoId?: string; piezas?: string }> }) {
   const params = await searchParams;
   const q = (params.q || "").trim();
   const page = Math.max(1, Number(params.page) || 1);
+  const defaultClienteId = Number(params.clienteId) || undefined;
+  const defaultProductoId = Number(params.productoId) || undefined;
+  const defaultPiezas = Math.max(1, Number(params.piezas) || 1);
   const where = {
     estado: { in: [EstadoVenta.FIADA, EstadoVenta.PARCIAL] },
     ...(q
@@ -85,13 +88,13 @@ export default async function FiadosPage({ searchParams }: { searchParams: Promi
           <h2 className="text-xl font-bold text-[var(--brand)]">¿Quién queda pendiente?</h2>
         </div>
 
-        <ClienteSearchField clientes={clientes} />
+        <ClienteSearchField clientes={clientes} defaultClienteId={defaultClienteId} />
 
         <div>
           <label className="ui-label" htmlFor="productoId">
             Producto 📦
           </label>
-          <select className="ui-input mt-2" id="productoId" name="productoId" required>
+          <select className="ui-input mt-2" defaultValue={defaultProductoId} id="productoId" name="productoId" required>
             <option value="">Selecciona producto</option>
             {productos.map((producto) => (
               <option key={producto.id} value={producto.id}>
@@ -110,7 +113,7 @@ export default async function FiadosPage({ searchParams }: { searchParams: Promi
           <label className="ui-label" htmlFor="piezas">
             Piezas 🔢
           </label>
-          <input className="ui-input mt-2" id="piezas" inputMode="numeric" min="1" name="piezas" placeholder="1" required type="number" />
+          <input className="ui-input mt-2" defaultValue={defaultPiezas} id="piezas" inputMode="numeric" min="1" name="piezas" placeholder="1" required type="number" />
         </div>
 
         <div>

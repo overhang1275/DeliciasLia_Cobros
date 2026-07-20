@@ -12,10 +12,10 @@ type ProductoOption = {
 
 const money = new Intl.NumberFormat("es-MX", { currency: "MXN", style: "currency" });
 
-export function CambioPendienteFields({ productos }: { productos: ProductoOption[] }) {
+export function CambioPendienteFields({ productos, defaultProductoId, defaultPiezas = 1 }: { productos: ProductoOption[]; defaultProductoId?: number; defaultPiezas?: number }) {
   const router = useRouter();
-  const [productoId, setProductoId] = useState("");
-  const [piezas, setPiezas] = useState(1);
+  const [productoId, setProductoId] = useState(defaultProductoId ? String(defaultProductoId) : "");
+  const [piezas, setPiezas] = useState(defaultPiezas);
   const [estado, setEstado] = useState("PAGADA");
   const [metodoPago, setMetodoPago] = useState("EFECTIVO");
   const [deboCambio, setDeboCambio] = useState(false);

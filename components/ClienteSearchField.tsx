@@ -8,9 +8,10 @@ type ClienteOption = {
   telefono?: string | null;
 };
 
-export function ClienteSearchField({ clientes }: { clientes: ClienteOption[] }) {
-  const [query, setQuery] = useState("");
-  const [clienteId, setClienteId] = useState("");
+export function ClienteSearchField({ clientes, defaultClienteId }: { clientes: ClienteOption[]; defaultClienteId?: number }) {
+  const clienteDefault = clientes.find((cliente) => cliente.id === defaultClienteId);
+  const [query, setQuery] = useState(clienteDefault?.nombre || "");
+  const [clienteId, setClienteId] = useState(clienteDefault ? String(clienteDefault.id) : "");
   const resultados = useMemo(() => {
     const texto = query.trim().toLowerCase();
     if (!texto) return clientes.slice(0, 6);
