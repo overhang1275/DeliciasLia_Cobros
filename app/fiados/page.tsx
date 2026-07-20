@@ -2,6 +2,7 @@ import Link from "next/link";
 import { EstadoVenta } from "@prisma/client";
 import { registrarFiado } from "./actions";
 import { ClienteSearchField } from "@/components/ClienteSearchField";
+import { EliminarFiadoForm } from "@/components/EliminarFiadoForm";
 import { LiquidarDeudaForm } from "@/components/LiquidarDeudaForm";
 import { Pagination } from "@/components/Pagination";
 import { db } from "@/lib/db";
@@ -125,10 +126,12 @@ export default async function FiadosPage({ searchParams }: { searchParams: Promi
         </button>
       </form>
 
-      <section className="grid gap-3" aria-label="Fiados pendientes">
+      <section className="grid gap-4" aria-label="Fiados pendientes">
         <div className="flex items-center justify-between">
           <h2 className="text-xl font-bold text-[var(--brand)]">Pendientes</h2>
-          <span className="text-2xl" aria-hidden="true">💰</span>
+          <span className="text-2xl" aria-hidden="true">
+            💰
+          </span>
         </div>
         <form className="flex gap-3 rounded-[1.75rem] bg-white p-3 shadow-sm" action="/fiados">
           <input className="ui-input" defaultValue={q} name="q" placeholder="Buscar fiado" />
@@ -140,8 +143,8 @@ export default async function FiadosPage({ searchParams }: { searchParams: Promi
           <p className="rounded-[1.75rem] bg-white p-4 text-[var(--text-muted)] shadow-sm">No hay fiados pendientes.</p>
         ) : (
           pendientes.map((venta) => (
-            <article className="rounded-[1.75rem] bg-white p-4 shadow-sm" key={venta.id}>
-              <div className="flex items-start justify-between gap-4">
+            <article className="rounded-[1.75rem] bg-white p-5 shadow-sm" key={venta.id}>
+              <div className="flex items-start justify-between gap-5">
                 <div className="flex min-w-0 gap-3">
                   <span className="grid size-11 shrink-0 place-items-center rounded-2xl bg-[var(--primary-soft)] text-2xl" aria-hidden="true">
                     📒
@@ -159,7 +162,7 @@ export default async function FiadosPage({ searchParams }: { searchParams: Promi
                   {money.format(venta.pendiente)}
                 </p>
               </div>
-              <div className="mt-5 grid gap-2 lg:grid-cols-[auto_1fr]">
+              <div className="mt-5 grid gap-3 rounded-[1.5rem] bg-[var(--app-bg)] p-3 lg:grid-cols-[auto_1fr]">
                 <div className="grid gap-2 sm:grid-cols-2 lg:flex">
                   <Link className="ui-button-secondary min-h-10 px-4 text-sm" href={`/fiados/${venta.id}/pago`}>
                     💵 Registrar pago
@@ -174,6 +177,9 @@ export default async function FiadosPage({ searchParams }: { searchParams: Promi
                 <div className="lg:justify-self-end">
                   <LiquidarDeudaForm clienteId={venta.clienteId} total={money.format(totalPorCliente.get(venta.clienteId) || venta.pendiente)} />
                 </div>
+              </div>
+              <div className="mt-3 flex justify-end">
+                <EliminarFiadoForm ventaId={venta.id} />
               </div>
             </article>
           ))

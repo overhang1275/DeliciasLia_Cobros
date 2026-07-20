@@ -78,3 +78,31 @@ export async function liquidarDeudaCliente(formData: FormData) {
   revalidatePath("/clientes");
   redirect("/fiados");
 }
+
+export async function eliminarFiado(formData: FormData) {
+  const ventaId = Number(formData.get("ventaId"));
+  const confirmacion = formData.get("confirmacion");
+
+  if (!Number.isInteger(ventaId) || ventaId <= 0 || confirmacion !== "CONFIRMAR") {
+    redirect("/fiados");
+  }
+
+  const venta = await db.venta.findFirst({
+    where: { id: ventaId, estado: { in: ["FIADA", "PARCIAL"] } },
+    select: { id: true }
+  });
+
+  if (venta) {
+    await db.$transaction([
+      db.pago.deleteMany({ where: { ventaId: venta.id } }),
+      db.detalleVenta.deleteMany({ where: { ventaId: venta.id } }),
+      db.venta.delete({ where: { id: venta.id } })
+    ]);
+  }
+
+  revalidatePath("/");
+  revalidatePath("/fiados");
+  revalidatePath("/clientes");
+  revalidatePath("/reportes");
+  redirect("/fiados");
+}
