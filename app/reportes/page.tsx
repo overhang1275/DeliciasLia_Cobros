@@ -68,16 +68,17 @@ export default async function ReportesPage({ searchParams }: { searchParams: Pro
   }).filter((item) => item.total > 0);
   const maxDia = Math.max(...ventasPorDia.map((item) => item.total), 0);
 
-  const clientes = new Map<string, { compras: number; total: number }>();
+  const clientes = new Map<number, { nombre: string; compras: number; total: number }>();
   for (const venta of ventas) {
-    const actual = clientes.get(venta.cliente.nombre) || { compras: 0, total: 0 };
-    clientes.set(venta.cliente.nombre, {
+    const actual = clientes.get(venta.clienteId) || { nombre: venta.cliente.nombre, compras: 0, total: 0 };
+    clientes.set(venta.clienteId, {
+      nombre: actual.nombre,
       compras: actual.compras + 1,
       total: actual.total + Number(venta.total)
     });
   }
-  const topClientes = [...clientes.entries()]
-    .map(([nombre, data]) => ({ nombre, promedio: data.total / data.compras, ...data }))
+  const topClientes = [...clientes.values()]
+    .map((data) => ({ promedio: data.total / data.compras, ...data }))
     .sort((a, b) => b.total - a.total)
     .slice(0, 3);
   const maxCliente = Math.max(...topClientes.map((item) => item.total), 0);

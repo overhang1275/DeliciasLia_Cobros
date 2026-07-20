@@ -152,7 +152,7 @@ export default async function PedidosPage({ searchParams }: { searchParams: Prom
                   💵 Venta
                 </Link>
                 <Link className="ui-button-secondary min-h-10 px-4 text-sm" href={orderLink("/fiados", pedido)}>
-                  📒 Saldo pendiente
+                  📒 Crédito
                 </Link>
                 <form action={cancelarPedido}>
                   <input name="pedidoId" type="hidden" value={pedido.id} />

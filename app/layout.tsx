@@ -11,7 +11,7 @@ export async function generateMetadata(): Promise<Metadata> {
 
   return {
     title: negocioNombre,
-    description: `Ventas, saldos pendientes, pedidos y cobros para ${negocioNombre}`,
+    description: `Ventas, créditos, pedidos y cobros para ${negocioNombre}`,
     applicationName: negocioNombre,
     manifest: "/manifest.webmanifest",
     appleWebApp: {

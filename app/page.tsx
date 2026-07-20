@@ -29,13 +29,13 @@ export default async function HomePage() {
   }, 0);
 
   const metrics = [
-    ["💰", "Saldo pendiente", money.format(porCobrar), "Dinero pendiente por cobrar"],
+    ["💰", "Crédito por cobrar", money.format(porCobrar), "Dinero pendiente por cobrar"],
     ["💸", "Cambios que debo", money.format(Number(cambiosPendientes._sum.cambioMonto || 0)), "Cambio pendiente por entregar"],
     ["👥", "Clientes activos", clientes.toString(), "Personas registradas"],
     ["📦", "Productos", productos.toString(), "Articulos en catalogo"]
   ];
   const quickLinks = [
-    ["📒", "Saldo pendiente", "Cobros pendientes", "/fiados"],
+    ["📒", "Créditos", "Cobros pendientes", "/fiados"],
     ["👤", "Clientes", "Alta y consulta", "/clientes"]
   ];
 

@@ -75,7 +75,7 @@ export default async function FiadosPage({ searchParams }: { searchParams: Promi
         </span>
         <div className="min-w-0 flex-1">
           <p className="ui-label">Cobros pendientes</p>
-          <h1 className="truncate text-3xl font-bold text-[var(--brand)]">Saldo pendiente</h1>
+          <h1 className="truncate text-3xl font-bold text-[var(--brand)]">Crédito</h1>
         </div>
         <Link className="grid size-11 place-items-center rounded-2xl bg-[var(--primary-soft)] text-xl text-[var(--primary)]" href="/" aria-label="Inicio">
           <span aria-hidden="true">🏠</span>
@@ -84,7 +84,7 @@ export default async function FiadosPage({ searchParams }: { searchParams: Promi
 
       <form action={registrarFiado} className="grid gap-4 rounded-[2rem] bg-white p-5 shadow-sm">
         <div>
-          <p className="ui-label">Nuevo saldo pendiente</p>
+          <p className="ui-label">Nuevo crédito</p>
           <h2 className="text-xl font-bold text-[var(--brand)]">¿Quién queda pendiente?</h2>
         </div>
 
@@ -129,7 +129,7 @@ export default async function FiadosPage({ searchParams }: { searchParams: Promi
         </button>
       </form>
 
-      <section className="grid gap-4" aria-label="Saldos pendientes">
+      <section className="grid gap-4" aria-label="Créditos pendientes">
         <div className="flex items-center justify-between">
           <h2 className="text-xl font-bold text-[var(--brand)]">Pendientes</h2>
           <span className="text-2xl" aria-hidden="true">
@@ -137,13 +137,13 @@ export default async function FiadosPage({ searchParams }: { searchParams: Promi
           </span>
         </div>
         <form className="flex gap-3 rounded-[1.75rem] bg-white p-3 shadow-sm" action="/fiados">
-          <input className="ui-input" defaultValue={q} name="q" placeholder="Buscar saldo pendiente" />
+          <input className="ui-input" defaultValue={q} name="q" placeholder="Buscar crédito" />
           <button className="ui-button-secondary min-h-14 px-4" type="submit" aria-label="Filtrar">
             🔎
           </button>
         </form>
         {pendientes.length === 0 ? (
-          <p className="rounded-[1.75rem] bg-white p-4 text-[var(--text-muted)] shadow-sm">No hay saldos pendientes.</p>
+          <p className="rounded-[1.75rem] bg-white p-4 text-[var(--text-muted)] shadow-sm">No hay créditos pendientes.</p>
         ) : (
           pendientes.map((venta) => (
             <article className="rounded-[1.75rem] bg-white p-5 shadow-sm" key={venta.id}>
@@ -157,7 +157,7 @@ export default async function FiadosPage({ searchParams }: { searchParams: Promi
                     <p className="ui-label">
                       {venta.detalles[0]
                         ? `${venta.detalles[0].producto.nombre} x ${venta.detalles[0].cantidad}`
-                        : venta.observaciones || "Saldo pendiente"}
+                        : venta.observaciones || "Crédito"}
                     </p>
                   </div>
                 </div>

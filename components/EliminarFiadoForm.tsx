@@ -7,7 +7,7 @@ export function EliminarFiadoForm({ ventaId }: { ventaId: number }) {
     <form
       action={eliminarFiado}
       onSubmit={(event) => {
-        const confirmacion = prompt("Escribe CONFIRMAR para eliminar este saldo pendiente.");
+        const confirmacion = prompt("Escribe CONFIRMAR para eliminar este crédito.");
         if (confirmacion !== "CONFIRMAR") {
           event.preventDefault();
           return;

@@ -86,7 +86,7 @@ export default async function EstadoPublicoPage({ params, searchParams }: { para
           </div>
         </div>
         <div className="mt-5 rounded-[1.75rem] bg-[var(--primary-soft)] p-4">
-          <p className="text-sm font-bold text-[var(--primary)]">💰 Saldo por cobrar</p>
+          <p className="text-sm font-bold text-[var(--primary)]">💰 Crédito por cobrar</p>
           <p className="mt-1 text-4xl font-bold text-[var(--brand)]">{money.format(saldo)}</p>
           {cliente.telefono ? <p className="mt-2 text-sm text-[var(--text-muted)]">Telefono: {cliente.telefono}</p> : null}
         </div>
@@ -130,7 +130,7 @@ export default async function EstadoPublicoPage({ params, searchParams }: { para
             <h2 className="text-2xl font-bold text-[var(--brand)]">📋 Movimientos</h2>
             <div className="flex gap-2 text-xs font-bold">
               <span className="rounded-full bg-green-50 px-3 py-1 text-green-700">Verde: pagos</span>
-              <span className="rounded-full bg-red-50 px-3 py-1 text-red-700">Rojo: deuda</span>
+              <span className="rounded-full bg-red-50 px-3 py-1 text-red-700">Rojo: crédito</span>
             </div>
           </div>
         </div>

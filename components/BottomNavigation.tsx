@@ -5,7 +5,7 @@ import { usePathname } from "next/navigation";
 
 const navItems = [
   { href: "/", label: "Inicio", icon: "M3 12h18M5 12l7-7 7 7M6 10v10h12V10" },
-  { href: "/fiados", label: "Saldo", icon: "M4 7h16M4 12h16M4 17h10" },
+  { href: "/fiados", label: "Crédito", icon: "M4 7h16M4 12h16M4 17h10" },
   { href: "/clientes", label: "Clientes", icon: "M16 11a4 4 0 1 0-8 0M4 21a8 8 0 0 1 16 0" },
   { href: "/mas", label: "Mas", icon: "M5 12h.01M12 12h.01M19 12h.01" }
 ];

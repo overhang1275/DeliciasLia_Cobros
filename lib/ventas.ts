@@ -30,7 +30,7 @@ export async function registrarVenta({ clienteId, productoId, piezas, estado, me
       utilidadTotal: total - costoTotal,
       cambioPendiente: cambioMonto > 0,
       cambioMonto,
-      observaciones: `${estado === "FIADA" ? "Saldo pendiente" : "Venta"}: ${producto.nombre}`,
+      observaciones: `${estado === "FIADA" ? "Crédito" : "Venta"}: ${producto.nombre}`,
       detalles: {
         create: {
           productoId: producto.id,
