@@ -1,10 +1,15 @@
 import type { MetadataRoute } from "next";
+import { getConfiguracion } from "@/lib/configuracion";
 
-export default function manifest(): MetadataRoute.Manifest {
+export const dynamic = "force-dynamic";
+
+export default async function manifest(): Promise<MetadataRoute.Manifest> {
+  const { negocioNombre } = await getConfiguracion();
+
   return {
-    name: "Delicias Lia",
-    short_name: "Delicias Lia",
-    description: "Ventas, fiados e inventario",
+    name: negocioNombre,
+    short_name: negocioNombre,
+    description: `Ventas, fiados, pedidos y cobros para ${negocioNombre}`,
     start_url: "/",
     display: "standalone",
     background_color: "#fffaf3",

@@ -2,20 +2,29 @@ import type { Metadata, Viewport } from "next";
 import type { ReactNode } from "react";
 import { cookies } from "next/headers";
 import { BottomNavigation } from "@/components/BottomNavigation";
+import { getConfiguracion } from "@/lib/configuracion";
 import { isValidSessionToken, SESSION_COOKIE } from "@/lib/session";
 import "./globals.css";
 
-export const metadata: Metadata = {
-  title: "Delicias Lia",
-  description: "Ventas, fiados e inventario para Delicias Lia",
-  applicationName: "Delicias Lia",
-  manifest: "/manifest.webmanifest",
-  icons: {
-    apple: "/api/logo",
-    icon: "/api/logo",
-    shortcut: "/api/logo"
-  }
-};
+export async function generateMetadata(): Promise<Metadata> {
+  const { negocioNombre } = await getConfiguracion();
+
+  return {
+    title: negocioNombre,
+    description: `Ventas, fiados, pedidos y cobros para ${negocioNombre}`,
+    applicationName: negocioNombre,
+    manifest: "/manifest.webmanifest",
+    appleWebApp: {
+      capable: true,
+      title: negocioNombre
+    },
+    icons: {
+      apple: "/api/logo",
+      icon: "/api/logo",
+      shortcut: "/api/logo"
+    }
+  };
+}
 
 export const viewport: Viewport = {
   themeColor: "#f6a6bc",
