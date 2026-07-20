@@ -16,7 +16,7 @@ export default async function ConfiguracionPage() {
           <p className="ui-label">Sistema</p>
           <h1 className="truncate text-3xl font-bold text-[var(--brand)]">Configuracion</h1>
         </div>
-        <Link className="grid size-11 place-items-center rounded-2xl bg-[var(--primary-soft)] text-xl text-[var(--primary)]" href="/" aria-label="Inicio">
+        <Link className="grid size-11 place-items-center rounded-2xl bg-[var(--primary-soft)] text-xl text-[var(--primary)]" href="/" aria-label="Inicio" title="Inicio">
           <span aria-hidden="true">🏠</span>
         </Link>
       </header>

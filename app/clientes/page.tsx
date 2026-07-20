@@ -56,7 +56,7 @@ export default async function ClientesPage({ searchParams }: { searchParams: Pro
           <p className="ui-label">Personas</p>
           <h1 className="truncate text-3xl font-bold text-[var(--brand)]">Clientes</h1>
         </div>
-        <Link className="grid size-11 place-items-center rounded-2xl bg-[var(--primary-soft)] text-xl text-[var(--primary)]" href="/" aria-label="Inicio">
+        <Link className="grid size-11 place-items-center rounded-2xl bg-[var(--primary-soft)] text-xl text-[var(--primary)]" href="/" aria-label="Inicio" title="Inicio">
           <span aria-hidden="true">🏠</span>
         </Link>
       </header>
@@ -100,7 +100,7 @@ export default async function ClientesPage({ searchParams }: { searchParams: Pro
         </div>
         <form className="flex gap-3 rounded-[1.75rem] bg-white p-3 shadow-sm" action="/clientes">
           <input className="ui-input" defaultValue={q} name="q" placeholder="Buscar cliente" />
-          <button className="ui-button-secondary min-h-14 px-4" type="submit" aria-label="Filtrar">
+          <button className="ui-button-secondary min-h-14 px-4" type="submit" aria-label="Filtrar" title="Filtrar">
             🔎
           </button>
         </form>
@@ -132,6 +132,7 @@ export default async function ClientesPage({ searchParams }: { searchParams: Pro
                   aria-label={`Historial de ${cliente.nombre}`}
                   className="absolute bottom-4 right-28 grid size-10 place-items-center rounded-full bg-[var(--primary-soft)] text-[var(--primary)]"
                   href={`/clientes/${cliente.id}/historial`}
+                  title="Historial"
                 >
                   <svg aria-hidden="true" className="size-5" fill="none" stroke="currentColor" strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" viewBox="0 0 24 24">
                     <path d="M3 3v18h18" />
@@ -142,6 +143,7 @@ export default async function ClientesPage({ searchParams }: { searchParams: Pro
                   aria-label={`Estado de cuenta de ${cliente.nombre}`}
                   className="absolute bottom-4 right-16 grid size-10 place-items-center rounded-full bg-[var(--primary-soft)] text-[var(--primary)]"
                   href={cliente.estadoToken ? `/estado/${cliente.estadoToken}` : `/clientes/${cliente.id}/estado`}
+                  title="Estado de cuenta"
                 >
                   <svg aria-hidden="true" className="size-5" fill="none" stroke="currentColor" strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" viewBox="0 0 24 24">
                     <path d="M8 6h13" />
@@ -156,6 +158,7 @@ export default async function ClientesPage({ searchParams }: { searchParams: Pro
                   aria-label={`Editar ${cliente.nombre}`}
                   className="absolute bottom-4 right-4 grid size-10 place-items-center rounded-full bg-[var(--primary-soft)] text-[var(--primary)]"
                   href={`/clientes/${cliente.id}/editar`}
+                  title="Editar"
                 >
                   <svg aria-hidden="true" className="size-5" fill="none" stroke="currentColor" strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" viewBox="0 0 24 24">
                     <path d="M12 20h9" />

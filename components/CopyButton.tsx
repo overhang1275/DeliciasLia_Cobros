@@ -16,6 +16,7 @@ export function CopyButton({ value }: { value: string }) {
       aria-label="Copiar"
       className="grid size-9 shrink-0 place-items-center rounded-full bg-[var(--primary-soft)] text-[var(--primary)]"
       onClick={copy}
+      title={copied ? "Copiado" : "Copiar"}
       type="button"
     >
       {copied ? (

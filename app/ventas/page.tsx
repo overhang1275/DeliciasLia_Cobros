@@ -39,7 +39,7 @@ export default async function VentasPage({ searchParams }: { searchParams: Promi
           <p className="ui-label">Venta rapida</p>
           <h1 className="truncate text-3xl font-bold text-[var(--brand)]">Nueva venta</h1>
         </div>
-        <Link className="grid size-11 place-items-center rounded-2xl bg-[var(--primary-soft)] text-xl text-[var(--primary)]" href="/" aria-label="Inicio">
+        <Link className="grid size-11 place-items-center rounded-2xl bg-[var(--primary-soft)] text-xl text-[var(--primary)]" href="/" aria-label="Inicio" title="Inicio">
           <span aria-hidden="true">🏠</span>
         </Link>
       </header>

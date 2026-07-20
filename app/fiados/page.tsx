@@ -77,7 +77,7 @@ export default async function FiadosPage({ searchParams }: { searchParams: Promi
           <p className="ui-label">Cobros pendientes</p>
           <h1 className="truncate text-3xl font-bold text-[var(--brand)]">Crédito</h1>
         </div>
-        <Link className="grid size-11 place-items-center rounded-2xl bg-[var(--primary-soft)] text-xl text-[var(--primary)]" href="/" aria-label="Inicio">
+        <Link className="grid size-11 place-items-center rounded-2xl bg-[var(--primary-soft)] text-xl text-[var(--primary)]" href="/" aria-label="Inicio" title="Inicio">
           <span aria-hidden="true">🏠</span>
         </Link>
       </header>
@@ -138,7 +138,7 @@ export default async function FiadosPage({ searchParams }: { searchParams: Promi
         </div>
         <form className="flex gap-3 rounded-[1.75rem] bg-white p-3 shadow-sm" action="/fiados">
           <input className="ui-input" defaultValue={q} name="q" placeholder="Buscar crédito" />
-          <button className="ui-button-secondary min-h-14 px-4" type="submit" aria-label="Filtrar">
+          <button className="ui-button-secondary min-h-14 px-4" type="submit" aria-label="Filtrar" title="Filtrar">
             🔎
           </button>
         </form>

@@ -22,7 +22,7 @@ export default async function EditarClientePage({ params }: { params: Promise<{ 
           <p className="ui-label">Clientes</p>
           <h1 className="truncate text-3xl font-bold text-[var(--brand)]">Editar cliente</h1>
         </div>
-        <Link className="grid size-11 place-items-center rounded-2xl bg-[var(--primary-soft)] text-xl text-[var(--primary)]" href="/clientes" aria-label="Volver">
+        <Link className="grid size-11 place-items-center rounded-2xl bg-[var(--primary-soft)] text-xl text-[var(--primary)]" href="/clientes" aria-label="Volver" title="Volver">
           <span aria-hidden="true">⬅️</span>
         </Link>
       </header>

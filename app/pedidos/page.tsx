@@ -56,7 +56,7 @@ export default async function PedidosPage({ searchParams }: { searchParams: Prom
           <p className="ui-label">Encargos</p>
           <h1 className="truncate text-3xl font-bold text-[var(--brand)]">Pedidos</h1>
         </div>
-        <Link className="grid size-11 place-items-center rounded-2xl bg-[var(--primary-soft)] text-xl text-[var(--primary)]" href="/" aria-label="Inicio">
+        <Link className="grid size-11 place-items-center rounded-2xl bg-[var(--primary-soft)] text-xl text-[var(--primary)]" href="/" aria-label="Inicio" title="Inicio">
           <span aria-hidden="true">🏠</span>
         </Link>
       </header>
@@ -123,7 +123,7 @@ export default async function PedidosPage({ searchParams }: { searchParams: Prom
         </div>
         <form className="flex gap-3 rounded-[1.75rem] bg-white p-3 shadow-sm" action="/pedidos">
           <input className="ui-input" defaultValue={q} name="q" placeholder="Buscar pedido" />
-          <button className="ui-button-secondary min-h-14 px-4" type="submit" aria-label="Filtrar">
+          <button className="ui-button-secondary min-h-14 px-4" type="submit" aria-label="Filtrar" title="Filtrar">
             🔎
           </button>
         </form>

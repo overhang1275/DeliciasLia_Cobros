@@ -19,7 +19,7 @@ export function BottomNavigation() {
         {navItems.slice(0, 2).map((item) => (
           <NavItem active={pathname === item.href} key={item.href} {...item} />
         ))}
-        <Link className="app-fab" href="/ventas" aria-label="Nueva venta">
+        <Link className="app-fab" href="/ventas" aria-label="Nueva venta" title="Nueva venta">
           <svg aria-hidden="true" className="size-7" fill="none" stroke="currentColor" strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" viewBox="0 0 24 24">
             <path d="M12 5v14M5 12h14" />
           </svg>
