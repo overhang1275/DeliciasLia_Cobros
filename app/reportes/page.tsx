@@ -35,7 +35,7 @@ export default async function ReportesPage({ searchParams }: { searchParams: Pro
   const [ventas, pagos, detalles, ventasPendientes] = await Promise.all([
     db.venta.findMany({
       where: { fecha: range, estado: { not: "CANCELADA" } },
-      include: { pagos: true },
+      include: { cliente: true, pagos: true },
       orderBy: { fecha: "asc" }
     }),
     db.pago.findMany({ where: { fecha: range }, orderBy: { fecha: "asc" } }),
@@ -67,6 +67,20 @@ export default async function ReportesPage({ searchParams }: { searchParams: Pro
     return { label: day.format(date), total };
   }).filter((item) => item.total > 0);
   const maxDia = Math.max(...ventasPorDia.map((item) => item.total), 0);
+
+  const clientes = new Map<string, { compras: number; total: number }>();
+  for (const venta of ventas) {
+    const actual = clientes.get(venta.cliente.nombre) || { compras: 0, total: 0 };
+    clientes.set(venta.cliente.nombre, {
+      compras: actual.compras + 1,
+      total: actual.total + Number(venta.total)
+    });
+  }
+  const topClientes = [...clientes.entries()]
+    .map(([nombre, data]) => ({ nombre, promedio: data.total / data.compras, ...data }))
+    .sort((a, b) => b.total - a.total)
+    .slice(0, 3);
+  const maxCliente = Math.max(...topClientes.map((item) => item.total), 0);
 
   const productos = new Map<string, { piezas: number; total: number }>();
   for (const detalle of detalles) {
@@ -156,6 +170,28 @@ export default async function ReportesPage({ searchParams }: { searchParams: Pro
               </div>
               <div className="h-3 rounded-full bg-[var(--primary-soft)]">
                 <div className="h-3 rounded-full bg-[var(--primary)]" style={{ width: barWidth(item.total, maxDia) }} />
+              </div>
+            </div>
+          ))
+        )}
+      </section>
+
+      <section className="grid gap-3 rounded-[1.75rem] bg-white p-4 shadow-sm">
+        <h2 className="text-xl font-bold text-[var(--brand)]">🏆 Top 3 clientes</h2>
+        {topClientes.length === 0 ? (
+          <p className="ui-label">Todavia no hay ventas en este rango.</p>
+        ) : (
+          topClientes.map((cliente, index) => (
+            <div className="grid gap-1" key={cliente.nombre}>
+              <div className="flex items-start justify-between gap-3 text-sm">
+                <span>
+                  <strong className="text-[var(--text-main)]">{index + 1}. {cliente.nombre}</strong>
+                  <span className="ui-label block">{cliente.compras} compras · ticket promedio {money.format(cliente.promedio)}</span>
+                </span>
+                <strong>{money.format(cliente.total)}</strong>
+              </div>
+              <div className="h-3 rounded-full bg-[var(--primary-soft)]">
+                <div className="h-3 rounded-full bg-[var(--primary)]" style={{ width: barWidth(cliente.total, maxCliente) }} />
               </div>
             </div>
           ))
