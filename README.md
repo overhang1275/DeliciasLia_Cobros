@@ -100,6 +100,14 @@ sudo bash scripts/update-ubuntu-lxc.sh
 
 Antes de actualizar, el script respalda `database/database.sqlite` si existe. Después ejecuta `npm ci`, `prisma generate`, `prisma migrate deploy`, `npm run build` y reinicia el servicio.
 
+Levantar un demo separado:
+
+```bash
+sudo bash scripts/demo-ubuntu-lxc.sh
+```
+
+El demo usa `/opt/delicias-lia-demo`, el servicio `delicias-lia-demo`, el puerto `3001`, usuario `admin` y password `demo12345` por defecto. Este script borra y vuelve a crear solo la base del demo.
+
 Variables aceptadas por los scripts:
 
 - `REPO_URL`: repositorio a clonar; por defecto `https://github.com/overhang1275/DeliciasLia_Cobros.git`.
