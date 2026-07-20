@@ -53,6 +53,7 @@ export default async function HistorialClientePage({ params }: { params: Promise
       detalle: venta.detalles[0] ? `${venta.detalles[0].producto.nombre} x ${venta.detalles[0].cantidad}` : venta.observaciones || "Venta",
       monto: Number(venta.total),
       pendiente: Math.max(0, Number(venta.total) - venta.pagos.reduce((sum, pago) => sum + Number(pago.monto), 0)),
+      mostrarNegativo: false,
       tono: venta.estado === "PAGADA" ? "text-[var(--primary)]" : "text-red-700"
     })),
     ...pagos.map((pago) => ({
@@ -64,6 +65,7 @@ export default async function HistorialClientePage({ params }: { params: Promise
       detalle: `${pago.metodo.toLowerCase()} · ${pago.venta.detalles[0]?.producto.nombre || pago.venta.observaciones || "Pago"}`,
       monto: -Number(pago.monto),
       pendiente: 0,
+      mostrarNegativo: false,
       tono: "text-green-700"
     })),
     ...cliente.pedidos.map((pedido) => ({
@@ -75,6 +77,7 @@ export default async function HistorialClientePage({ params }: { params: Promise
       detalle: `${pedido.producto.nombre} x ${pedido.piezas}`,
       monto: 0,
       pendiente: 0,
+      mostrarNegativo: false,
       tono: pedido.estado === "PENDIENTE" ? "text-[var(--primary)]" : "text-[var(--text-muted)]"
     })),
     ...cliente.ventas
@@ -88,6 +91,7 @@ export default async function HistorialClientePage({ params }: { params: Promise
         detalle: "Cambio por entregar al cliente",
         monto: Number(venta.cambioMonto),
         pendiente: 0,
+        mostrarNegativo: true,
         tono: "text-red-700"
       }))
   ].sort((a, b) => b.fecha.getTime() - a.fecha.getTime() || a.id.localeCompare(b.id));
@@ -143,7 +147,7 @@ export default async function HistorialClientePage({ params }: { params: Promise
                 </div>
                 {movimiento.monto !== 0 ? (
                   <p className={`shrink-0 rounded-full bg-[var(--primary-soft)] px-3 py-1 text-sm font-bold ${movimiento.tono}`}>
-                    {money.format(Math.abs(movimiento.monto))}
+                    {movimiento.mostrarNegativo ? `-${money.format(Math.abs(movimiento.monto))}` : money.format(Math.abs(movimiento.monto))}
                   </p>
                 ) : null}
               </div>
