@@ -108,3 +108,27 @@ textarea {
     transition-duration: 0ms !important;
   }
 }
+
+@media print {
+  body {
+    background: #ffffff;
+  }
+
+  .app-page {
+    max-width: none;
+    min-height: auto;
+    padding: 0;
+  }
+
+  .app-bottom-nav,
+  .no-print {
+    display: none !important;
+  }
+
+  header,
+  section,
+  article {
+    box-shadow: none !important;
+    break-inside: avoid;
+  }
+}

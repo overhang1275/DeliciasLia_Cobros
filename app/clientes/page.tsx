@@ -129,6 +129,16 @@ export default async function ClientesPage({ searchParams }: { searchParams: Pro
                 </div>
                 {cliente.notas ? <p className="mt-3 text-sm text-[var(--text-muted)]">{cliente.notas}</p> : null}
                 <Link
+                  aria-label={`Historial de ${cliente.nombre}`}
+                  className="absolute bottom-4 right-28 grid size-10 place-items-center rounded-full bg-[var(--primary-soft)] text-[var(--primary)]"
+                  href={`/clientes/${cliente.id}/historial`}
+                >
+                  <svg aria-hidden="true" className="size-5" fill="none" stroke="currentColor" strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" viewBox="0 0 24 24">
+                    <path d="M3 3v18h18" />
+                    <path d="m7 14 4-4 3 3 5-6" />
+                  </svg>
+                </Link>
+                <Link
                   aria-label={`Estado de cuenta de ${cliente.nombre}`}
                   className="absolute bottom-4 right-16 grid size-10 place-items-center rounded-full bg-[var(--primary-soft)] text-[var(--primary)]"
                   href={cliente.estadoToken ? `/estado/${cliente.estadoToken}` : `/clientes/${cliente.id}/estado`}

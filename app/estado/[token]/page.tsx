@@ -4,6 +4,7 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import { CopyButton } from "@/components/CopyButton";
 import { Pagination } from "@/components/Pagination";
+import { PrintButton } from "@/components/PrintButton";
 import { ShareStatementButton } from "@/components/ShareStatementButton";
 import { getConfiguracion } from "@/lib/configuracion";
 import { db } from "@/lib/db";
@@ -13,6 +14,7 @@ export const dynamic = "force-dynamic";
 
 const money = new Intl.NumberFormat("es-MX", { currency: "MXN", style: "currency" });
 const date = new Intl.DateTimeFormat("es-MX", { dateStyle: "medium" });
+const generatedAt = new Intl.DateTimeFormat("es-MX", { dateStyle: "medium", timeStyle: "short" });
 const pageSize = 10;
 const ticketId = (id: number) => String(id).padStart(6, "0");
 
@@ -71,6 +73,7 @@ export default async function EstadoPublicoPage({ params, searchParams }: { para
   const totalPages = Math.max(1, Math.ceil(movimientos.length / pageSize));
   const pageMovimientos = movimientos.slice((Math.min(page, totalPages) - 1) * pageSize, Math.min(page, totalPages) * pageSize);
   const isAdmin = await isValidSessionToken((await cookies()).get(SESSION_COOKIE)?.value);
+  const fechaGenerado = generatedAt.format(new Date());
 
   return (
     <main className="app-page">
@@ -82,6 +85,7 @@ export default async function EstadoPublicoPage({ params, searchParams }: { para
               <p className="ui-label">Estado de cuenta</p>
               <h1 className="break-words text-3xl font-bold text-[var(--brand)]">{cliente.nombre}</h1>
               <p className="ui-label mt-1">{config.negocioNombre}</p>
+              <p className="ui-label mt-1">Generado el {fechaGenerado}</p>
             </div>
           </div>
         </div>
@@ -91,8 +95,9 @@ export default async function EstadoPublicoPage({ params, searchParams }: { para
           {cliente.telefono ? <p className="mt-2 text-sm text-[var(--text-muted)]">Telefono: {cliente.telefono}</p> : null}
         </div>
         {isAdmin ? (
-          <div className="mt-4 grid gap-3 sm:grid-cols-2">
+          <div className="mt-4 grid gap-3 sm:grid-cols-3 no-print">
             <ShareStatementButton cliente={cliente.nombre} telefono={cliente.telefono} />
+            <PrintButton />
             <Link className="ui-button-secondary min-h-11 px-4" href="/clientes">
               Volver
             </Link>
@@ -118,7 +123,9 @@ export default async function EstadoPublicoPage({ params, searchParams }: { para
               <p className="text-xs font-bold uppercase text-[var(--text-muted)]">{label}</p>
               <p className="break-words text-base font-semibold text-[var(--text-main)]">{value}</p>
             </div>
-            <CopyButton value={value} />
+            <span className="no-print">
+              <CopyButton value={value} />
+            </span>
           </div>
         ))}
       </section>
@@ -159,7 +166,9 @@ export default async function EstadoPublicoPage({ params, searchParams }: { para
             </article>
           ))
         )}
-        <Pagination basePath={`/estado/${token}`} page={Math.min(page, totalPages)} q="" totalPages={totalPages} />
+        <div className="no-print">
+          <Pagination basePath={`/estado/${token}`} page={Math.min(page, totalPages)} q="" totalPages={totalPages} />
+        </div>
       </section>
     </main>
   );
