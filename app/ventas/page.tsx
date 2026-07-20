@@ -27,41 +27,58 @@ export default async function VentasPage() {
 
   return (
     <main className="app-page">
-      <header className="flex items-start justify-between gap-4">
-        <div>
-          <p className="ui-label">Ventas</p>
-          <h1 className="text-4xl font-bold text-[var(--brand)]">Nueva venta</h1>
+      <header className="flex items-center gap-4 rounded-[2rem] bg-white p-4 shadow-sm">
+        <span className="grid size-14 shrink-0 place-items-center rounded-2xl bg-[var(--primary-soft)] text-3xl" aria-hidden="true">
+          🧾
+        </span>
+        <div className="min-w-0 flex-1">
+          <p className="ui-label">Venta rapida</p>
+          <h1 className="truncate text-3xl font-bold text-[var(--brand)]">Nueva venta</h1>
         </div>
-        <Link className="ui-button-secondary min-h-11 px-4" href="/">
-          Inicio
+        <Link className="grid size-11 place-items-center rounded-2xl bg-[var(--primary-soft)] text-xl text-[var(--primary)]" href="/" aria-label="Inicio">
+          <span aria-hidden="true">⌂</span>
         </Link>
       </header>
 
-      <form action={crearVenta} className="ui-card grid gap-4">
+      <form action={crearVenta} className="grid gap-4 rounded-[2rem] bg-white p-5 shadow-sm">
+        <div>
+          <p className="ui-label">Datos de la venta</p>
+          <h2 className="text-xl font-bold text-[var(--brand)]">¿Qué se vendió?</h2>
+        </div>
+
         <ClienteSearchField clientes={clientes} />
 
         <CambioPendienteFields productos={productosOptions} />
 
-        <button className="ui-button-primary" type="submit">
-          Guardar venta
+        <button className="ui-button-primary gap-2" type="submit">
+          <span aria-hidden="true">✓</span>
+          Guardar
         </button>
       </form>
 
       <section className="grid gap-3" aria-label="Ultimas ventas">
-        <h2 className="text-xl font-bold text-[var(--brand)]">Ultimas ventas</h2>
+        <div className="flex items-center justify-between">
+          <h2 className="text-xl font-bold text-[var(--brand)]">Ultimas ventas</h2>
+          <span className="text-2xl" aria-hidden="true">🛍️</span>
+        </div>
         {ventas.length === 0 ? (
-          <p className="ui-card ui-label">Todavia no hay ventas registradas.</p>
+          <p className="rounded-[1.75rem] bg-white p-4 text-[var(--text-muted)] shadow-sm">Todavia no hay ventas registradas.</p>
         ) : (
           ventas.map((venta) => (
-            <article className="ui-card" key={venta.id}>
+            <article className="rounded-[1.75rem] bg-white p-4 shadow-sm" key={venta.id}>
               <div className="flex items-start justify-between gap-4">
-                <div>
+                <div className="flex min-w-0 gap-3">
+                  <span className="grid size-11 shrink-0 place-items-center rounded-2xl bg-[var(--primary-soft)] text-2xl" aria-hidden="true">
+                    🍮
+                  </span>
+                  <div className="min-w-0">
                   <h3 className="font-bold text-[var(--text-main)]">{venta.cliente.nombre}</h3>
                   <p className="ui-label">
                     {venta.detalles[0]
                       ? `${venta.detalles[0].producto.nombre} x ${venta.detalles[0].cantidad}`
                       : venta.observaciones || "Venta"}
                   </p>
+                  </div>
                 </div>
                 <p className="rounded-full bg-[var(--primary-soft)] px-3 py-1 text-sm font-bold text-[var(--primary)]">
                   {money.format(Number(venta.total))}

@@ -30,11 +30,11 @@ export function CambioPendienteFields({ productos }: { productos: ProductoOption
       <fieldset className="grid grid-cols-2 gap-3">
         <label className="ui-button-secondary">
           <input className="mr-2" checked={estado === "PAGADA"} name="estado" type="radio" value="PAGADA" onChange={(event) => setEstado(event.target.value)} />
-          Pagada
+          💵 Pagada
         </label>
         <label className="ui-button-secondary">
           <input className="mr-2" checked={estado === "FIADA"} name="estado" type="radio" value="FIADA" onChange={() => router.push("/fiados")} />
-          Fiada
+          📒 Fiada
         </label>
       </fieldset>
 
@@ -43,18 +43,18 @@ export function CambioPendienteFields({ productos }: { productos: ProductoOption
           <legend className="ui-label col-span-2">Forma de pago</legend>
           <label className="ui-button-secondary">
             <input className="mr-2" checked={metodoPago === "EFECTIVO"} name="metodoPago" type="radio" value="EFECTIVO" onChange={(event) => setMetodoPago(event.target.value)} />
-            Efectivo
+            💵 Efectivo
           </label>
           <label className="ui-button-secondary">
             <input className="mr-2" checked={metodoPago === "TRANSFERENCIA"} name="metodoPago" type="radio" value="TRANSFERENCIA" onChange={(event) => setMetodoPago(event.target.value)} />
-            Transferencia
+            🏦 Transferencia
           </label>
         </fieldset>
       ) : null}
 
       <div>
         <label className="ui-label" htmlFor="productoId">
-          Producto
+          Producto 🍮
         </label>
         <select className="ui-input mt-2" id="productoId" name="productoId" required value={productoId} onChange={(event) => setProductoId(event.target.value)}>
           <option value="">Selecciona producto</option>
@@ -73,7 +73,7 @@ export function CambioPendienteFields({ productos }: { productos: ProductoOption
 
       <div>
         <label className="ui-label" htmlFor="piezas">
-          Piezas
+          Piezas 🔢
         </label>
         <input className="ui-input mt-2" id="piezas" inputMode="numeric" min="1" name="piezas" placeholder="1" required type="number" value={piezas} onChange={(event) => setPiezas(Math.max(1, Number(event.target.value) || 1))} />
       </div>
@@ -82,7 +82,7 @@ export function CambioPendienteFields({ productos }: { productos: ProductoOption
         <fieldset className="grid gap-3 sm:grid-cols-[auto_1fr] sm:items-end">
           <label className="ui-button-secondary sm:mb-0">
             <input className="mr-2" checked={deboCambio} name="cambioPendiente" type="checkbox" onChange={(event) => setDeboCambio(event.target.checked)} />
-            Debo cambio
+            💸 Debo cambio
           </label>
           <div>
             <label className="ui-label" htmlFor="montoRecibido">

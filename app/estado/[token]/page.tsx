@@ -74,18 +74,19 @@ export default async function EstadoPublicoPage({ params, searchParams }: { para
 
   return (
     <main className="app-page">
-      <header className="ui-card">
+      <header className="rounded-[2rem] bg-white p-5 shadow-sm">
         <div className="flex items-start gap-4">
           <div className="flex min-w-0 items-center gap-3">
-            {config.logoDataUrl ? <Image alt={config.negocioNombre} className="size-16 shrink-0 rounded-2xl object-cover" height={64} src={config.logoDataUrl} unoptimized width={64} /> : null}
+            {config.logoDataUrl ? <Image alt={config.negocioNombre} className="size-16 shrink-0 rounded-3xl object-cover" height={64} src={config.logoDataUrl} unoptimized width={64} /> : <span className="grid size-16 shrink-0 place-items-center rounded-3xl bg-[var(--primary-soft)] text-3xl">🍮</span>}
             <div className="min-w-0">
-              <p className="ui-label">{config.negocioNombre}</p>
+              <p className="ui-label">Estado de cuenta</p>
               <h1 className="break-words text-3xl font-bold text-[var(--brand)]">{cliente.nombre}</h1>
+              <p className="ui-label mt-1">{config.negocioNombre}</p>
             </div>
           </div>
         </div>
-        <div className="mt-5 rounded-2xl bg-[var(--primary-soft)] p-4">
-          <p className="text-sm font-bold text-[var(--primary)]">Saldo por cobrar</p>
+        <div className="mt-5 rounded-[1.75rem] bg-[var(--primary-soft)] p-4">
+          <p className="text-sm font-bold text-[var(--primary)]">💰 Saldo por cobrar</p>
           <p className="mt-1 text-4xl font-bold text-[var(--brand)]">{money.format(saldo)}</p>
           {cliente.telefono ? <p className="mt-2 text-sm text-[var(--text-muted)]">Telefono: {cliente.telefono}</p> : null}
         </div>
@@ -99,7 +100,7 @@ export default async function EstadoPublicoPage({ params, searchParams }: { para
         ) : null}
       </header>
 
-      <section className="ui-card">
+      <section className="rounded-[2rem] bg-white p-5 shadow-sm">
         <div className="flex items-start justify-between gap-4">
           <div>
             <p className="ui-label">Datos para deposito</p>
@@ -126,7 +127,7 @@ export default async function EstadoPublicoPage({ params, searchParams }: { para
         <div>
           <p className="ui-label">Estado de cuenta</p>
           <div className="flex flex-wrap items-center justify-between gap-3">
-            <h2 className="text-2xl font-bold text-[var(--brand)]">Movimientos</h2>
+            <h2 className="text-2xl font-bold text-[var(--brand)]">📋 Movimientos</h2>
             <div className="flex gap-2 text-xs font-bold">
               <span className="rounded-full bg-green-50 px-3 py-1 text-green-700">Verde: pagos</span>
               <span className="rounded-full bg-red-50 px-3 py-1 text-red-700">Rojo: deuda</span>
@@ -134,17 +135,22 @@ export default async function EstadoPublicoPage({ params, searchParams }: { para
           </div>
         </div>
         {pageMovimientos.length === 0 ? (
-          <p className="ui-card ui-label">Todavia no hay movimientos registrados.</p>
+          <p className="rounded-[1.75rem] bg-white p-4 text-[var(--text-muted)] shadow-sm">Todavia no hay movimientos registrados.</p>
         ) : (
           pageMovimientos.map((movimiento) => (
-            <article className="ui-card" key={movimiento.id}>
+            <article className="rounded-[1.75rem] bg-white p-4 shadow-sm" key={movimiento.id}>
               <div className="flex items-start justify-between gap-4">
-                <div className="min-w-0">
+                <div className="flex min-w-0 gap-3">
+                  <span className={`grid size-11 shrink-0 place-items-center rounded-2xl text-2xl ${movimiento.tipo === "abono" ? "bg-green-50" : "bg-red-50"}`} aria-hidden="true">
+                    {movimiento.tipo === "abono" ? "✅" : "🧾"}
+                  </span>
+                  <div className="min-w-0">
                   <p className="font-bold text-[var(--text-main)]">{movimiento.folio}</p>
                   <p className="text-sm text-[var(--text-main)]">{movimiento.concepto}</p>
                   <p className="ui-label">
                     {date.format(movimiento.fecha)} - {movimiento.detalle}
                   </p>
+                  </div>
                 </div>
                 <p className={`shrink-0 rounded-full px-3 py-1 text-sm font-bold ${movimiento.tipo === "abono" ? "bg-green-50 text-green-700" : "bg-red-50 text-red-700"}`}>
                   {money.format(Math.abs(movimiento.monto))}

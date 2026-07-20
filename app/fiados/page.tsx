@@ -65,22 +65,30 @@ export default async function FiadosPage({ searchParams }: { searchParams: Promi
 
   return (
     <main className="app-page">
-      <header className="flex items-start justify-between gap-4">
-        <div>
-          <p className="ui-label">Fiados</p>
-          <h1 className="text-4xl font-bold text-[var(--brand)]">Registrar deuda</h1>
+      <header className="flex items-center gap-4 rounded-[2rem] bg-white p-4 shadow-sm">
+        <span className="grid size-14 shrink-0 place-items-center rounded-2xl bg-[var(--primary-soft)] text-3xl" aria-hidden="true">
+          📒
+        </span>
+        <div className="min-w-0 flex-1">
+          <p className="ui-label">Cobros pendientes</p>
+          <h1 className="truncate text-3xl font-bold text-[var(--brand)]">Fiados</h1>
         </div>
-        <Link className="ui-button-secondary min-h-11 px-4" href="/">
-          Inicio
+        <Link className="grid size-11 place-items-center rounded-2xl bg-[var(--primary-soft)] text-xl text-[var(--primary)]" href="/" aria-label="Inicio">
+          <span aria-hidden="true">⌂</span>
         </Link>
       </header>
 
-      <form action={registrarFiado} className="ui-card grid gap-4">
+      <form action={registrarFiado} className="grid gap-4 rounded-[2rem] bg-white p-5 shadow-sm">
+        <div>
+          <p className="ui-label">Nuevo fiado</p>
+          <h2 className="text-xl font-bold text-[var(--brand)]">¿Quién queda pendiente?</h2>
+        </div>
+
         <ClienteSearchField clientes={clientes} />
 
         <div>
           <label className="ui-label" htmlFor="productoId">
-            Tipo de postre
+            Tipo de postre 🍮
           </label>
           <select className="ui-input mt-2" id="productoId" name="productoId" required>
             <option value="">Selecciona postre</option>
@@ -99,44 +107,53 @@ export default async function FiadosPage({ searchParams }: { searchParams: Promi
 
         <div>
           <label className="ui-label" htmlFor="piezas">
-            Piezas
+            Piezas 🔢
           </label>
           <input className="ui-input mt-2" id="piezas" inputMode="numeric" min="1" name="piezas" placeholder="1" required type="number" />
         </div>
 
         <div>
           <label className="ui-label" htmlFor="fecha">
-            Fecha de venta
+            Fecha de venta 📅
           </label>
           <input className="ui-input mt-2" defaultValue={today} id="fecha" name="fecha" required type="date" />
         </div>
 
-        <button className="ui-button-primary" type="submit">
-          Guardar fiado
+        <button className="ui-button-primary gap-2" type="submit">
+          <span aria-hidden="true">✓</span>
+          Guardar
         </button>
       </form>
 
       <section className="grid gap-3" aria-label="Fiados pendientes">
-        <h2 className="text-xl font-bold text-[var(--brand)]">Pendientes</h2>
-        <form className="ui-card flex gap-3" action="/fiados">
+        <div className="flex items-center justify-between">
+          <h2 className="text-xl font-bold text-[var(--brand)]">Pendientes</h2>
+          <span className="text-2xl" aria-hidden="true">💰</span>
+        </div>
+        <form className="flex gap-3 rounded-[1.75rem] bg-white p-3 shadow-sm" action="/fiados">
           <input className="ui-input" defaultValue={q} name="q" placeholder="Buscar fiado" />
-          <button className="ui-button-secondary px-4" type="submit">
-            Filtrar
+          <button className="ui-button-secondary min-h-14 px-4" type="submit" aria-label="Filtrar">
+            🔎
           </button>
         </form>
         {pendientes.length === 0 ? (
-          <p className="ui-card ui-label">Todavia no hay fiados registrados.</p>
+          <p className="rounded-[1.75rem] bg-white p-4 text-[var(--text-muted)] shadow-sm">No hay fiados pendientes.</p>
         ) : (
           pendientes.map((venta) => (
-            <article className="ui-card" key={venta.id}>
+            <article className="rounded-[1.75rem] bg-white p-4 shadow-sm" key={venta.id}>
               <div className="flex items-start justify-between gap-4">
-                <div>
-                  <h3 className="font-bold text-[var(--text-main)]">{venta.cliente.nombre}</h3>
-                  <p className="ui-label">
-                    {venta.detalles[0]
-                      ? `${venta.detalles[0].producto.nombre} x ${venta.detalles[0].cantidad}`
-                      : venta.observaciones || "Fiado"}
-                  </p>
+                <div className="flex min-w-0 gap-3">
+                  <span className="grid size-11 shrink-0 place-items-center rounded-2xl bg-[var(--primary-soft)] text-2xl" aria-hidden="true">
+                    📒
+                  </span>
+                  <div className="min-w-0">
+                    <h3 className="font-bold text-[var(--text-main)]">{venta.cliente.nombre}</h3>
+                    <p className="ui-label">
+                      {venta.detalles[0]
+                        ? `${venta.detalles[0].producto.nombre} x ${venta.detalles[0].cantidad}`
+                        : venta.observaciones || "Fiado"}
+                    </p>
+                  </div>
                 </div>
                 <p className="rounded-full bg-[var(--primary-soft)] px-3 py-1 text-sm font-bold text-[var(--primary)]">
                   {money.format(venta.pendiente)}
@@ -145,13 +162,13 @@ export default async function FiadosPage({ searchParams }: { searchParams: Promi
               <div className="mt-5 grid gap-2 lg:grid-cols-[auto_1fr]">
                 <div className="grid gap-2 sm:grid-cols-2 lg:flex">
                   <Link className="ui-button-secondary min-h-10 px-4 text-sm" href={`/fiados/${venta.id}/pago`}>
-                    Registrar pago
+                    💵 Registrar pago
                   </Link>
                   <Link
                     className="ui-button-secondary min-h-10 px-4 text-sm"
                     href={venta.cliente.estadoToken ? `/estado/${venta.cliente.estadoToken}` : `/clientes/${venta.clienteId}/estado`}
                   >
-                    Estado de cuenta
+                    📄 Estado de cuenta
                   </Link>
                 </div>
                 <div className="lg:justify-self-end">

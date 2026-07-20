@@ -50,61 +50,73 @@ export default async function ClientesPage({ searchParams }: { searchParams: Pro
 
   return (
     <main className="app-page">
-      <header className="flex items-start justify-between gap-4">
-        <div>
-          <p className="ui-label">Clientes</p>
-          <h1 className="text-4xl font-bold text-[var(--brand)]">Alta de clientes</h1>
+      <header className="flex items-center gap-4 rounded-[2rem] bg-white p-4 shadow-sm">
+        <span className="grid size-14 shrink-0 place-items-center rounded-2xl bg-[var(--primary-soft)] text-3xl" aria-hidden="true">👥</span>
+        <div className="min-w-0 flex-1">
+          <p className="ui-label">Personas</p>
+          <h1 className="truncate text-3xl font-bold text-[var(--brand)]">Clientes</h1>
         </div>
-        <Link className="ui-button-secondary min-h-11 px-4" href="/">
-          Inicio
+        <Link className="grid size-11 place-items-center rounded-2xl bg-[var(--primary-soft)] text-xl text-[var(--primary)]" href="/" aria-label="Inicio">
+          <span aria-hidden="true">⌂</span>
         </Link>
       </header>
 
-      <form action={crearCliente} className="ui-card grid gap-4">
+      <form action={crearCliente} className="grid gap-4 rounded-[2rem] bg-white p-5 shadow-sm">
+        <div>
+          <p className="ui-label">Nuevo cliente</p>
+          <h2 className="text-xl font-bold text-[var(--brand)]">Datos de contacto</h2>
+        </div>
         <div>
           <label className="ui-label" htmlFor="nombre">
-            Nombre
+            Nombre 👤
           </label>
           <input className="ui-input mt-2" id="nombre" name="nombre" required minLength={2} />
         </div>
 
         <div>
           <label className="ui-label" htmlFor="telefono">
-            Telefono
+            Telefono 📱
           </label>
           <input className="ui-input mt-2" id="telefono" name="telefono" inputMode="tel" />
         </div>
 
         <div>
           <label className="ui-label" htmlFor="notas">
-            Notas
+            Notas 📝
           </label>
           <textarea className="ui-input mt-2 min-h-24 py-4" id="notas" name="notas" />
         </div>
 
-        <button className="ui-button-primary" type="submit">
-          Guardar cliente
+        <button className="ui-button-primary gap-2" type="submit">
+          <span aria-hidden="true">✓</span>
+          Guardar
         </button>
       </form>
 
       <section className="grid gap-3" aria-label="Lista de clientes">
-        <h2 className="text-xl font-bold text-[var(--brand)]">Clientes activos</h2>
-        <form className="ui-card flex gap-3" action="/clientes">
+        <div className="flex items-center justify-between">
+          <h2 className="text-xl font-bold text-[var(--brand)]">Clientes activos</h2>
+          <span className="text-2xl" aria-hidden="true">📇</span>
+        </div>
+        <form className="flex gap-3 rounded-[1.75rem] bg-white p-3 shadow-sm" action="/clientes">
           <input className="ui-input" defaultValue={q} name="q" placeholder="Buscar cliente" />
-          <button className="ui-button-secondary px-4" type="submit">
-            Filtrar
+          <button className="ui-button-secondary min-h-14 px-4" type="submit" aria-label="Filtrar">
+            🔎
           </button>
         </form>
         {clientes.length === 0 ? (
-          <p className="ui-card ui-label">Todavia no hay clientes registrados.</p>
+          <p className="rounded-[1.75rem] bg-white p-4 text-[var(--text-muted)] shadow-sm">Todavia no hay clientes registrados.</p>
         ) : (
           clientes.map((cliente) => {
             return (
-              <article className="ui-card relative pb-14" key={cliente.id}>
+              <article className="relative rounded-[1.75rem] bg-white p-4 pb-14 shadow-sm" key={cliente.id}>
                 <div className="flex items-start justify-between gap-4">
-                  <div>
-                    <h3 className="font-bold text-[var(--text-main)]">{cliente.nombre}</h3>
-                    <p className="ui-label">{cliente.telefono || "Sin telefono"}</p>
+                  <div className="flex min-w-0 gap-3">
+                    <span className="grid size-11 shrink-0 place-items-center rounded-2xl bg-[var(--primary-soft)] text-2xl" aria-hidden="true">👤</span>
+                    <div className="min-w-0">
+                      <h3 className="truncate font-bold text-[var(--text-main)]">{cliente.nombre}</h3>
+                      <p className="ui-label">{cliente.telefono || "Sin telefono"}</p>
+                    </div>
                   </div>
                   <div className="flex flex-wrap justify-end gap-2">
                     <p className="rounded-full bg-[var(--primary-soft)] px-3 py-1 text-sm font-bold text-[var(--primary)]">

@@ -99,50 +99,52 @@ export default async function ReportesPage({ searchParams }: { searchParams: Pro
 
   return (
     <main className="app-page">
-      <header className="flex items-start justify-between gap-4">
-        <div>
+      <header className="flex items-center gap-4 rounded-[2rem] bg-white p-4 shadow-sm">
+        <span className="grid size-14 shrink-0 place-items-center rounded-2xl bg-[var(--primary-soft)] text-3xl" aria-hidden="true">📊</span>
+        <div className="min-w-0 flex-1">
           <p className="ui-label">Reportes</p>
-          <h1 className="text-4xl font-bold text-[var(--brand)]">Analisis de ventas</h1>
+          <h1 className="truncate text-3xl font-bold text-[var(--brand)]">Analisis</h1>
         </div>
-        <Link className="ui-button-secondary min-h-11 px-4" href="/">
-          Inicio
+        <Link className="grid size-11 place-items-center rounded-2xl bg-[var(--primary-soft)] text-xl text-[var(--primary)]" href="/" aria-label="Inicio">
+          <span aria-hidden="true">⌂</span>
         </Link>
       </header>
 
-      <form className="ui-card grid gap-4 sm:grid-cols-[1fr_1fr_auto]" action="/reportes">
+      <form className="grid gap-4 rounded-[2rem] bg-white p-5 shadow-sm sm:grid-cols-[1fr_1fr_auto]" action="/reportes">
         <div>
           <label className="ui-label" htmlFor="desde">
-            Desde
+            Desde 📅
           </label>
           <input className="ui-input mt-2" defaultValue={dateInput(since)} id="desde" name="desde" type="date" />
         </div>
         <div>
           <label className="ui-label" htmlFor="hasta">
-            Hasta
+            Hasta 📅
           </label>
           <input className="ui-input mt-2" defaultValue={dateInput(until)} id="hasta" name="hasta" type="date" />
         </div>
         <button className="ui-button-primary self-end px-5" type="submit">
-          Aplicar
+          🔎 Aplicar
         </button>
       </form>
 
       <section className="grid grid-cols-2 gap-3" aria-label="Resumen">
         {[
-          ["Ventas", money.format(totalVentas)],
-          ["Cobrado", money.format(cobrado)],
-          ["Por cobrar", money.format(porCobrar)],
-          ["Utilidad", money.format(utilidad)]
-        ].map(([label, value]) => (
-          <article className="ui-card" key={label}>
+          ["🧾", "Ventas", money.format(totalVentas)],
+          ["💵", "Cobrado", money.format(cobrado)],
+          ["📒", "Por cobrar", money.format(porCobrar)],
+          ["📈", "Utilidad", money.format(utilidad)]
+        ].map(([icon, label, value]) => (
+          <article className="rounded-[1.75rem] bg-white p-4 shadow-sm" key={label}>
+            <span className="text-2xl" aria-hidden="true">{icon}</span>
             <p className="ui-label">{label}</p>
             <p className="mt-2 text-2xl font-bold text-[var(--brand)]">{value}</p>
           </article>
         ))}
       </section>
 
-      <section className="ui-card grid gap-3">
-        <h2 className="text-xl font-bold text-[var(--brand)]">Ventas por dia</h2>
+      <section className="grid gap-3 rounded-[1.75rem] bg-white p-4 shadow-sm">
+        <h2 className="text-xl font-bold text-[var(--brand)]">📅 Ventas por dia</h2>
         {ventasPorDia.length === 0 ? (
           <p className="ui-label">No hubo ventas en este rango.</p>
         ) : (
@@ -161,8 +163,8 @@ export default async function ReportesPage({ searchParams }: { searchParams: Pro
       </section>
 
       <section className="grid gap-3 md:grid-cols-2">
-        <article className="ui-card grid gap-3">
-          <h2 className="text-xl font-bold text-[var(--brand)]">Mejores productos</h2>
+        <article className="grid gap-3 rounded-[1.75rem] bg-white p-4 shadow-sm">
+          <h2 className="text-xl font-bold text-[var(--brand)]">🍮 Mejores productos</h2>
           {topProductos.length === 0 ? (
             <p className="ui-label">Todavia no hay ventas.</p>
           ) : (
@@ -180,8 +182,8 @@ export default async function ReportesPage({ searchParams }: { searchParams: Pro
           )}
         </article>
 
-        <article className="ui-card grid gap-3">
-          <h2 className="text-xl font-bold text-[var(--brand)]">Forma de pago</h2>
+        <article className="grid gap-3 rounded-[1.75rem] bg-white p-4 shadow-sm">
+          <h2 className="text-xl font-bold text-[var(--brand)]">💳 Forma de pago</h2>
           {pagosPorMetodo.map((item) => (
             <div className="grid gap-1" key={item.metodo}>
               <div className="flex justify-between text-sm">
@@ -196,8 +198,8 @@ export default async function ReportesPage({ searchParams }: { searchParams: Pro
         </article>
       </section>
 
-      <section className="ui-card grid gap-3">
-        <h2 className="text-xl font-bold text-[var(--brand)]">Clientes con deuda</h2>
+      <section className="grid gap-3 rounded-[1.75rem] bg-white p-4 shadow-sm">
+        <h2 className="text-xl font-bold text-[var(--brand)]">💰 Clientes con deuda</h2>
         {listaDeudores.length === 0 ? (
           <p className="ui-label">No hay clientes con deuda pendiente.</p>
         ) : (

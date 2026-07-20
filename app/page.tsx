@@ -62,19 +62,19 @@ export default async function HomePage() {
         </form>
       </header>
 
-      <section className="grid gap-4 rounded-[2rem] bg-white p-6 shadow-sm" aria-label="Accion principal">
-        <div className="flex items-start gap-4">
-          <span className="grid size-14 shrink-0 place-items-center rounded-2xl bg-[var(--primary-soft)] text-3xl" aria-hidden="true">
+      <section className="flex items-center gap-3 rounded-[1.75rem] bg-white p-4 shadow-sm" aria-label="Accion principal">
+        <div className="flex min-w-0 flex-1 items-center gap-3">
+          <span className="grid size-11 shrink-0 place-items-center rounded-2xl bg-[var(--primary-soft)] text-2xl" aria-hidden="true">
             🧾
           </span>
-          <div>
+          <div className="min-w-0">
             <p className="ui-label">Lo mas usado</p>
-            <h2 className="text-3xl font-bold text-[var(--brand)]">Registra una venta en segundos</h2>
+            <h2 className="truncate text-lg font-bold text-[var(--brand)]">Nueva venta rapida</h2>
           </div>
         </div>
-        <Link className="ui-button-primary gap-2" href="/ventas">
+        <Link className="ui-button-primary min-h-11 shrink-0 gap-2 rounded-2xl px-4 text-sm" href="/ventas">
           <span aria-hidden="true">➕</span>
-          Nueva venta
+          Crear
         </Link>
       </section>
 
