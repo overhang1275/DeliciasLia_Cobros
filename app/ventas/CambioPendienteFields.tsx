@@ -34,7 +34,7 @@ export function CambioPendienteFields({ productos, defaultProductoId, defaultPie
         </label>
         <label className="ui-button-secondary">
           <input className="mr-2" checked={estado === "FIADA"} name="estado" type="radio" value="FIADA" onChange={() => router.push("/fiados")} />
-          📒 Fiada
+          📒 Saldo pendiente
         </label>
       </fieldset>
 

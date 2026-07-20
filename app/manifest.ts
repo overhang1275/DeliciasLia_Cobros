@@ -9,7 +9,7 @@ export default async function manifest(): Promise<MetadataRoute.Manifest> {
   return {
     name: negocioNombre,
     short_name: negocioNombre,
-    description: `Ventas, fiados, pedidos y cobros para ${negocioNombre}`,
+    description: `Ventas, saldos pendientes, pedidos y cobros para ${negocioNombre}`,
     start_url: "/",
     display: "standalone",
     background_color: "#fffaf3",

@@ -27,7 +27,7 @@ export default async function LoginPage({ searchParams }: { searchParams: Promis
 
         <div className="rounded-[1.5rem] bg-[var(--app-bg)] p-4">
           <p className="text-lg font-bold text-[var(--text-main)]">Bienvenido</p>
-          <p className="ui-label mt-1">Ingresa para registrar ventas, fiados y pagos.</p>
+          <p className="ui-label mt-1">Ingresa para registrar ventas, saldos pendientes y pagos.</p>
         </div>
 
         {error ? <p className="rounded-2xl bg-red-50 px-4 py-3 text-sm font-bold text-red-700">Usuario o contrasena incorrectos.</p> : null}

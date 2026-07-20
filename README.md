@@ -2,9 +2,9 @@
 
 ## Descripción
 
-Aplicación web privada para administrar ventas, fiados, pagos, clientes, productos, pedidos y reportes de Delicias Lia. Está construida como una PWA con Next.js, React, Prisma y SQLite.
+Aplicación web privada para administrar ventas, saldos pendientes, pagos, clientes, productos, pedidos y reportes. Está construida como una PWA con Next.js, React, Prisma y SQLite.
 
-El sistema incluye acceso de administrador, tablero de inicio, registro de ventas rápidas, control de fiados y pagos parciales, estados de cuenta por cliente, catálogo de productos, pedidos pendientes, reportes de ventas/cobros/utilidad y configuración del negocio con logo y datos bancarios.
+El sistema incluye acceso de administrador, tablero de inicio, registro de ventas rápidas, control de saldos pendientes y pagos parciales, estados de cuenta por cliente, catálogo de productos, pedidos pendientes, reportes de ventas/cobros/utilidad y configuración del negocio con logo y datos bancarios.
 
 ## Objetivo
 
@@ -70,12 +70,12 @@ El usuario inicial es `admin`. La contraseña se toma de `ADMIN_PASSWORD` durant
 Rutas principales:
 
 - `/login`: acceso de administrador.
-- `/`: tablero con fiados por cobrar, cambios pendientes, clientes y productos.
+- `/`: tablero con saldos por cobrar, cambios pendientes, clientes y productos.
 - `/ventas`: registro de venta rápida y últimas ventas.
-- `/fiados`: registro, búsqueda, pago, liquidación y eliminación de fiados.
+- `/fiados`: registro, búsqueda, pago, liquidación y eliminación de saldos pendientes.
 - `/clientes`: alta, búsqueda, edición y estado de cuenta de clientes.
 - `/productos`: alta y búsqueda de productos.
-- `/pedidos`: alta, búsqueda, conversión a venta/fiado y cancelación de pedidos.
+- `/pedidos`: alta, búsqueda, conversión a venta/saldo pendiente y cancelación de pedidos.
 - `/reportes`: ventas, cobros, por cobrar, utilidad, productos vendidos y clientes con deuda.
 - `/configuracion`: logo, nombre del negocio y datos bancarios.
 - `/api/health`: verificación simple de salud.

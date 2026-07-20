@@ -30,7 +30,7 @@ export default async function PagoFiadoPage({ params }: { params: Promise<{ id: 
           💵
         </span>
         <div className="min-w-0 flex-1">
-          <p className="ui-label">Abono a fiado</p>
+          <p className="ui-label">Abono a saldo pendiente</p>
           <h1 className="truncate text-3xl font-bold text-[var(--brand)]">Registrar pago</h1>
         </div>
         <Link className="grid size-11 place-items-center rounded-2xl bg-[var(--primary-soft)] text-xl text-[var(--primary)]" href="/fiados" aria-label="Volver">
@@ -47,7 +47,7 @@ export default async function PagoFiadoPage({ params }: { params: Promise<{ id: 
             <p className="ui-label">{venta.cliente.nombre}</p>
             <h2 className="mt-1 text-3xl font-bold text-[var(--brand)]">{money.format(Math.max(0, pendiente))}</h2>
             <p className="ui-label mt-2">
-              {detalle ? `${detalle.producto.nombre} x ${detalle.cantidad}` : venta.observaciones || "Fiado"}
+              {detalle ? `${detalle.producto.nombre} x ${detalle.cantidad}` : venta.observaciones || "Saldo pendiente"}
             </p>
           </div>
         </div>

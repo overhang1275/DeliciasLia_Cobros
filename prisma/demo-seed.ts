@@ -73,7 +73,7 @@ async function main() {
       total: 80,
       costoTotal: 36,
       utilidadTotal: 44,
-      observaciones: "Fiado demo",
+      observaciones: "Saldo pendiente demo",
       detalles: { create: { productoId: productoB.id, cantidad: 2, precioUnitario: 40, costoUnitario: 18, subtotal: 80 } }
     }
   });
