@@ -5,6 +5,7 @@ import { notFound } from "next/navigation";
 import { ClipboardList, Landmark, Store, Wallet } from "@/components/AppIcon";
 import { CopyButton } from "@/components/CopyButton";
 import { EstadoMovimientosAccordion } from "@/components/EstadoMovimientosAccordion";
+import { Pagination } from "@/components/Pagination";
 import { PrintButton } from "@/components/PrintButton";
 import { ShareStatementButton } from "@/components/ShareStatementButton";
 import { getConfiguracion } from "@/lib/configuracion";
@@ -17,10 +18,13 @@ const money = new Intl.NumberFormat("es-MX", { currency: "MXN", style: "currency
 const date = new Intl.DateTimeFormat("es-MX", { dateStyle: "medium" });
 const time = new Intl.DateTimeFormat("es-MX", { hour: "2-digit", minute: "2-digit" });
 const generatedAt = new Intl.DateTimeFormat("es-MX", { dateStyle: "medium", timeStyle: "short" });
+const pageSize = 5;
 const ticketId = (id: number) => String(id).padStart(6, "0");
 
-export default async function EstadoPublicoPage({ params }: { params: Promise<{ token: string }> }) {
+export default async function EstadoPublicoPage({ params, searchParams }: { params: Promise<{ token: string }>; searchParams: Promise<{ page?: string }> }) {
   const { token } = await params;
+  const { page: pageParam } = await searchParams;
+  const page = Math.max(1, Number(pageParam) || 1);
   const [cliente, config] = await Promise.all([
     db.cliente.findUnique({
       where: { estadoToken: token },
@@ -105,6 +109,9 @@ export default async function EstadoPublicoPage({ params }: { params: Promise<{ 
       pagos: money.format(grupo.pagos),
       saldo: money.format(grupo.cargos - grupo.pagos)
     }));
+  const totalPages = Math.max(1, Math.ceil(gruposMovimientos.length / pageSize));
+  const currentPage = Math.min(page, totalPages);
+  const pageGruposMovimientos = gruposMovimientos.slice((currentPage - 1) * pageSize, currentPage * pageSize);
   const isAdmin = await isValidSessionToken((await cookies()).get(SESSION_COOKIE)?.value);
   const fechaGenerado = generatedAt.format(new Date());
 
@@ -176,7 +183,7 @@ export default async function EstadoPublicoPage({ params }: { params: Promise<{ 
         ))}
       </section>
 
-      <section className="grid gap-4 rounded-[2rem] bg-white p-5 shadow-sm">
+      <section className="grid gap-3">
         <div>
           <p className="ui-label">Estado de cuenta</p>
           <div className="flex flex-wrap items-center justify-between gap-3">
@@ -184,16 +191,21 @@ export default async function EstadoPublicoPage({ params }: { params: Promise<{ 
               <ClipboardList aria-hidden="true" className="size-6 text-[var(--primary)]" />
               Movimientos
             </h2>
-            <div className="flex gap-2 text-xs font-bold">
-              <span className="rounded-full bg-green-50 px-3 py-1 text-green-700">Verde: pagos</span>
-              <span className="rounded-full bg-red-50 px-3 py-1 text-red-700">Rojo: crédito</span>
+            <div className="flex gap-3 text-xs font-bold">
+              <span className="text-green-700">Verde: pagos</span>
+              <span className="text-red-700">Rojo: crédito</span>
             </div>
           </div>
         </div>
         {gruposMovimientos.length === 0 ? (
-          <p className="rounded-[1.75rem] bg-[var(--app-bg)] p-4 text-[var(--text-muted)]">Todavía no hay movimientos registrados.</p>
+          <p className="rounded-[1.75rem] bg-white p-4 text-[var(--text-muted)] shadow-sm">Todavía no hay movimientos registrados.</p>
         ) : (
-          <EstadoMovimientosAccordion grupos={gruposMovimientos} />
+          <>
+            <EstadoMovimientosAccordion grupos={pageGruposMovimientos} />
+            <div className="no-print">
+              <Pagination basePath={`/estado/${token}`} page={currentPage} q="" totalPages={totalPages} />
+            </div>
+          </>
         )}
       </section>
     </main>

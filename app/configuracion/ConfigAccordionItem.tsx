@@ -11,8 +11,7 @@ export function ConfigAccordionItem({
   description,
   isOpen: controlledOpen,
   onOpenChange,
-  title,
-  variant = "default"
+  title
 }: {
   children: ReactNode;
   defaultOpen?: boolean;
@@ -20,7 +19,6 @@ export function ConfigAccordionItem({
   isOpen?: boolean;
   onOpenChange?: (isOpen: boolean) => void;
   title: string;
-  variant?: "default" | "soft";
 }) {
   const [localOpen, setLocalOpen] = useState(defaultOpen);
   const isOpen = controlledOpen ?? localOpen;
@@ -32,7 +30,7 @@ export function ConfigAccordionItem({
   };
 
   return (
-    <section className={variant === "soft" ? "rounded-[1.75rem] bg-[var(--app-bg)]" : "rounded-[1.75rem] border bg-white shadow-sm"}>
+    <section className="rounded-[1.75rem] border bg-white shadow-sm">
       <h2>
         <button
           aria-controls={contentId}
