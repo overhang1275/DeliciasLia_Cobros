@@ -42,6 +42,7 @@ export function EstadoMovimientosAccordion({ grupos }: { grupos: Grupo[] }) {
           key={grupo.key}
           onOpenChange={(isOpen) => setOpenKey(isOpen ? grupo.key : "")}
           title={grupo.fecha}
+          variant="soft"
         >
           {grupo.movimientos.map((movimiento) => (
             <article className="rounded-[1.75rem] bg-white p-4 shadow-sm" key={movimiento.id}>

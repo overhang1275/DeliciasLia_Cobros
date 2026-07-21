@@ -26,7 +26,7 @@ export function ShareStatementButton({ cliente, telefono }: { cliente: string; t
   }
 
   return (
-    <button className="ui-button-primary min-h-11 shrink-0 gap-2 px-4" onClick={share} type="button">
+    <button className="ui-button-compact gap-2" onClick={share} type="button">
       <Share2 aria-hidden="true" className="size-4" />
       {done ? "Copiado" : "WhatsApp"}
     </button>

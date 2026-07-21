@@ -2,7 +2,7 @@ import { cookies } from "next/headers";
 import Image from "next/image";
 import Link from "next/link";
 import { notFound } from "next/navigation";
-import { ClipboardList, Store, Wallet } from "@/components/AppIcon";
+import { ClipboardList, Landmark, Store, Wallet } from "@/components/AppIcon";
 import { CopyButton } from "@/components/CopyButton";
 import { EstadoMovimientosAccordion } from "@/components/EstadoMovimientosAccordion";
 import { PrintButton } from "@/components/PrintButton";
@@ -128,19 +128,21 @@ export default async function EstadoPublicoPage({ params }: { params: Promise<{ 
             </div>
           </div>
         </div>
-        <div className="mt-5 rounded-[1.75rem] bg-[var(--primary-soft)] p-4">
-          <p className="inline-flex items-center gap-2 text-sm font-bold text-[var(--primary)]">
-            <Wallet aria-hidden="true" className="size-4" />
-            Crédito por cobrar
-          </p>
-          <p className="mt-1 text-4xl font-bold text-[var(--brand)]">{money.format(saldo)}</p>
-          {cliente.telefono ? <p className="mt-2 text-sm text-[var(--text-muted)]">Teléfono: {cliente.telefono}</p> : null}
+        <div className="mt-5 flex items-center justify-between gap-4 rounded-[1.75rem] bg-[var(--app-bg)] p-4">
+          <div className="min-w-0">
+            <p className="ui-label">Crédito por cobrar</p>
+            <p className="mt-1 text-4xl font-bold text-[var(--brand)]">{money.format(saldo)}</p>
+            {cliente.telefono ? <p className="mt-2 text-sm text-[var(--text-muted)]">Teléfono: {cliente.telefono}</p> : null}
+          </div>
+          <span className="grid size-12 shrink-0 place-items-center rounded-2xl bg-[var(--primary-soft)] text-[var(--primary)]" aria-hidden="true">
+            <Wallet className="size-6" />
+          </span>
         </div>
         {isAdmin ? (
-          <div className="mt-4 grid gap-3 sm:grid-cols-3 no-print">
+          <div className="mt-4 flex flex-wrap gap-2 no-print">
             <ShareStatementButton cliente={cliente.nombre} telefono={cliente.telefono} />
             <PrintButton />
-            <Link className="ui-button-secondary min-h-11 px-4" href="/clientes">
+            <Link className="ui-button-compact" href="/clientes">
               Volver
             </Link>
           </div>
@@ -148,22 +150,24 @@ export default async function EstadoPublicoPage({ params }: { params: Promise<{ 
       </header>
 
       <section className="rounded-[2rem] bg-white p-5 shadow-sm">
-        <div className="flex items-start justify-between gap-4">
+        <div className="flex items-start gap-3">
+          <span className="grid size-12 shrink-0 place-items-center rounded-2xl bg-[var(--primary-soft)] text-[var(--primary)]" aria-hidden="true">
+            <Landmark className="size-6" />
+          </span>
           <div>
             <p className="ui-label">Datos para depósito</p>
-            <h2 className="mt-1 text-2xl font-bold text-[var(--brand)]">{config.banco}</h2>
+            <h2 className="mt-1 text-2xl font-semibold text-[var(--brand)]">{config.banco}</h2>
           </div>
-          {config.logoDataUrl ? <Image alt="" className="size-12 rounded-xl object-cover opacity-90" height={48} src={config.logoDataUrl} unoptimized width={48} /> : null}
         </div>
         {[
           ["A nombre de", config.titular],
           ["CLABE", config.clabe],
           ["Cuenta", config.cuenta]
         ].map(([label, value]) => (
-          <div className="mt-3 flex items-center justify-between gap-3 rounded-2xl border border-[var(--border-soft)] px-4 py-3" key={label}>
+          <div className="mt-3 flex items-center justify-between gap-3 rounded-2xl bg-[var(--app-bg)] px-4 py-3" key={label}>
             <div className="min-w-0">
-              <p className="text-xs font-bold uppercase text-[var(--text-muted)]">{label}</p>
-              <p className="break-words text-base font-semibold text-[var(--text-main)]">{value}</p>
+              <p className="text-sm font-bold text-[var(--brand)]">{label}</p>
+              <p className="break-words text-base text-[var(--text-main)]">{value}</p>
             </div>
             <span className="no-print">
               <CopyButton value={value} />
@@ -172,7 +176,7 @@ export default async function EstadoPublicoPage({ params }: { params: Promise<{ 
         ))}
       </section>
 
-      <section className="grid gap-3">
+      <section className="grid gap-4 rounded-[2rem] bg-white p-5 shadow-sm">
         <div>
           <p className="ui-label">Estado de cuenta</p>
           <div className="flex flex-wrap items-center justify-between gap-3">
@@ -187,7 +191,7 @@ export default async function EstadoPublicoPage({ params }: { params: Promise<{ 
           </div>
         </div>
         {gruposMovimientos.length === 0 ? (
-          <p className="rounded-[1.75rem] bg-white p-4 text-[var(--text-muted)] shadow-sm">Todavía no hay movimientos registrados.</p>
+          <p className="rounded-[1.75rem] bg-[var(--app-bg)] p-4 text-[var(--text-muted)]">Todavía no hay movimientos registrados.</p>
         ) : (
           <EstadoMovimientosAccordion grupos={gruposMovimientos} />
         )}

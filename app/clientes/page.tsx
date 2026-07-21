@@ -116,57 +116,56 @@ export default async function ClientesPage({ searchParams }: { searchParams: Pro
         ) : (
           clientes.map((cliente) => {
             return (
-              <article className="relative rounded-[1.75rem] bg-white p-4 pb-16 shadow-sm" key={cliente.id}>
-                <div className="flex items-start justify-between gap-4">
-                  <div className="flex min-w-0 gap-3">
-                    <span className="grid size-11 shrink-0 place-items-center rounded-2xl bg-[var(--primary-soft)] text-[var(--primary)]" aria-hidden="true">
-                      <User className="size-5" />
-                    </span>
-                    <div className="min-w-0">
-                      <h3 className="truncate font-bold text-[var(--text-main)]">{cliente.nombre}</h3>
-                      <p className="ui-label">{cliente.telefono || "Sin telefono"}</p>
-                    </div>
-                  </div>
-                  <div className="flex flex-wrap justify-end gap-2">
-                    <p className="rounded-full bg-[var(--primary-soft)] px-3 py-1 text-sm font-bold text-[var(--primary)]">
-                      {cliente._count.ventas} compras
-                    </p>
-                    <p className={`rounded-full px-3 py-1 text-sm font-bold ${cliente.saldo > 0 ? "bg-red-50 text-red-700" : "bg-green-50 text-green-700"}`}>
-                      {cliente.saldo > 0 ? "Debe" : "No debe"}
-                    </p>
-                    {cliente.cambioPendiente > 0 ? (
-                      <p className="rounded-full bg-amber-50 px-3 py-1 text-sm font-bold text-amber-700" title="Tienes cambio pendiente con este cliente">
-                        Dar cambio
-                      </p>
-                    ) : null}
+              <article className="rounded-[1.75rem] bg-white p-4 shadow-sm" key={cliente.id}>
+                <div className="flex min-w-0 gap-3">
+                  <span className="grid size-11 shrink-0 place-items-center rounded-2xl bg-[var(--primary-soft)] text-[var(--primary)]" aria-hidden="true">
+                    <User className="size-5" />
+                  </span>
+                  <div className="min-w-0 flex-1">
+                    <h3 className="truncate font-bold text-[var(--text-main)]">{cliente.nombre}</h3>
+                    <p className="ui-label">{cliente.telefono || "Sin telefono"}</p>
                   </div>
                 </div>
                 {cliente.notas ? <p className="mt-3 text-sm text-[var(--text-muted)]">{cliente.notas}</p> : null}
-                <Link
-                  aria-label={`Historial de ${cliente.nombre}`}
-                  className="ui-icon-button absolute bottom-4 right-40 size-10 rounded-full"
-                  href={`/clientes/${cliente.id}/historial`}
-                  title="Historial"
-                >
-                  <ChartNoAxesColumnIncreasing aria-hidden="true" className="size-5" />
-                </Link>
-                <Link
-                  aria-label={`Estado de cuenta de ${cliente.nombre}`}
-                  className="ui-icon-button absolute bottom-4 right-28 size-10 rounded-full"
-                  href={cliente.estadoToken ? `/estado/${cliente.estadoToken}` : `/clientes/${cliente.id}/estado`}
-                  title="Estado de cuenta"
-                >
-                  <FileText aria-hidden="true" className="size-5" />
-                </Link>
-                <Link
-                  aria-label={`Editar ${cliente.nombre}`}
-                  className="ui-icon-button absolute bottom-4 right-16 size-10 rounded-full"
-                  href={`/clientes/${cliente.id}/editar`}
-                  title="Editar"
-                >
-                  <Pencil aria-hidden="true" className="size-5" />
-                </Link>
-                <div className="absolute bottom-4 right-4">
+                <div className="mt-4 grid grid-cols-3 gap-2 rounded-[1.5rem] bg-[var(--app-bg)] p-3">
+                  <div>
+                    <p className="text-xs text-[var(--text-muted)]">Compras</p>
+                    <p className="font-bold text-[var(--brand)]">{cliente._count.ventas}</p>
+                  </div>
+                  <div>
+                    <p className="text-xs text-[var(--text-muted)]">Crédito</p>
+                    <p className={`font-bold ${cliente.saldo > 0 ? "text-red-700" : "text-green-700"}`}>{cliente.saldo > 0 ? "Debe" : "No debe"}</p>
+                  </div>
+                  <div>
+                    <p className="text-xs text-[var(--text-muted)]">Cambio</p>
+                    <p className={`font-bold ${cliente.cambioPendiente > 0 ? "text-amber-700" : "text-[var(--text-muted)]"}`}>{cliente.cambioPendiente > 0 ? "Pendiente" : "Sin cambio"}</p>
+                  </div>
+                </div>
+                <div className="mt-4 flex justify-end gap-2 border-t border-[var(--border-soft)] pt-3">
+                  <Link
+                    aria-label={`Historial de ${cliente.nombre}`}
+                    className="ui-icon-button size-10 rounded-full"
+                    href={`/clientes/${cliente.id}/historial`}
+                    title="Historial"
+                  >
+                    <ChartNoAxesColumnIncreasing aria-hidden="true" className="size-5" />
+                  </Link>
+                  <Link
+                    aria-label={`Estado de cuenta de ${cliente.nombre}`}
+                    className="ui-icon-button size-10 rounded-full"
+                    href={cliente.estadoToken ? `/estado/${cliente.estadoToken}` : `/clientes/${cliente.id}/estado`}
+                    title="Estado de cuenta"
+                  >
+                    <FileText aria-hidden="true" className="size-5" />
+                  </Link>
+                  <Link
+                    aria-label={`Editar ${cliente.nombre}`}
+                    className="ui-icon-button size-10 rounded-full"
+                    href={`/clientes/${cliente.id}/editar`}
+                    title="Editar"
+                  >
+                    <Pencil aria-hidden="true" className="size-5" />
+                  </Link>
                   <EliminarClienteButton clienteId={cliente.id} nombre={cliente.nombre} />
                 </div>
               </article>
