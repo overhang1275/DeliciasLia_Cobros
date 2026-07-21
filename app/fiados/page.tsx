@@ -6,20 +6,14 @@ import { ClienteSearchField } from "@/components/ClienteSearchField";
 import { EliminarFiadoForm } from "@/components/EliminarFiadoForm";
 import { LiquidarDeudaForm } from "@/components/LiquidarDeudaForm";
 import { Pagination } from "@/components/Pagination";
-import { SuccessNotice } from "@/components/SuccessNotice";
 import { db } from "@/lib/db";
 
 export const dynamic = "force-dynamic";
 const pageSize = 6;
 
 const money = new Intl.NumberFormat("es-MX", { currency: "MXN", style: "currency" });
+const date = new Intl.DateTimeFormat("es-MX", { day: "2-digit", month: "short", year: "numeric" });
 const today = new Date().toISOString().slice(0, 10);
-const successMessages: Record<string, string> = {
-  credito: "Crédito guardado correctamente.",
-  eliminado: "Crédito eliminado correctamente.",
-  liquidado: "Deuda liquidada correctamente.",
-  pago: "Pago registrado correctamente."
-};
 
 export default async function FiadosPage({ searchParams }: { searchParams: Promise<{ page?: string; q?: string; clienteId?: string; guardado?: string; productoId?: string; piezas?: string }> }) {
   const params = await searchParams;
@@ -90,8 +84,6 @@ export default async function FiadosPage({ searchParams }: { searchParams: Promi
         </Link>
       </header>
 
-      {params.guardado && successMessages[params.guardado] ? <SuccessNotice>{successMessages[params.guardado]}</SuccessNotice> : null}
-
       <form action={registrarFiado} className="grid gap-4 rounded-[2rem] bg-white p-5 shadow-sm">
         <div>
           <p className="ui-label">Nuevo crédito</p>
@@ -156,20 +148,24 @@ export default async function FiadosPage({ searchParams }: { searchParams: Promi
           pendientes.map((venta) => (
             <article className="rounded-[1.75rem] bg-white p-5 shadow-sm" key={venta.id}>
               <div className="flex items-start justify-between gap-5">
-                <div className="flex min-w-0 gap-3">
+                <div className="flex min-w-0 flex-1 gap-3">
                   <span className="grid size-11 shrink-0 place-items-center rounded-2xl bg-[var(--primary-soft)] text-[var(--primary)]" aria-hidden="true">
                     <ReceiptText className="size-5" />
                   </span>
                   <div className="min-w-0">
-                    <h3 className="font-bold text-[var(--text-main)]">{venta.cliente.nombre}</h3>
+                    <h3 className="truncate font-bold text-[var(--text-main)]">{venta.cliente.nombre}</h3>
                     <p className="ui-label">
                       {venta.detalles[0]
                         ? `${venta.detalles[0].producto.nombre} x ${venta.detalles[0].cantidad}`
                         : venta.observaciones || "Crédito"}
                     </p>
+                    <p className="mt-1 inline-flex items-center gap-1 text-sm text-[var(--text-muted)]">
+                      <CalendarDays aria-hidden="true" className="size-4" />
+                      {date.format(venta.fecha)}
+                    </p>
                   </div>
                 </div>
-                <p className="rounded-full bg-[var(--primary-soft)] px-3 py-1 text-sm font-bold text-[var(--primary)]">
+                <p className="shrink-0 rounded-full bg-[var(--primary-soft)] px-3 py-1 text-sm font-bold text-[var(--primary)]">
                   {money.format(venta.pendiente)}
                 </p>
               </div>

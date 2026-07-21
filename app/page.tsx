@@ -2,7 +2,8 @@ import Image from "next/image";
 import Link from "next/link";
 import type { LucideIcon } from "lucide-react";
 import { logout } from "@/app/login/actions";
-import { Check, ChevronRight, HandCoins, LogOut, Package, Plus, ReceiptText, Store, User, Users, Wallet } from "@/components/AppIcon";
+import { ConfigAccordionItem } from "@/app/configuracion/ConfigAccordionItem";
+import { ChevronRight, HandCoins, LogOut, Package, Plus, ReceiptText, Store, User, Users, Wallet } from "@/components/AppIcon";
 import { getConfiguracion } from "@/lib/configuracion";
 import { db } from "@/lib/db";
 
@@ -11,7 +12,12 @@ export const dynamic = "force-dynamic";
 const money = new Intl.NumberFormat("es-MX", { currency: "MXN", style: "currency" });
 
 export default async function HomePage() {
-  const [config, clientes, productos, ventasFiadas, cambiosPendientes] = await Promise.all([
+  const inicioHoy = new Date();
+  inicioHoy.setHours(0, 0, 0, 0);
+  const finHoy = new Date(inicioHoy);
+  finHoy.setHours(23, 59, 59, 999);
+  const rangoHoy = { gte: inicioHoy, lte: finHoy };
+  const [config, clientes, productos, ventasFiadas, cambiosPendientes, piezasHoy, cobradoHoy, creditoHoy] = await Promise.all([
     getConfiguracion(),
     db.cliente.count({ where: { activo: true } }),
     db.producto.count({ where: { activo: true } }),
@@ -22,6 +28,18 @@ export default async function HomePage() {
     db.venta.aggregate({
       where: { cambioPendiente: true },
       _sum: { cambioMonto: true }
+    }),
+    db.detalleVenta.aggregate({
+      where: { venta: { fecha: rangoHoy, estado: { not: "CANCELADA" } } },
+      _sum: { cantidad: true }
+    }),
+    db.pago.aggregate({
+      where: { fecha: rangoHoy },
+      _sum: { monto: true }
+    }),
+    db.venta.aggregate({
+      where: { fecha: rangoHoy, estado: { in: ["FIADA", "PARCIAL"] } },
+      _sum: { total: true }
     })
   ]);
 
@@ -94,6 +112,24 @@ export default async function HomePage() {
           </article>
         ))}
       </section>
+
+      <ConfigAccordionItem defaultOpen description="Resumen del día en curso." title="Ventas de Hoy">
+        <div className="grid gap-3">
+          {[
+            ["🧁", "Piezas vendidas", String(piezasHoy._sum.cantidad || 0)],
+            ["💰", "Cobrado", money.format(Number(cobradoHoy._sum.monto || 0))],
+            ["📝", "Fiado", money.format(Number(creditoHoy._sum.total || 0))]
+          ].map(([emoji, label, value]) => (
+            <div className="flex items-center justify-between gap-4 rounded-[1.5rem] bg-[var(--app-bg)] p-4" key={label}>
+              <div className="flex min-w-0 items-center gap-3">
+                <span className="text-2xl" aria-hidden="true">{emoji}</span>
+                <p className="font-bold text-[var(--text-main)]">{label}</p>
+              </div>
+              <p className="shrink-0 text-xl font-bold text-[var(--brand)]">{value}</p>
+            </div>
+          ))}
+        </div>
+      </ConfigAccordionItem>
 
       <section className="grid gap-3" aria-label="Accesos rapidos">
         <h2 className="text-xl font-bold text-[var(--brand)]">Atajos</h2>

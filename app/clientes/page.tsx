@@ -1,8 +1,8 @@
 import Link from "next/link";
 import { ChartNoAxesColumnIncreasing, FileText, Home, Pencil, Phone, Save, Search, User, Users } from "@/components/AppIcon";
 import { crearCliente } from "./actions";
+import { EliminarClienteButton } from "@/components/EliminarClienteButton";
 import { Pagination } from "@/components/Pagination";
-import { SuccessNotice } from "@/components/SuccessNotice";
 import { db } from "@/lib/db";
 
 export const dynamic = "force-dynamic";
@@ -68,8 +68,6 @@ export default async function ClientesPage({ searchParams }: { searchParams: Pro
         </Link>
       </header>
 
-      {params.guardado === "cliente" ? <SuccessNotice>Cliente guardado correctamente.</SuccessNotice> : null}
-
       <form action={crearCliente} className="grid gap-4 rounded-[2rem] bg-white p-5 shadow-sm">
         <div>
           <p className="ui-label">Nuevo cliente</p>
@@ -118,7 +116,7 @@ export default async function ClientesPage({ searchParams }: { searchParams: Pro
         ) : (
           clientes.map((cliente) => {
             return (
-              <article className="relative rounded-[1.75rem] bg-white p-4 pb-14 shadow-sm" key={cliente.id}>
+              <article className="relative rounded-[1.75rem] bg-white p-4 pb-16 shadow-sm" key={cliente.id}>
                 <div className="flex items-start justify-between gap-4">
                   <div className="flex min-w-0 gap-3">
                     <span className="grid size-11 shrink-0 place-items-center rounded-2xl bg-[var(--primary-soft)] text-[var(--primary)]" aria-hidden="true">
@@ -146,7 +144,7 @@ export default async function ClientesPage({ searchParams }: { searchParams: Pro
                 {cliente.notas ? <p className="mt-3 text-sm text-[var(--text-muted)]">{cliente.notas}</p> : null}
                 <Link
                   aria-label={`Historial de ${cliente.nombre}`}
-                  className="ui-icon-button absolute bottom-4 right-28 size-10 rounded-full"
+                  className="ui-icon-button absolute bottom-4 right-40 size-10 rounded-full"
                   href={`/clientes/${cliente.id}/historial`}
                   title="Historial"
                 >
@@ -154,7 +152,7 @@ export default async function ClientesPage({ searchParams }: { searchParams: Pro
                 </Link>
                 <Link
                   aria-label={`Estado de cuenta de ${cliente.nombre}`}
-                  className="ui-icon-button absolute bottom-4 right-16 size-10 rounded-full"
+                  className="ui-icon-button absolute bottom-4 right-28 size-10 rounded-full"
                   href={cliente.estadoToken ? `/estado/${cliente.estadoToken}` : `/clientes/${cliente.id}/estado`}
                   title="Estado de cuenta"
                 >
@@ -162,12 +160,15 @@ export default async function ClientesPage({ searchParams }: { searchParams: Pro
                 </Link>
                 <Link
                   aria-label={`Editar ${cliente.nombre}`}
-                  className="ui-icon-button absolute bottom-4 right-4 size-10 rounded-full"
+                  className="ui-icon-button absolute bottom-4 right-16 size-10 rounded-full"
                   href={`/clientes/${cliente.id}/editar`}
                   title="Editar"
                 >
                   <Pencil aria-hidden="true" className="size-5" />
                 </Link>
+                <div className="absolute bottom-4 right-4">
+                  <EliminarClienteButton clienteId={cliente.id} nombre={cliente.nombre} />
+                </div>
               </article>
             );
           })

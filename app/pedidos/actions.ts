@@ -17,7 +17,7 @@ export async function crearPedido(formData: FormData) {
   await db.pedido.create({ data: pedido });
 
   revalidatePath("/pedidos");
-  redirect("/pedidos");
+  redirect("/pedidos?guardado=pedido");
 }
 
 export async function cancelarPedido(formData: FormData) {
@@ -30,5 +30,5 @@ export async function cancelarPedido(formData: FormData) {
   });
 
   revalidatePath("/pedidos");
-  redirect("/pedidos");
+  redirect("/pedidos?guardado=pedido-cancelado");
 }

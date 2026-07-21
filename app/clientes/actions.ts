@@ -32,3 +32,19 @@ export async function editarCliente(id: number, formData: FormData) {
   revalidatePath("/clientes");
   redirect("/clientes?guardado=cliente");
 }
+
+export async function eliminarCliente(formData: FormData) {
+  const id = Number(formData.get("clienteId"));
+  const confirmacion = formData.get("confirmacion");
+
+  if (!Number.isInteger(id) || id <= 0 || confirmacion !== "CONFIRMAR") {
+    redirect("/clientes");
+  }
+
+  await db.cliente.update({ where: { id }, data: { activo: false } });
+  revalidatePath("/");
+  revalidatePath("/clientes");
+  revalidatePath("/fiados");
+  revalidatePath("/reportes");
+  redirect("/clientes?guardado=cliente-eliminado");
+}

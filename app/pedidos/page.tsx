@@ -3,6 +3,7 @@ import { EstadoPedido } from "@prisma/client";
 import { cancelarPedido, crearPedido } from "./actions";
 import { Banknote, CalendarDays, ClipboardList, Hash, Home, Package, ReceiptText, Save, Search, X } from "@/components/AppIcon";
 import { ClienteSearchField } from "@/components/ClienteSearchField";
+import { ConfirmSubmitButton } from "@/components/ConfirmSubmitButton";
 import { Pagination } from "@/components/Pagination";
 import { db } from "@/lib/db";
 
@@ -134,12 +135,12 @@ export default async function PedidosPage({ searchParams }: { searchParams: Prom
           pedidos.map((pedido) => (
             <article className="rounded-[1.75rem] bg-white p-5 shadow-sm" key={pedido.id}>
               <div className="flex items-start justify-between gap-4">
-                <div className="flex min-w-0 gap-3">
+                <div className="flex min-w-0 flex-1 gap-3">
                   <span className="grid size-11 shrink-0 place-items-center rounded-2xl bg-[var(--primary-soft)] text-[var(--primary)]" aria-hidden="true">
                     <Package className="size-5" />
                   </span>
                   <div className="min-w-0">
-                    <h3 className="font-bold text-[var(--text-main)]">{pedido.cliente.nombre}</h3>
+                    <h3 className="truncate font-bold text-[var(--text-main)]">{pedido.cliente.nombre}</h3>
                     <p className="ui-label">
                       {pedido.producto.nombre} x {pedido.piezas}
                     </p>
@@ -161,10 +162,15 @@ export default async function PedidosPage({ searchParams }: { searchParams: Prom
                 </Link>
                 <form action={cancelarPedido}>
                   <input name="pedidoId" type="hidden" value={pedido.id} />
-                  <button className="ui-button-danger w-full gap-2" type="submit">
+                  <ConfirmSubmitButton
+                    className="ui-button-danger w-full gap-2"
+                    title="Cancelar pedido"
+                    description={`Se cancelará el pedido de ${pedido.cliente.nombre}. No afectará ventas ni créditos.`}
+                    confirmLabel="Cancelar pedido"
+                  >
                     <X aria-hidden="true" className="size-4" />
                     Cancelar
-                  </button>
+                  </ConfirmSubmitButton>
                 </form>
               </div>
             </article>

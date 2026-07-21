@@ -2,7 +2,6 @@ import Link from "next/link";
 import { crearProducto } from "./actions";
 import { HandCoins, Home, Package, Save, Search, Tags } from "@/components/AppIcon";
 import { Pagination } from "@/components/Pagination";
-import { SuccessNotice } from "@/components/SuccessNotice";
 import { db } from "@/lib/db";
 
 export const dynamic = "force-dynamic";
@@ -47,8 +46,6 @@ export default async function ProductosPage({ searchParams }: { searchParams: Pr
           <Home aria-hidden="true" className="size-5" />
         </Link>
       </header>
-
-      {params.guardado === "producto" ? <SuccessNotice>Producto guardado correctamente.</SuccessNotice> : null}
 
       <form action={crearProducto} className="grid gap-4 rounded-[2rem] bg-white p-5 shadow-sm">
         <div>

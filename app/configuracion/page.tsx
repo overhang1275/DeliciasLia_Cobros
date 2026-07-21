@@ -3,7 +3,6 @@ import Image from "next/image";
 import { ConfigAccordionItem } from "./ConfigAccordionItem";
 import { cambiarPasswordAdmin, guardarConfiguracion } from "./actions";
 import { CreditCard, Hash, Home, ImageIcon, KeyRound, Landmark, Save, Settings, Store, Tags, User } from "@/components/AppIcon";
-import { SuccessNotice } from "@/components/SuccessNotice";
 import { getConfiguracion } from "@/lib/configuracion";
 
 export const dynamic = "force-dynamic";
@@ -33,8 +32,6 @@ export default async function ConfiguracionPage({ searchParams }: { searchParams
           <Home aria-hidden="true" className="size-5" />
         </Link>
       </header>
-
-      {params.guardado === "configuracion" ? <SuccessNotice>Configuración guardada correctamente.</SuccessNotice> : null}
 
       <form action={guardarConfiguracion} className="grid gap-4" id="configuracion-form">
         <ConfigAccordionItem defaultOpen description="Logo y nombre que verá la app." title="Identidad del negocio">
