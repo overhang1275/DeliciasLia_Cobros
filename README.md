@@ -2,13 +2,13 @@
 
 ## Descripción
 
-Aplicación web privada para administrar ventas, créditos, pagos, clientes, productos, pedidos y reportes. Está construida como una PWA con Next.js, React, Prisma y SQLite.
+Aplicación web privada para administrar cobros, ventas, créditos, clientes, productos, pedidos y reportes financieros de Delicias Lia. Está construida como una PWA con Next.js, React, Prisma y SQLite.
 
-El sistema incluye acceso de administrador, tablero de inicio, registro de ventas rápidas, control de créditos y pagos parciales, estados de cuenta por cliente, catálogo de productos, pedidos pendientes, reportes de ventas/cobros/utilidad y configuración del negocio con logo y datos bancarios.
+La app incluye login de administrador, tablero inicial, registro de ventas rápidas, control de fiados y pagos parciales, estados de cuenta públicos por cliente, catálogo de productos, pedidos pendientes, configuración del negocio y reportes financieros con métricas listas para tomar decisiones sin depender de una descarga a Excel.
 
 ## Objetivo
 
-Centralizar el cobro diario del negocio y dar seguimiento a dinero pendiente por cobrar, cambios pendientes por entregar, clientes activos, productos registrados, pedidos y reportes básicos de operación.
+Centralizar la operación diaria del negocio: vender, cobrar, registrar deuda, dar seguimiento a clientes, revisar inventario, convertir pedidos en ventas o créditos y consultar indicadores financieros claros para decidir qué cobrar, qué producto reponer y qué margen está dejando la operación.
 
 ## Tecnologías
 
@@ -18,14 +18,17 @@ Centralizar el cobro diario del negocio y dar seguimiento a dinero pendiente por
 - Prisma 6
 - SQLite
 - Tailwind CSS 3
+- Motion
+- Lucide React
 - next-pwa
-- Zod
 - React Hook Form
+- Zod
+- Chart.js
 - ESLint
 
 ## Requisitos
 
-- Node.js 20 o superior; el script de instalación para Ubuntu usa Node.js 22 por defecto.
+- Node.js 20 o superior; los scripts de Ubuntu/LXC instalan Node.js 22 por defecto.
 - npm
 - SQLite mediante Prisma
 - En despliegue Ubuntu/LXC: `bash`, `git`, `curl`, `build-essential`, `openssl` y `systemd`
@@ -38,7 +41,7 @@ Instalar dependencias:
 npm install
 ```
 
-Crear `.env` con la base de datos local:
+Crear `.env` tomando como base `.env.example`:
 
 ```env
 DATABASE_URL="file:../database/database.sqlite"
@@ -48,7 +51,7 @@ AUTH_SECURE_COOKIE="false"
 PORT="3000"
 ```
 
-Generar Prisma Client, aplicar migraciones y sembrar datos iniciales:
+Preparar base de datos:
 
 ```bash
 npm run prisma:generate
@@ -69,24 +72,27 @@ npm run build
 npm run start
 ```
 
-El usuario inicial es `admin`. La contraseña se toma de `ADMIN_PASSWORD` durante el seed; si no existe, el seed genera una contraseña aleatoria y la imprime en consola.
+El usuario inicial es `admin`. La contraseña se toma de `ADMIN_PASSWORD` durante el seed; si falta, el seed genera una contraseña temporal y la imprime en consola.
 
 Rutas principales:
 
 - `/login`: acceso de administrador.
-- `/`: tablero con créditos por cobrar, cambios pendientes, clientes y productos.
-- `/ventas`: registro de venta rápida y últimas ventas.
-- `/fiados`: registro, búsqueda, pago, liquidación y eliminación de créditos.
-- `/clientes`: alta, búsqueda, edición y estado de cuenta de clientes.
+- `/`: tablero inicial con créditos por cobrar, cambios pendientes, clientes, productos y accesos rápidos.
+- `/ventas`: registro de venta rápida, ventas pagadas, fiadas o parciales y cambio pendiente.
+- `/fiados`: registro, búsqueda, pago, liquidación y eliminación con confirmación sostenida.
+- `/clientes`: alta, búsqueda, edición, historial y estado de cuenta.
+- `/estado/[token]`: estado de cuenta público por cliente con pagos en verde y cargos/deuda en rojo.
 - `/productos`: alta y búsqueda de productos.
 - `/pedidos`: alta, búsqueda, conversión a venta/crédito y cancelación de pedidos.
-- `/reportes`: ventas, cobros, por cobrar, utilidad, productos vendidos y clientes con deuda.
+- `/reportes`: ventas, utilidad, margen, cobros, deuda, inventario, pedidos, top clientes, productos rentables, formas de pago y tipo de venta.
 - `/configuracion`: logo, nombre del negocio y datos bancarios.
 - `/api/health`: verificación simple de salud.
 
+La interfaz usa iconos de Lucide y animaciones sutiles con Motion en las rutas.
+
 ## Despliegue
 
-El repositorio incluye scripts para instalar y actualizar la aplicación en un Ubuntu/LXC con `systemd`.
+El repositorio incluye scripts para instalar, actualizar y levantar un demo en Ubuntu/LXC con `systemd`.
 
 Instalación inicial:
 
@@ -110,7 +116,7 @@ Levantar un demo separado:
 sudo bash scripts/demo-ubuntu-lxc.sh
 ```
 
-El demo usa `/opt/delicias-lia-demo`, el servicio `delicias-lia-demo`, el puerto `3001`, usuario `admin` y password `demo12345` por defecto. Este script borra y vuelve a crear solo la base del demo.
+El demo usa `/opt/delicias-lia-demo`, servicio `delicias-lia-demo`, puerto `3001`, usuario `admin` y password `demo12345` por defecto. Este script borra y vuelve a crear solo la base del demo.
 
 Variables aceptadas por los scripts:
 
@@ -129,12 +135,13 @@ Variables aceptadas por los scripts:
 - `AUTH_SECURE_COOKIE`: usa cookie segura cuando vale `true`.
 - `ALLOW_DEMO_RESET`: requerida con valor `1` para ejecutar `prisma/demo-seed.ts`; el script demo la escribe automáticamente.
 - `NODE_ENV`: usado por Next.js y para desactivar PWA en desarrollo.
-- `PORT`: usado por el servicio de producción en los scripts de despliegue.
+- `PORT`: usado por Next.js y por los servicios de producción en los scripts de despliegue.
 
 ## Responsable
+Este proyecto es desarrollado y mantenido por:
 
-No especificado en el repositorio.
+- **GitHub:** [@overhang1275](https://github.com/overhang1275)
 
 ## Estado
 
-Proyecto privado en versión `0.1.0`. Cuenta con migraciones Prisma, seed inicial, seed demo, scripts de desarrollo, build, lint, migración, seed, despliegue Ubuntu/LXC y demo Ubuntu/LXC. No se encontraron scripts de pruebas automatizadas.
+Proyecto privado en versión `0.1.0`. Cuenta con migraciones Prisma, seed inicial, seed demo, scripts de desarrollo, build, lint, migración, despliegue Ubuntu/LXC y demo Ubuntu/LXC. No se encontraron scripts de pruebas automatizadas.
