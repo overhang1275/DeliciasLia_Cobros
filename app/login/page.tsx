@@ -29,7 +29,7 @@ export default async function LoginPage({ searchParams }: { searchParams: Promis
           <p className="ui-label mt-1">Ingresa para registrar ventas, créditos y pagos.</p>
         </div>
 
-        {error ? <p className="rounded-2xl bg-red-50 px-4 py-3 text-sm font-bold text-red-700">Usuario o contrasena incorrectos.</p> : null}
+        {error ? <p className="rounded-2xl bg-red-50 px-4 py-3 text-sm font-bold text-red-700">Usuario o contraseña incorrectos.</p> : null}
         <input name="next" type="hidden" value={next || "/"} />
 
         <label className="grid gap-2">
@@ -38,7 +38,7 @@ export default async function LoginPage({ searchParams }: { searchParams: Promis
         </label>
 
         <label className="grid gap-2">
-          <span className="ui-label">Contrasena</span>
+          <span className="ui-label">Contraseña</span>
           <input autoComplete="current-password" className="ui-input" name="password" required type="password" />
         </label>
 

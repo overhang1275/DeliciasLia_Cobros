@@ -2,6 +2,7 @@
 
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
+import { hashPassword, verifyPassword } from "@/lib/auth";
 import { db } from "@/lib/db";
 
 export async function guardarConfiguracion(formData: FormData) {
@@ -41,5 +42,28 @@ export async function guardarConfiguracion(formData: FormData) {
   revalidatePath("/");
   revalidatePath("/configuracion");
   revalidatePath("/clientes");
-  redirect("/configuracion");
+  redirect("/configuracion?toast=configuracion");
+}
+
+export async function cambiarPasswordAdmin(formData: FormData) {
+  const actual = String(formData.get("passwordActual") || "");
+  const nueva = String(formData.get("passwordNueva") || "");
+  const confirmar = String(formData.get("passwordConfirmar") || "");
+
+  if (nueva.length < 8) redirect("/configuracion?password=min");
+  if (nueva !== confirmar) redirect("/configuracion?password=match");
+
+  const admin = await db.usuario.findUnique({ where: { usuario: "admin" } });
+
+  if (!admin?.activo || !(await verifyPassword(actual, admin.passwordHash))) {
+    redirect("/configuracion?password=actual");
+  }
+
+  await db.usuario.update({
+    where: { usuario: "admin" },
+    data: { passwordHash: await hashPassword(nueva) }
+  });
+
+  revalidatePath("/configuracion");
+  redirect("/configuracion?password=ok");
 }

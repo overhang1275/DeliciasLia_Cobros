@@ -40,7 +40,7 @@ export default async function EditarClientePage({ params }: { params: Promise<{ 
 
         <div>
           <label className="ui-label inline-flex items-center gap-1" htmlFor="telefono">
-            Telefono <Phone aria-hidden="true" className="size-4" />
+            Teléfono <Phone aria-hidden="true" className="size-4" />
           </label>
           <input className="ui-input mt-2" defaultValue={cliente.telefono || ""} id="telefono" name="telefono" inputMode="tel" />
         </div>

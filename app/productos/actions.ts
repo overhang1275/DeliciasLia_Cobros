@@ -21,5 +21,5 @@ export async function crearProducto(formData: FormData) {
 
   revalidatePath("/");
   revalidatePath("/productos");
-  redirect("/productos");
+  redirect("/productos?toast=producto");
 }

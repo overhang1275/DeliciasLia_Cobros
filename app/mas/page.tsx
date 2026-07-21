@@ -4,10 +4,10 @@ import { ArrowRight, ChartNoAxesColumnIncreasing, Home, LogOut, Package, Receipt
 import { logout } from "@/app/login/actions";
 
 const items: [LucideIcon, string, string, string][] = [
-  [ReceiptText, "Pedidos", "Encargos para entregar despues", "/pedidos"],
-  [Package, "Productos", "Catalogo y precios de venta", "/productos"],
+  [ReceiptText, "Pedidos", "Encargos para entregar después", "/pedidos"],
+  [Package, "Productos", "Catálogo y precios de venta", "/productos"],
   [ChartNoAxesColumnIncreasing, "Reportes", "Ventas, cobros y deudores", "/reportes"],
-  [Settings, "Configuracion", "Logo, negocio y datos bancarios", "/configuracion"]
+  [Settings, "Configuración", "Logo, negocio y datos bancarios", "/configuracion"]
 ];
 
 export default function MasPage() {
@@ -18,7 +18,7 @@ export default function MasPage() {
           <Wrench className="size-7" />
         </span>
         <div className="min-w-0 flex-1">
-          <p className="ui-label">Mas opciones</p>
+          <p className="ui-label">Más opciones</p>
           <h1 className="truncate text-3xl font-bold text-[var(--brand)]">Herramientas</h1>
           <p className="mt-1 line-clamp-2 text-sm text-[var(--text-muted)]">Todo lo que no usas a cada minuto.</p>
         </div>

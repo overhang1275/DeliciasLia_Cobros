@@ -39,7 +39,7 @@ export default async function ProductosPage({ searchParams }: { searchParams: Pr
           <Package className="size-7" />
         </span>
         <div className="min-w-0 flex-1">
-          <p className="ui-label">Catalogo</p>
+          <p className="ui-label">Catálogo</p>
           <h1 className="truncate text-3xl font-bold text-[var(--brand)]">Productos</h1>
         </div>
         <Link className="grid size-11 place-items-center rounded-2xl bg-[var(--primary-soft)] text-xl text-[var(--primary)]" href="/" aria-label="Inicio" title="Inicio">
@@ -94,7 +94,7 @@ export default async function ProductosPage({ searchParams }: { searchParams: Pr
           </button>
         </form>
         {productos.length === 0 ? (
-          <p className="rounded-[1.75rem] bg-white p-4 text-[var(--text-muted)] shadow-sm">Todavia no hay productos registrados.</p>
+          <p className="rounded-[1.75rem] bg-white p-4 text-[var(--text-muted)] shadow-sm">Todavía no hay productos registrados.</p>
         ) : (
           productos.map((producto) => (
             <article className="flex items-center justify-between gap-4 rounded-[1.75rem] bg-white p-4 shadow-sm" key={producto.id}>

@@ -148,7 +148,7 @@ export default async function HistorialClientePage({ params }: { params: Promise
           Movimientos
         </h2>
         {movimientos.length === 0 ? (
-          <p className="rounded-[1.75rem] bg-white p-4 text-[var(--text-muted)] shadow-sm">Todavia no hay movimientos registrados.</p>
+          <p className="rounded-[1.75rem] bg-white p-4 text-[var(--text-muted)] shadow-sm">Todavía no hay movimientos registrados.</p>
         ) : (
           movimientos.map((movimiento) => (
             <article className="rounded-[1.75rem] bg-white p-4 shadow-sm" key={movimiento.id}>

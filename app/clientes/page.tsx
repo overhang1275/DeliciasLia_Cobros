@@ -81,7 +81,7 @@ export default async function ClientesPage({ searchParams }: { searchParams: Pro
 
         <div>
           <label className="ui-label inline-flex items-center gap-1" htmlFor="telefono">
-            Telefono <Phone aria-hidden="true" className="size-4" />
+            Teléfono <Phone aria-hidden="true" className="size-4" />
           </label>
           <input className="ui-input mt-2" id="telefono" name="telefono" inputMode="tel" />
         </div>
@@ -111,7 +111,7 @@ export default async function ClientesPage({ searchParams }: { searchParams: Pro
           </button>
         </form>
         {clientes.length === 0 ? (
-          <p className="rounded-[1.75rem] bg-white p-4 text-[var(--text-muted)] shadow-sm">Todavia no hay clientes registrados.</p>
+          <p className="rounded-[1.75rem] bg-white p-4 text-[var(--text-muted)] shadow-sm">Todavía no hay clientes registrados.</p>
         ) : (
           clientes.map((cliente) => {
             return (
@@ -143,7 +143,7 @@ export default async function ClientesPage({ searchParams }: { searchParams: Pro
                 {cliente.notas ? <p className="mt-3 text-sm text-[var(--text-muted)]">{cliente.notas}</p> : null}
                 <Link
                   aria-label={`Historial de ${cliente.nombre}`}
-                  className="absolute bottom-4 right-28 grid size-10 place-items-center rounded-full bg-[var(--primary-soft)] text-[var(--primary)]"
+                  className="absolute bottom-4 right-28 grid size-10 place-items-center rounded-full bg-[var(--primary-soft)] text-[var(--primary)] transition hover:bg-[var(--primary)] hover:text-white focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--primary)] active:scale-95"
                   href={`/clientes/${cliente.id}/historial`}
                   title="Historial"
                 >
@@ -151,7 +151,7 @@ export default async function ClientesPage({ searchParams }: { searchParams: Pro
                 </Link>
                 <Link
                   aria-label={`Estado de cuenta de ${cliente.nombre}`}
-                  className="absolute bottom-4 right-16 grid size-10 place-items-center rounded-full bg-[var(--primary-soft)] text-[var(--primary)]"
+                  className="absolute bottom-4 right-16 grid size-10 place-items-center rounded-full bg-[var(--primary-soft)] text-[var(--primary)] transition hover:bg-[var(--primary)] hover:text-white focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--primary)] active:scale-95"
                   href={cliente.estadoToken ? `/estado/${cliente.estadoToken}` : `/clientes/${cliente.id}/estado`}
                   title="Estado de cuenta"
                 >
@@ -159,7 +159,7 @@ export default async function ClientesPage({ searchParams }: { searchParams: Pro
                 </Link>
                 <Link
                   aria-label={`Editar ${cliente.nombre}`}
-                  className="absolute bottom-4 right-4 grid size-10 place-items-center rounded-full bg-[var(--primary-soft)] text-[var(--primary)]"
+                  className="absolute bottom-4 right-4 grid size-10 place-items-center rounded-full bg-[var(--primary-soft)] text-[var(--primary)] transition hover:bg-[var(--primary)] hover:text-white focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--primary)] active:scale-95"
                   href={`/clientes/${cliente.id}/editar`}
                   title="Editar"
                 >

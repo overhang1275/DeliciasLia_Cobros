@@ -34,7 +34,7 @@ export default async function HomePage() {
     [HandCoins, "Crédito por cobrar", money.format(porCobrar), "Dinero pendiente por cobrar"],
     [Wallet, "Cambios que debo", money.format(Number(cambiosPendientes._sum.cambioMonto || 0)), "Cambio pendiente por entregar"],
     [Users, "Clientes activos", clientes.toString(), "Personas registradas"],
-    [Package, "Productos", productos.toString(), "Articulos en catalogo"]
+    [Package, "Productos", productos.toString(), "Artículos en catálogo"]
   ];
   const quickLinks: [LucideIcon, string, string, string][] = [
     [ReceiptText, "Créditos", "Cobros pendientes", "/fiados"],
@@ -62,14 +62,14 @@ export default async function HomePage() {
         </form>
       </header>
 
-      <section className="flex items-center gap-3 rounded-[1.75rem] bg-white p-4 shadow-sm" aria-label="Accion principal">
+      <section className="flex items-center gap-3 rounded-[1.75rem] bg-white p-4 shadow-sm" aria-label="Acción principal">
         <div className="flex min-w-0 flex-1 items-center gap-3">
           <span className="grid size-11 shrink-0 place-items-center rounded-2xl bg-[var(--primary-soft)] text-[var(--primary)]" aria-hidden="true">
             <ReceiptText className="size-6" />
           </span>
           <div className="min-w-0">
-            <p className="ui-label">Lo mas usado</p>
-            <h2 className="truncate text-lg font-bold text-[var(--brand)]">Nueva venta rapida</h2>
+            <p className="ui-label">Lo más usado</p>
+            <h2 className="truncate text-lg font-bold text-[var(--brand)]">Nueva venta rápida</h2>
           </div>
         </div>
         <Link className="ui-button-primary min-h-11 shrink-0 gap-2 rounded-2xl px-4 text-sm" href="/ventas">

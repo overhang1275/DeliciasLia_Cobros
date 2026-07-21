@@ -37,7 +37,7 @@ export default async function VentasPage({ searchParams }: { searchParams: Promi
           <ReceiptText className="size-7" />
         </span>
         <div className="min-w-0 flex-1">
-          <p className="ui-label">Venta rapida</p>
+          <p className="ui-label">Venta rápida</p>
           <h1 className="truncate text-3xl font-bold text-[var(--brand)]">Nueva venta</h1>
         </div>
         <Link className="grid size-11 place-items-center rounded-2xl bg-[var(--primary-soft)] text-xl text-[var(--primary)]" href="/" aria-label="Inicio" title="Inicio">
@@ -48,7 +48,7 @@ export default async function VentasPage({ searchParams }: { searchParams: Promi
       <form action={crearVenta} className="grid gap-4 rounded-[2rem] bg-white p-5 shadow-sm">
         <div>
           <p className="ui-label">Datos de la venta</p>
-          <h2 className="text-xl font-bold text-[var(--brand)]">Que se vendio?</h2>
+          <h2 className="text-xl font-bold text-[var(--brand)]">¿Qué se vendió?</h2>
         </div>
 
         <ClienteSearchField clientes={clientes} defaultClienteId={defaultClienteId} />
@@ -61,13 +61,13 @@ export default async function VentasPage({ searchParams }: { searchParams: Promi
         </button>
       </form>
 
-      <section className="grid gap-3" aria-label="Ultimas ventas">
+      <section className="grid gap-3" aria-label="Últimas ventas">
         <div className="flex items-center justify-between">
-          <h2 className="text-xl font-bold text-[var(--brand)]">Ultimas ventas</h2>
+          <h2 className="text-xl font-bold text-[var(--brand)]">Últimas ventas</h2>
           <ShoppingBag className="size-6 text-[var(--primary)]" aria-hidden="true" />
         </div>
         {ventas.length === 0 ? (
-          <p className="rounded-[1.75rem] bg-white p-4 text-[var(--text-muted)] shadow-sm">Todavia no hay ventas registradas.</p>
+          <p className="rounded-[1.75rem] bg-white p-4 text-[var(--text-muted)] shadow-sm">Todavía no hay ventas registradas.</p>
         ) : (
           ventas.map((venta) => (
             <article className="rounded-[1.75rem] bg-white p-4 shadow-sm" key={venta.id}>

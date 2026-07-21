@@ -1,6 +1,7 @@
 import type { Metadata, Viewport } from "next";
-import type { ReactNode } from "react";
+import { Suspense, type ReactNode } from "react";
 import { cookies } from "next/headers";
+import { AppToasts } from "@/components/AppToasts";
 import { BottomNavigation } from "@/components/BottomNavigation";
 import { RouteMotion } from "@/components/RouteMotion";
 import { getConfiguracion } from "@/lib/configuracion";
@@ -46,6 +47,9 @@ export default async function RootLayout({ children }: Readonly<{ children: Reac
     <html lang="es" data-theme={tema}>
       <body>
         <RouteMotion>{children}</RouteMotion>
+        <Suspense fallback={null}>
+          <AppToasts />
+        </Suspense>
         {hasSession ? <BottomNavigation /> : null}
       </body>
     </html>
