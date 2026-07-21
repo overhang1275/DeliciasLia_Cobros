@@ -2,6 +2,7 @@
 
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
+import { registrarLog } from "@/lib/audit";
 import { db } from "@/lib/db";
 import { clienteSchema } from "@/lib/validators/clientes";
 
@@ -16,7 +17,8 @@ export async function crearCliente(formData: FormData) {
     notas: formData.get("notas") || undefined
   });
 
-  await db.cliente.create({ data: { ...cliente, estadoToken: estadoToken() } });
+  const creado = await db.cliente.create({ data: { ...cliente, estadoToken: estadoToken() } });
+  await registrarLog({ accion: "crear", entidad: "Cliente", entidadId: creado.id, detalle: `Cliente: ${creado.nombre}${creado.telefono ? ` | Teléfono: ${creado.telefono}` : ""}` });
   revalidatePath("/clientes");
   redirect("/clientes?guardado=cliente");
 }
@@ -29,6 +31,7 @@ export async function editarCliente(id: number, formData: FormData) {
   });
 
   await db.cliente.update({ where: { id }, data: cliente });
+  await registrarLog({ accion: "editar", entidad: "Cliente", entidadId: id, detalle: `Cliente: ${cliente.nombre}${cliente.telefono ? ` | Teléfono: ${cliente.telefono}` : ""}` });
   revalidatePath("/clientes");
   redirect("/clientes?guardado=cliente");
 }
@@ -41,7 +44,8 @@ export async function eliminarCliente(formData: FormData) {
     redirect("/clientes");
   }
 
-  await db.cliente.update({ where: { id }, data: { activo: false } });
+  const eliminado = await db.cliente.update({ where: { id }, data: { activo: false } });
+  await registrarLog({ accion: "eliminar", entidad: "Cliente", entidadId: id, detalle: `Cliente: ${eliminado.nombre}${eliminado.telefono ? ` | Teléfono: ${eliminado.telefono}` : ""}` });
   revalidatePath("/");
   revalidatePath("/clientes");
   revalidatePath("/fiados");

@@ -2,6 +2,7 @@
 
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
+import { auditMoney, auditTicketId, registrarLog } from "@/lib/audit";
 import { db } from "@/lib/db";
 import { registrarVenta } from "@/lib/ventas";
 import { fiadoSchema, pagoFiadoSchema } from "@/lib/validators/fiados";
@@ -14,7 +15,17 @@ export async function registrarFiado(formData: FormData) {
     fecha: formData.get("fecha")
   });
 
-  await registrarVenta({ ...fiado, estado: "FIADA" });
+  const [cliente, producto] = await Promise.all([
+    db.cliente.findUnique({ where: { id: fiado.clienteId }, select: { nombre: true } }),
+    db.producto.findUnique({ where: { id: fiado.productoId }, select: { nombre: true } })
+  ]);
+  const creada = await registrarVenta({ ...fiado, estado: "FIADA" });
+  await registrarLog({
+    accion: "crear",
+    entidad: "Crédito",
+    entidadId: creada.id,
+    detalle: `Cliente: ${cliente?.nombre || fiado.clienteId} | Ticket ID ${auditTicketId(creada.id)} | Producto: ${producto?.nombre || fiado.productoId} x ${fiado.piezas} | Total crédito: ${auditMoney.format(Number(creada.total))}`
+  });
 
   revalidatePath("/");
   revalidatePath("/fiados");
@@ -30,19 +41,25 @@ export async function registrarPagoFiado(formData: FormData) {
 
   const venta = await db.venta.findUniqueOrThrow({
     where: { id: pago.ventaId },
-    include: { pagos: true }
+    include: { cliente: true, detalles: { include: { producto: true } }, pagos: true }
   });
   const pagado = venta.pagos.reduce((total, item) => total + Number(item.monto), 0);
   const pendiente = Number(venta.total) - pagado;
   const monto = Math.min(pago.monto, pendiente);
 
-  await db.$transaction([
+  const [pagoCreado] = await db.$transaction([
     db.pago.create({ data: { ventaId: venta.id, monto, metodo: pago.metodo } }),
     db.venta.update({
       where: { id: venta.id },
       data: { estado: pendiente - monto <= 0 ? "PAGADA" : "PARCIAL" }
     })
   ]);
+  await registrarLog({
+    accion: "crear",
+    entidad: "Pago",
+    entidadId: pagoCreado.id,
+    detalle: `Cliente: ${venta.cliente.nombre} | Ref. pago ID ${auditTicketId(pagoCreado.id)} | Ticket ID ${auditTicketId(venta.id)} | Producto: ${venta.detalles[0]?.producto.nombre || "Venta"} | Pago: ${auditMoney.format(monto)} | Método: ${pago.metodo} | Pendiente antes: ${auditMoney.format(pendiente)} | Pendiente después: ${auditMoney.format(Math.max(0, pendiente - monto))}`
+  });
 
   revalidatePath("/");
   revalidatePath("/fiados");
@@ -59,19 +76,29 @@ export async function liquidarDeudaCliente(formData: FormData) {
 
   const ventas = await db.venta.findMany({
     where: { clienteId, estado: { in: ["FIADA", "PARCIAL"] } },
-    include: { pagos: true }
+    include: { cliente: true, pagos: true }
   });
+  let totalLiquidado = 0;
   const operaciones = ventas.flatMap((venta) => {
     const pagado = venta.pagos.reduce((total, pago) => total + Number(pago.monto), 0);
     const pendiente = Number(venta.total) - pagado;
     if (pendiente <= 0) return [];
+    totalLiquidado += pendiente;
     return [
       db.pago.create({ data: { ventaId: venta.id, monto: pendiente, metodo } }),
       db.venta.update({ where: { id: venta.id }, data: { estado: "PAGADA" } })
     ];
   });
 
-  if (operaciones.length > 0) await db.$transaction(operaciones);
+  if (operaciones.length > 0) {
+    await db.$transaction(operaciones);
+    await registrarLog({
+      accion: "liquidar",
+      entidad: "Cliente",
+      entidadId: clienteId,
+      detalle: `Cliente: ${ventas[0]?.cliente.nombre || clienteId} | Créditos liquidados: ${operaciones.length / 2} | Total pagado: ${auditMoney.format(totalLiquidado)} | Método: ${metodo}`
+    });
+  }
 
   revalidatePath("/");
   revalidatePath("/fiados");
@@ -89,7 +116,7 @@ export async function eliminarFiado(formData: FormData) {
 
   const venta = await db.venta.findFirst({
     where: { id: ventaId, estado: { in: ["FIADA", "PARCIAL"] } },
-    select: { id: true }
+    include: { cliente: true, detalles: { include: { producto: true } } }
   });
 
   if (venta) {
@@ -98,6 +125,12 @@ export async function eliminarFiado(formData: FormData) {
       db.detalleVenta.deleteMany({ where: { ventaId: venta.id } }),
       db.venta.delete({ where: { id: venta.id } })
     ]);
+    await registrarLog({
+      accion: "eliminar",
+      entidad: "Crédito",
+      entidadId: venta.id,
+      detalle: `Cliente: ${venta.cliente.nombre} | Ticket ID ${auditTicketId(venta.id)} | Producto: ${venta.detalles[0]?.producto.nombre || "Venta"} | Total eliminado: ${auditMoney.format(Number(venta.total))}`
+    });
   }
 
   revalidatePath("/");

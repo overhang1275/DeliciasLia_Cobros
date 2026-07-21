@@ -2,8 +2,9 @@ import Link from "next/link";
 import Image from "next/image";
 import { ConfigAccordionItem } from "./ConfigAccordionItem";
 import { cambiarPasswordAdmin, guardarConfiguracion } from "./actions";
-import { CreditCard, Hash, Home, ImageIcon, KeyRound, Landmark, Save, Settings, Store, Tags, User } from "@/components/AppIcon";
+import { ClipboardList, CreditCard, Hash, Home, ImageIcon, KeyRound, Landmark, Save, Settings, Store, Tags, User } from "@/components/AppIcon";
 import { getConfiguracion } from "@/lib/configuracion";
+import { db } from "@/lib/db";
 
 export const dynamic = "force-dynamic";
 
@@ -13,9 +14,18 @@ const passwordMessages: Record<string, string> = {
   min: "La nueva contraseña debe tener al menos 8 caracteres.",
   ok: "Contraseña actualizada."
 };
+const accionesLog: Record<string, string> = {
+  actualizar: "Actualizó",
+  cancelar: "Canceló",
+  crear: "Creó",
+  editar: "Editó",
+  eliminar: "Eliminó",
+  liquidar: "Liquidó"
+};
+const fechaLog = new Intl.DateTimeFormat("es-MX", { dateStyle: "medium", timeStyle: "short" });
 
 export default async function ConfiguracionPage({ searchParams }: { searchParams: Promise<{ guardado?: string; password?: string }> }) {
-  const [config, params] = await Promise.all([getConfiguracion(), searchParams]);
+  const [config, params, logs] = await Promise.all([getConfiguracion(), searchParams, db.auditLog.findMany({ orderBy: { creadoEn: "desc" }, take: 8 })]);
   const passwordMessage = params.password ? passwordMessages[params.password] : "";
 
   return (
@@ -138,6 +148,36 @@ export default async function ConfiguracionPage({ searchParams }: { searchParams
           </button>
         </ConfigAccordionItem>
       </form>
+
+      <ConfigAccordionItem description="Últimas 8 creaciones, cambios y eliminaciones." title="Log">
+        <Link className="ui-button-compact gap-2 justify-self-start" download href="/configuracion/log.txt">
+          <ClipboardList aria-hidden="true" className="size-4" />
+          Descargar log completo
+        </Link>
+        {logs.length === 0 ? (
+          <p className="rounded-[1.5rem] bg-[var(--app-bg)] p-4 text-sm text-[var(--text-muted)]">Todavía no hay registros de auditoría.</p>
+        ) : (
+          <div className="grid gap-3">
+            {logs.map((log) => (
+              <article className="border-b border-[var(--border-soft)] pb-3 last:border-b-0 last:pb-0" key={log.id}>
+                <div className="flex items-start gap-3">
+                  <span className="grid size-10 shrink-0 place-items-center rounded-2xl bg-[var(--primary-soft)] text-[var(--primary)]" aria-hidden="true">
+                    <ClipboardList className="size-5" />
+                  </span>
+                  <div className="min-w-0 flex-1">
+                    <p className="font-bold text-[var(--text-main)]">
+                      {accionesLog[log.accion] || log.accion} {log.entidad}
+                      {log.entidadId ? ` ID ${log.entidadId}` : ""}
+                    </p>
+                    {log.detalle ? <p className="text-sm text-[var(--text-main)]">{log.detalle}</p> : null}
+                    <p className="ui-label">{fechaLog.format(log.creadoEn)} - {log.usuario || "Sistema"}</p>
+                  </div>
+                </div>
+              </article>
+            ))}
+          </div>
+        )}
+      </ConfigAccordionItem>
 
       <button className="ui-button-primary gap-2" form="configuracion-form" type="submit">
         <Save aria-hidden="true" className="size-5" />

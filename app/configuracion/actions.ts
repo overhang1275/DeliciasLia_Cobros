@@ -2,6 +2,7 @@
 
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
+import { registrarLog } from "@/lib/audit";
 import { hashPassword, verifyPassword } from "@/lib/auth";
 import { db } from "@/lib/db";
 
@@ -38,6 +39,7 @@ export async function guardarConfiguracion(formData: FormData) {
       ...(logoDataUrl ? { logoDataUrl } : {})
     }
   });
+  await registrarLog({ accion: "editar", entidad: "Configuración", entidadId: 1, detalle: "Configuración del sistema" });
 
   revalidatePath("/");
   revalidatePath("/configuracion");
@@ -63,6 +65,7 @@ export async function cambiarPasswordAdmin(formData: FormData) {
     where: { usuario: "admin" },
     data: { passwordHash: await hashPassword(nueva) }
   });
+  await registrarLog({ accion: "editar", entidad: "Seguridad", detalle: "Contraseña de admin actualizada" });
 
   revalidatePath("/configuracion");
   redirect("/configuracion?password=ok");

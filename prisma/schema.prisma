@@ -147,6 +147,19 @@ model Usuario {
   creadoEn     DateTime @default(now())
 }
 
+model AuditLog {
+  id        Int      @id @default(autoincrement())
+  accion    String
+  entidad   String
+  entidadId Int?
+  detalle   String?
+  usuario   String?
+  creadoEn  DateTime @default(now())
+
+  @@index([creadoEn])
+  @@index([entidad, entidadId])
+}
+
 enum EstadoVenta {
   PAGADA
   FIADA
