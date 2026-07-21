@@ -2,12 +2,14 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
+import type { LucideIcon } from "lucide-react";
+import { Home, MoreHorizontal, Plus, ReceiptText, Users } from "@/components/AppIcon";
 
 const navItems = [
-  { href: "/", label: "Inicio", icon: "M3 12h18M5 12l7-7 7 7M6 10v10h12V10" },
-  { href: "/fiados", label: "Crédito", icon: "M4 7h16M4 12h16M4 17h10" },
-  { href: "/clientes", label: "Clientes", icon: "M16 11a4 4 0 1 0-8 0M4 21a8 8 0 0 1 16 0" },
-  { href: "/mas", label: "Mas", icon: "M5 12h.01M12 12h.01M19 12h.01" }
+  { href: "/", label: "Inicio", icon: Home },
+  { href: "/fiados", label: "Crédito", icon: ReceiptText },
+  { href: "/clientes", label: "Clientes", icon: Users },
+  { href: "/mas", label: "Mas", icon: MoreHorizontal }
 ];
 
 export function BottomNavigation() {
@@ -20,9 +22,7 @@ export function BottomNavigation() {
           <NavItem active={pathname === item.href} key={item.href} {...item} />
         ))}
         <Link className="app-fab" href="/ventas" aria-label="Nueva venta" title="Nueva venta">
-          <svg aria-hidden="true" className="size-7" fill="none" stroke="currentColor" strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" viewBox="0 0 24 24">
-            <path d="M12 5v14M5 12h14" />
-          </svg>
+          <Plus aria-hidden="true" className="size-7" strokeWidth={2.5} />
         </Link>
         {navItems.slice(2).map((item) => (
           <NavItem active={pathname === item.href || (item.href === "/mas" && ["/productos", "/reportes", "/configuracion"].includes(pathname))} key={item.href} {...item} />
@@ -32,12 +32,10 @@ export function BottomNavigation() {
   );
 }
 
-function NavItem({ active, href, icon, label }: { active: boolean; href: string; icon: string; label: string }) {
+function NavItem({ active, href, icon: Icon, label }: { active: boolean; href: string; icon: LucideIcon; label: string }) {
   return (
     <Link className={`app-nav-item ${active ? "text-[var(--primary)]" : "text-[var(--text-muted)]"}`} href={href}>
-      <svg aria-hidden="true" className="size-5" fill="none" stroke="currentColor" strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" viewBox="0 0 24 24">
-        <path d={icon} />
-      </svg>
+      <Icon aria-hidden="true" className="size-5" />
       <span>{label}</span>
     </Link>
   );

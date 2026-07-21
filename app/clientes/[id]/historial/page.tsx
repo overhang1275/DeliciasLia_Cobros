@@ -1,5 +1,7 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
+import type { LucideIcon } from "lucide-react";
+import { ArrowLeft, Banknote, CalendarDays, Check, ReceiptText, TrendingUp, Wallet } from "@/components/AppIcon";
 import { db } from "@/lib/db";
 
 export const dynamic = "force-dynamic";
@@ -43,12 +45,23 @@ export default async function HistorialClientePage({ params }: { params: Promise
   }, 0);
   const cambiosPendientes = cliente.ventas.reduce((sum, venta) => sum + (venta.cambioPendiente ? Number(venta.cambioMonto) : 0), 0);
   const pedidosPendientes = cliente.pedidos.filter((pedido) => pedido.estado === "PENDIENTE").length;
-  const movimientos = [
+  const movimientos: {
+    id: string;
+    ventaId: number;
+    fecha: Date;
+    Icon: LucideIcon;
+    titulo: string;
+    detalle: string;
+    monto: number;
+    pendiente: number;
+    mostrarNegativo: boolean;
+    tono: string;
+  }[] = [
     ...cliente.ventas.map((venta) => ({
       id: `venta-${venta.id}`,
       ventaId: venta.id,
       fecha: venta.fecha,
-      icono: venta.estado === "PAGADA" ? "🧾" : "📒",
+      Icon: venta.estado === "PAGADA" ? ReceiptText : ReceiptText,
       titulo: `${venta.estado === "PAGADA" ? "Venta" : "Crédito"} ticket ID ${ticketId(venta.id)}`,
       detalle: venta.detalles[0] ? `${venta.detalles[0].producto.nombre} x ${venta.detalles[0].cantidad}` : venta.observaciones || "Venta",
       monto: Number(venta.total),
@@ -60,9 +73,9 @@ export default async function HistorialClientePage({ params }: { params: Promise
       id: `pago-${pago.id}`,
       ventaId: pago.ventaId,
       fecha: pago.fecha,
-      icono: "✅",
+      Icon: Check,
       titulo: `Pago ID ${ticketId(pago.id)} - ticket ID ${ticketId(pago.ventaId)}`,
-      detalle: `${pago.metodo.toLowerCase()} · ${pago.venta.detalles[0]?.producto.nombre || pago.venta.observaciones || "Pago"}`,
+      detalle: `${pago.metodo.toLowerCase()} - ${pago.venta.detalles[0]?.producto.nombre || pago.venta.observaciones || "Pago"}`,
       monto: -Number(pago.monto),
       pendiente: 0,
       mostrarNegativo: false,
@@ -72,7 +85,7 @@ export default async function HistorialClientePage({ params }: { params: Promise
       id: `pedido-${pedido.id}`,
       fecha: pedido.fechaEntrega,
       ventaId: 0,
-      icono: "🗓️",
+      Icon: CalendarDays,
       titulo: `Pedido ${pedido.estado.toLowerCase()}`,
       detalle: `${pedido.producto.nombre} x ${pedido.piezas}`,
       monto: 0,
@@ -86,7 +99,7 @@ export default async function HistorialClientePage({ params }: { params: Promise
         id: `cambio-${venta.id}`,
         ventaId: venta.id,
         fecha: venta.fecha,
-        icono: "💸",
+        Icon: Wallet,
         titulo: `Cambio pendiente ticket ID ${ticketId(venta.id)}`,
         detalle: "Cambio por entregar al cliente",
         monto: Number(venta.cambioMonto),
@@ -96,31 +109,33 @@ export default async function HistorialClientePage({ params }: { params: Promise
       }))
   ].sort((a, b) => b.fecha.getTime() - a.fecha.getTime() || a.id.localeCompare(b.id));
 
+  const resumen: [LucideIcon, string, string, string][] = [
+    [ReceiptText, "Comprado", money.format(totalComprado), ""],
+    [Check, "Pagado", money.format(totalPagado), ""],
+    [ReceiptText, "Crédito", money.format(creditoPendiente), ""],
+    [Wallet, "Cambios", cambiosPendientes > 0 ? `-${money.format(cambiosPendientes)}` : money.format(0), "text-red-700"],
+    [CalendarDays, "Pedidos", String(pedidosPendientes), ""]
+  ];
+
   return (
     <main className="app-page">
       <header className="flex items-center gap-4 rounded-[2rem] bg-white p-4 shadow-sm">
-        <span className="grid size-14 shrink-0 place-items-center rounded-2xl bg-[var(--primary-soft)] text-3xl" aria-hidden="true">
-          📈
+        <span className="grid size-14 shrink-0 place-items-center rounded-2xl bg-[var(--primary-soft)] text-[var(--primary)]" aria-hidden="true">
+          <TrendingUp className="size-7" />
         </span>
         <div className="min-w-0 flex-1">
           <p className="ui-label">Historial de cliente</p>
           <h1 className="truncate text-3xl font-bold text-[var(--brand)]">{cliente.nombre}</h1>
         </div>
         <Link className="grid size-11 place-items-center rounded-2xl bg-[var(--primary-soft)] text-xl text-[var(--primary)]" href="/clientes" aria-label="Volver" title="Volver">
-          <span aria-hidden="true">⬅️</span>
+          <ArrowLeft aria-hidden="true" className="size-5" />
         </Link>
       </header>
 
       <section className="grid grid-cols-2 gap-3" aria-label="Resumen">
-        {[
-          ["🧾", "Comprado", money.format(totalComprado), ""],
-          ["✅", "Pagado", money.format(totalPagado), ""],
-          ["📒", "Crédito", money.format(creditoPendiente), ""],
-          ["💸", "Cambios", cambiosPendientes > 0 ? `-${money.format(cambiosPendientes)}` : money.format(0), "text-red-700"],
-          ["🗓️", "Pedidos", String(pedidosPendientes), ""]
-        ].map(([icono, label, value, tone]) => (
+        {resumen.map(([Icon, label, value, tone]) => (
           <article className="rounded-[1.75rem] bg-white p-4 shadow-sm" key={label}>
-            <span className="text-2xl" aria-hidden="true">{icono}</span>
+            <Icon className="size-6 text-[var(--primary)]" aria-hidden="true" />
             <p className="ui-label">{label}</p>
             <p className={`mt-2 text-2xl font-bold ${tone || "text-[var(--brand)]"}`}>{value}</p>
           </article>
@@ -128,7 +143,10 @@ export default async function HistorialClientePage({ params }: { params: Promise
       </section>
 
       <section className="grid gap-3" aria-label="Movimientos">
-        <h2 className="text-xl font-bold text-[var(--brand)]">📋 Movimientos</h2>
+        <h2 className="flex items-center gap-2 text-xl font-bold text-[var(--brand)]">
+          <ReceiptText aria-hidden="true" className="size-5 text-[var(--primary)]" />
+          Movimientos
+        </h2>
         {movimientos.length === 0 ? (
           <p className="rounded-[1.75rem] bg-white p-4 text-[var(--text-muted)] shadow-sm">Todavia no hay movimientos registrados.</p>
         ) : (
@@ -136,8 +154,8 @@ export default async function HistorialClientePage({ params }: { params: Promise
             <article className="rounded-[1.75rem] bg-white p-4 shadow-sm" key={movimiento.id}>
               <div className="flex items-start justify-between gap-4">
                 <div className="flex min-w-0 gap-3">
-                  <span className="grid size-11 shrink-0 place-items-center rounded-2xl bg-[var(--primary-soft)] text-2xl" aria-hidden="true">
-                    {movimiento.icono}
+                  <span className="grid size-11 shrink-0 place-items-center rounded-2xl bg-[var(--primary-soft)] text-[var(--primary)]" aria-hidden="true">
+                    <movimiento.Icon className="size-5" />
                   </span>
                   <div className="min-w-0">
                     <p className="font-bold text-[var(--text-main)]">{movimiento.titulo}</p>
@@ -153,8 +171,9 @@ export default async function HistorialClientePage({ params }: { params: Promise
               </div>
               {movimiento.pendiente > 0 ? (
                 <div className="mt-3 flex justify-end">
-                  <Link className="ui-button-secondary min-h-10 px-4 text-sm" href={`/fiados/${movimiento.ventaId}/pago`}>
-                    💵 Registrar pago
+                  <Link className="ui-button-secondary min-h-10 gap-2 px-4 text-sm" href={`/fiados/${movimiento.ventaId}/pago`}>
+                    <Banknote aria-hidden="true" className="size-4" />
+                    Registrar pago
                   </Link>
                 </div>
               ) : null}

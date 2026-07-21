@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { Share2 } from "@/components/AppIcon";
 
 function whatsappPhone(phone?: string | null) {
   const digits = (phone || "").replace(/\D/g, "");
@@ -26,13 +27,7 @@ export function ShareStatementButton({ cliente, telefono }: { cliente: string; t
 
   return (
     <button className="ui-button-primary min-h-11 shrink-0 gap-2 px-4" onClick={share} type="button">
-      <svg aria-hidden="true" className="size-4" fill="none" stroke="currentColor" strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" viewBox="0 0 24 24">
-        <circle cx="18" cy="5" r="3" />
-        <circle cx="6" cy="12" r="3" />
-        <circle cx="18" cy="19" r="3" />
-        <path d="m8.6 13.5 6.8 4" />
-        <path d="m15.4 6.5-6.8 4" />
-      </svg>
+      <Share2 aria-hidden="true" className="size-4" />
       {done ? "Copiado" : "WhatsApp"}
     </button>
   );

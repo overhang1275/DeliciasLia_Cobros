@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { EstadoVenta } from "@prisma/client";
 import { registrarFiado } from "./actions";
+import { Banknote, CalendarDays, FileText, HandCoins, Home, Package, ReceiptText, Save, Search } from "@/components/AppIcon";
 import { ClienteSearchField } from "@/components/ClienteSearchField";
 import { EliminarFiadoForm } from "@/components/EliminarFiadoForm";
 import { LiquidarDeudaForm } from "@/components/LiquidarDeudaForm";
@@ -70,29 +71,29 @@ export default async function FiadosPage({ searchParams }: { searchParams: Promi
   return (
     <main className="app-page">
       <header className="flex items-center gap-4 rounded-[2rem] bg-white p-4 shadow-sm">
-        <span className="grid size-14 shrink-0 place-items-center rounded-2xl bg-[var(--primary-soft)] text-3xl" aria-hidden="true">
-          📒
+        <span className="grid size-14 shrink-0 place-items-center rounded-2xl bg-[var(--primary-soft)] text-[var(--primary)]" aria-hidden="true">
+          <ReceiptText className="size-7" />
         </span>
         <div className="min-w-0 flex-1">
           <p className="ui-label">Cobros pendientes</p>
           <h1 className="truncate text-3xl font-bold text-[var(--brand)]">Crédito</h1>
         </div>
         <Link className="grid size-11 place-items-center rounded-2xl bg-[var(--primary-soft)] text-xl text-[var(--primary)]" href="/" aria-label="Inicio" title="Inicio">
-          <span aria-hidden="true">🏠</span>
+          <Home aria-hidden="true" className="size-5" />
         </Link>
       </header>
 
       <form action={registrarFiado} className="grid gap-4 rounded-[2rem] bg-white p-5 shadow-sm">
         <div>
           <p className="ui-label">Nuevo crédito</p>
-          <h2 className="text-xl font-bold text-[var(--brand)]">¿Quién queda pendiente?</h2>
+          <h2 className="text-xl font-bold text-[var(--brand)]">Quien queda pendiente?</h2>
         </div>
 
         <ClienteSearchField clientes={clientes} defaultClienteId={defaultClienteId} />
 
         <div>
-          <label className="ui-label" htmlFor="productoId">
-            Producto 📦
+          <label className="ui-label inline-flex items-center gap-1" htmlFor="productoId">
+            Producto <Package aria-hidden="true" className="size-4" />
           </label>
           <select className="ui-input mt-2" defaultValue={defaultProductoId} id="productoId" name="productoId" required>
             <option value="">Selecciona producto</option>
@@ -111,20 +112,20 @@ export default async function FiadosPage({ searchParams }: { searchParams: Promi
 
         <div>
           <label className="ui-label" htmlFor="piezas">
-            Piezas 🔢
+            Piezas
           </label>
           <input className="ui-input mt-2" defaultValue={defaultPiezas} id="piezas" inputMode="numeric" min="1" name="piezas" placeholder="1" required type="number" />
         </div>
 
         <div>
-          <label className="ui-label" htmlFor="fecha">
-            Fecha de venta 📅
+          <label className="ui-label inline-flex items-center gap-1" htmlFor="fecha">
+            Fecha de venta <CalendarDays aria-hidden="true" className="size-4" />
           </label>
           <input className="ui-input mt-2" defaultValue={today} id="fecha" name="fecha" required type="date" />
         </div>
 
         <button className="ui-button-primary gap-2" type="submit">
-          <span aria-hidden="true">✓</span>
+          <Save aria-hidden="true" className="size-5" />
           Guardar
         </button>
       </form>
@@ -132,14 +133,12 @@ export default async function FiadosPage({ searchParams }: { searchParams: Promi
       <section className="grid gap-4" aria-label="Créditos pendientes">
         <div className="flex items-center justify-between">
           <h2 className="text-xl font-bold text-[var(--brand)]">Pendientes</h2>
-          <span className="text-2xl" aria-hidden="true">
-            💰
-          </span>
+          <HandCoins className="size-6 text-[var(--primary)]" aria-hidden="true" />
         </div>
         <form className="flex gap-3 rounded-[1.75rem] bg-white p-3 shadow-sm" action="/fiados">
           <input className="ui-input" defaultValue={q} name="q" placeholder="Buscar crédito" />
           <button className="ui-button-secondary min-h-14 px-4" type="submit" aria-label="Filtrar" title="Filtrar">
-            🔎
+            <Search aria-hidden="true" className="size-5" />
           </button>
         </form>
         {pendientes.length === 0 ? (
@@ -149,8 +148,8 @@ export default async function FiadosPage({ searchParams }: { searchParams: Promi
             <article className="rounded-[1.75rem] bg-white p-5 shadow-sm" key={venta.id}>
               <div className="flex items-start justify-between gap-5">
                 <div className="flex min-w-0 gap-3">
-                  <span className="grid size-11 shrink-0 place-items-center rounded-2xl bg-[var(--primary-soft)] text-2xl" aria-hidden="true">
-                    📒
+                  <span className="grid size-11 shrink-0 place-items-center rounded-2xl bg-[var(--primary-soft)] text-[var(--primary)]" aria-hidden="true">
+                    <ReceiptText className="size-5" />
                   </span>
                   <div className="min-w-0">
                     <h3 className="font-bold text-[var(--text-main)]">{venta.cliente.nombre}</h3>
@@ -167,14 +166,16 @@ export default async function FiadosPage({ searchParams }: { searchParams: Promi
               </div>
               <div className="mt-5 grid gap-3 rounded-[1.5rem] bg-[var(--app-bg)] p-3 lg:grid-cols-[auto_1fr]">
                 <div className="grid gap-2 sm:grid-cols-2 lg:flex">
-                  <Link className="ui-button-secondary min-h-10 px-4 text-sm" href={`/fiados/${venta.id}/pago`}>
-                    💵 Registrar pago
+                  <Link className="ui-button-secondary min-h-10 gap-2 px-4 text-sm" href={`/fiados/${venta.id}/pago`}>
+                    <Banknote aria-hidden="true" className="size-4" />
+                    Registrar pago
                   </Link>
                   <Link
-                    className="ui-button-secondary min-h-10 px-4 text-sm"
+                    className="ui-button-secondary min-h-10 gap-2 px-4 text-sm"
                     href={venta.cliente.estadoToken ? `/estado/${venta.cliente.estadoToken}` : `/clientes/${venta.clienteId}/estado`}
                   >
-                    📄 Estado de cuenta
+                    <FileText aria-hidden="true" className="size-4" />
+                    Estado de cuenta
                   </Link>
                 </div>
                 <div className="lg:justify-self-end">

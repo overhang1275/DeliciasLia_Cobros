@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { registrarPagoFiado } from "../../actions";
+import { ArrowLeft, Banknote, CreditCard, HandCoins, Landmark, ReceiptText, Save } from "@/components/AppIcon";
 import { db } from "@/lib/db";
 
 export const dynamic = "force-dynamic";
@@ -26,22 +27,22 @@ export default async function PagoFiadoPage({ params }: { params: Promise<{ id: 
   return (
     <main className="app-page">
       <header className="flex items-center gap-4 rounded-[2rem] bg-white p-4 shadow-sm">
-        <span className="grid size-14 shrink-0 place-items-center rounded-2xl bg-[var(--primary-soft)] text-3xl" aria-hidden="true">
-          💵
+        <span className="grid size-14 shrink-0 place-items-center rounded-2xl bg-[var(--primary-soft)] text-[var(--primary)]" aria-hidden="true">
+          <Banknote className="size-7" />
         </span>
         <div className="min-w-0 flex-1">
           <p className="ui-label">Abono a crédito</p>
           <h1 className="truncate text-3xl font-bold text-[var(--brand)]">Registrar pago</h1>
         </div>
         <Link className="grid size-11 place-items-center rounded-2xl bg-[var(--primary-soft)] text-xl text-[var(--primary)]" href="/fiados" aria-label="Volver" title="Volver">
-          <span aria-hidden="true">⬅️</span>
+          <ArrowLeft aria-hidden="true" className="size-5" />
         </Link>
       </header>
 
       <section className="rounded-[2rem] bg-white p-5 shadow-sm">
         <div className="flex items-start gap-3">
-          <span className="grid size-12 shrink-0 place-items-center rounded-2xl bg-[var(--primary-soft)] text-2xl" aria-hidden="true">
-            📒
+          <span className="grid size-12 shrink-0 place-items-center rounded-2xl bg-[var(--primary-soft)] text-[var(--primary)]" aria-hidden="true">
+            <ReceiptText className="size-6" />
           </span>
           <div className="min-w-0">
             <p className="ui-label">{venta.cliente.nombre}</p>
@@ -56,13 +57,13 @@ export default async function PagoFiadoPage({ params }: { params: Promise<{ id: 
       <form action={registrarPagoFiado} className="grid gap-4 rounded-[2rem] bg-white p-5 shadow-sm">
         <div>
           <p className="ui-label">Pago recibido</p>
-          <h2 className="text-xl font-bold text-[var(--brand)]">¿Cuánto abonó?</h2>
+          <h2 className="text-xl font-bold text-[var(--brand)]">Cuanto abono?</h2>
         </div>
         <input name="ventaId" type="hidden" value={venta.id} />
 
         <div>
-          <label className="ui-label" htmlFor="monto">
-            Cantidad 💰
+          <label className="ui-label inline-flex items-center gap-1" htmlFor="monto">
+            Cantidad <HandCoins aria-hidden="true" className="size-4" />
           </label>
           <input
             className="ui-input mt-2"
@@ -79,17 +80,17 @@ export default async function PagoFiadoPage({ params }: { params: Promise<{ id: 
         </div>
 
         <div>
-          <label className="ui-label" htmlFor="metodo">
-            Tipo de pago 💳
+          <label className="ui-label inline-flex items-center gap-1" htmlFor="metodo">
+            Tipo de pago <CreditCard aria-hidden="true" className="size-4" />
           </label>
           <select className="ui-input mt-2" id="metodo" name="metodo" required>
-            <option value="EFECTIVO">💵 Efectivo</option>
-            <option value="TRANSFERENCIA">🏦 Transferencia</option>
+            <option value="EFECTIVO">Efectivo</option>
+            <option value="TRANSFERENCIA">Transferencia</option>
           </select>
         </div>
 
         <button className="ui-button-primary gap-2" type="submit">
-          <span aria-hidden="true">✓</span>
+          <Save aria-hidden="true" className="size-5" />
           Guardar pago
         </button>
       </form>

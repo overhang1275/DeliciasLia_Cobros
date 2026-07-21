@@ -1,6 +1,8 @@
 import Image from "next/image";
 import Link from "next/link";
+import type { LucideIcon } from "lucide-react";
 import { logout } from "@/app/login/actions";
+import { Check, ChevronRight, HandCoins, LogOut, Package, Plus, ReceiptText, Store, User, Users, Wallet } from "@/components/AppIcon";
 import { getConfiguracion } from "@/lib/configuracion";
 import { db } from "@/lib/db";
 
@@ -28,15 +30,15 @@ export default async function HomePage() {
     return total + Math.max(0, Number(venta.total) - pagado);
   }, 0);
 
-  const metrics = [
-    ["💰", "Crédito por cobrar", money.format(porCobrar), "Dinero pendiente por cobrar"],
-    ["💸", "Cambios que debo", money.format(Number(cambiosPendientes._sum.cambioMonto || 0)), "Cambio pendiente por entregar"],
-    ["👥", "Clientes activos", clientes.toString(), "Personas registradas"],
-    ["📦", "Productos", productos.toString(), "Articulos en catalogo"]
+  const metrics: [LucideIcon, string, string, string][] = [
+    [HandCoins, "Crédito por cobrar", money.format(porCobrar), "Dinero pendiente por cobrar"],
+    [Wallet, "Cambios que debo", money.format(Number(cambiosPendientes._sum.cambioMonto || 0)), "Cambio pendiente por entregar"],
+    [Users, "Clientes activos", clientes.toString(), "Personas registradas"],
+    [Package, "Productos", productos.toString(), "Articulos en catalogo"]
   ];
-  const quickLinks = [
-    ["📒", "Créditos", "Cobros pendientes", "/fiados"],
-    ["👤", "Clientes", "Alta y consulta", "/clientes"]
+  const quickLinks: [LucideIcon, string, string, string][] = [
+    [ReceiptText, "Créditos", "Cobros pendientes", "/fiados"],
+    [User, "Clientes", "Alta y consulta", "/clientes"]
   ];
 
   return (
@@ -46,9 +48,7 @@ export default async function HomePage() {
           {config.logoDataUrl ? (
             <Image alt={config.negocioNombre} className="size-16 object-cover" height={64} src={config.logoDataUrl} unoptimized width={64} />
           ) : (
-            <span className="text-3xl" aria-label="Sin logo configurado">
-              🏪
-            </span>
+            <Store aria-label="Sin logo configurado" className="size-8 text-[var(--primary)]" />
           )}
         </div>
         <div className="min-w-0 flex-1">
@@ -57,19 +57,15 @@ export default async function HomePage() {
         </div>
         <form action={logout}>
           <button className="grid size-11 place-items-center rounded-2xl bg-[var(--primary-soft)] text-xl text-[var(--primary)]" aria-label="Salir" title="Salir" type="submit">
-            <svg aria-hidden="true" className="size-6" fill="none" stroke="currentColor" strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" viewBox="0 0 24 24">
-              <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4" />
-              <path d="M16 17l5-5-5-5" />
-              <path d="M21 12H9" />
-            </svg>
+            <LogOut aria-hidden="true" className="size-6" />
           </button>
         </form>
       </header>
 
       <section className="flex items-center gap-3 rounded-[1.75rem] bg-white p-4 shadow-sm" aria-label="Accion principal">
         <div className="flex min-w-0 flex-1 items-center gap-3">
-          <span className="grid size-11 shrink-0 place-items-center rounded-2xl bg-[var(--primary-soft)] text-2xl" aria-hidden="true">
-            🧾
+          <span className="grid size-11 shrink-0 place-items-center rounded-2xl bg-[var(--primary-soft)] text-[var(--primary)]" aria-hidden="true">
+            <ReceiptText className="size-6" />
           </span>
           <div className="min-w-0">
             <p className="ui-label">Lo mas usado</p>
@@ -77,17 +73,17 @@ export default async function HomePage() {
           </div>
         </div>
         <Link className="ui-button-primary min-h-11 shrink-0 gap-2 rounded-2xl px-4 text-sm" href="/ventas">
-          <span aria-hidden="true">➕</span>
+          <Plus aria-hidden="true" className="size-4" />
           Crear
         </Link>
       </section>
 
       <section className="grid gap-3 sm:grid-cols-2" aria-label="Para atender ahora">
-        {metrics.map(([icon, label, value, hint], index) => (
+        {metrics.map(([Icon, label, value, hint], index) => (
           <article className={index < 2 ? "rounded-[1.75rem] border border-red-100 bg-red-50/60 p-4 shadow-sm" : "rounded-[1.75rem] bg-white p-4 shadow-sm"} key={label}>
             <div className="flex items-center gap-3">
-              <span className="grid size-11 shrink-0 place-items-center rounded-2xl bg-[var(--primary-soft)] text-2xl" aria-hidden="true">
-                {icon}
+              <span className="grid size-11 shrink-0 place-items-center rounded-2xl bg-[var(--primary-soft)] text-[var(--primary)]" aria-hidden="true">
+                <Icon className="size-6" />
               </span>
               <div className="min-w-0">
                 <p className="ui-label">{label}</p>
@@ -101,18 +97,16 @@ export default async function HomePage() {
 
       <section className="grid gap-3" aria-label="Accesos rapidos">
         <h2 className="text-xl font-bold text-[var(--brand)]">Atajos</h2>
-        {quickLinks.map(([icon, title, description, href]) => (
+        {quickLinks.map(([Icon, title, description, href]) => (
           <Link className="flex min-h-20 items-center gap-4 rounded-[1.75rem] bg-white p-4 shadow-sm transition duration-150 active:scale-[0.99]" href={href} key={href}>
-            <span className="grid size-12 shrink-0 place-items-center rounded-2xl bg-[var(--primary-soft)] text-2xl" aria-hidden="true">
-              {icon}
+            <span className="grid size-12 shrink-0 place-items-center rounded-2xl bg-[var(--primary-soft)] text-[var(--primary)]" aria-hidden="true">
+              <Icon className="size-6" />
             </span>
             <span className="min-w-0 flex-1">
               <span className="block font-bold text-[var(--text-main)]">{title}</span>
               <span className="ui-label block">{description}</span>
             </span>
-            <span className="text-2xl font-bold text-[var(--primary)]" aria-hidden="true">
-              ›
-            </span>
+            <ChevronRight className="size-6 text-[var(--primary)]" aria-hidden="true" />
           </Link>
         ))}
       </section>

@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useMemo, useState } from "react";
+import { Banknote, Landmark, Package, ReceiptText, Wallet } from "@/components/AppIcon";
 
 type ProductoOption = {
   id: number;
@@ -30,11 +31,13 @@ export function CambioPendienteFields({ productos, defaultProductoId, defaultPie
       <fieldset className="grid grid-cols-2 gap-3">
         <label className="ui-button-secondary">
           <input className="mr-2" checked={estado === "PAGADA"} name="estado" type="radio" value="PAGADA" onChange={(event) => setEstado(event.target.value)} />
-          💵 Contado
+          <Banknote aria-hidden="true" className="mr-2 size-4" />
+          Contado
         </label>
         <label className="ui-button-secondary">
           <input className="mr-2" checked={estado === "FIADA"} name="estado" type="radio" value="FIADA" onChange={() => router.push("/fiados")} />
-          📒 Crédito
+          <ReceiptText aria-hidden="true" className="mr-2 size-4" />
+          Crédito
         </label>
       </fieldset>
 
@@ -43,18 +46,20 @@ export function CambioPendienteFields({ productos, defaultProductoId, defaultPie
           <legend className="ui-label col-span-2">Forma de pago</legend>
           <label className="ui-button-secondary">
             <input className="mr-2" checked={metodoPago === "EFECTIVO"} name="metodoPago" type="radio" value="EFECTIVO" onChange={(event) => setMetodoPago(event.target.value)} />
-            💵 Efectivo
+            <Banknote aria-hidden="true" className="mr-2 size-4" />
+            Efectivo
           </label>
           <label className="ui-button-secondary">
             <input className="mr-2" checked={metodoPago === "TRANSFERENCIA"} name="metodoPago" type="radio" value="TRANSFERENCIA" onChange={(event) => setMetodoPago(event.target.value)} />
-            🏦 Transferencia
+            <Landmark aria-hidden="true" className="mr-2 size-4" />
+            Transferencia
           </label>
         </fieldset>
       ) : null}
 
       <div>
-        <label className="ui-label" htmlFor="productoId">
-          Producto 📦
+        <label className="ui-label inline-flex items-center gap-1" htmlFor="productoId">
+          Producto <Package aria-hidden="true" className="size-4" />
         </label>
         <select className="ui-input mt-2" id="productoId" name="productoId" required value={productoId} onChange={(event) => setProductoId(event.target.value)}>
           <option value="">Selecciona producto</option>
@@ -73,7 +78,7 @@ export function CambioPendienteFields({ productos, defaultProductoId, defaultPie
 
       <div>
         <label className="ui-label" htmlFor="piezas">
-          Piezas 🔢
+          Piezas
         </label>
         <input className="ui-input mt-2" id="piezas" inputMode="numeric" min="1" name="piezas" placeholder="1" required type="number" value={piezas} onChange={(event) => setPiezas(Math.max(1, Number(event.target.value) || 1))} />
       </div>
@@ -82,7 +87,8 @@ export function CambioPendienteFields({ productos, defaultProductoId, defaultPie
         <fieldset className="grid gap-3 sm:grid-cols-[auto_1fr] sm:items-end">
           <label className="ui-button-secondary sm:mb-0">
             <input className="mr-2" checked={deboCambio} name="cambioPendiente" type="checkbox" onChange={(event) => setDeboCambio(event.target.checked)} />
-            💸 Debo cambio
+            <Wallet aria-hidden="true" className="mr-2 size-4" />
+            Debo cambio
           </label>
           <div>
             <label className="ui-label" htmlFor="montoRecibido">

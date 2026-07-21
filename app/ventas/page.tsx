@@ -2,6 +2,7 @@ import Link from "next/link";
 import { crearVenta } from "./actions";
 import { CambioPendienteFields } from "./CambioPendienteFields";
 import { DarCambioButton } from "./DarCambioButton";
+import { Home, Package, ReceiptText, Save, ShoppingBag } from "@/components/AppIcon";
 import { ClienteSearchField } from "@/components/ClienteSearchField";
 import { db } from "@/lib/db";
 
@@ -32,22 +33,22 @@ export default async function VentasPage({ searchParams }: { searchParams: Promi
   return (
     <main className="app-page">
       <header className="flex items-center gap-4 rounded-[2rem] bg-white p-4 shadow-sm">
-        <span className="grid size-14 shrink-0 place-items-center rounded-2xl bg-[var(--primary-soft)] text-3xl" aria-hidden="true">
-          🧾
+        <span className="grid size-14 shrink-0 place-items-center rounded-2xl bg-[var(--primary-soft)] text-[var(--primary)]" aria-hidden="true">
+          <ReceiptText className="size-7" />
         </span>
         <div className="min-w-0 flex-1">
           <p className="ui-label">Venta rapida</p>
           <h1 className="truncate text-3xl font-bold text-[var(--brand)]">Nueva venta</h1>
         </div>
         <Link className="grid size-11 place-items-center rounded-2xl bg-[var(--primary-soft)] text-xl text-[var(--primary)]" href="/" aria-label="Inicio" title="Inicio">
-          <span aria-hidden="true">🏠</span>
+          <Home aria-hidden="true" className="size-5" />
         </Link>
       </header>
 
       <form action={crearVenta} className="grid gap-4 rounded-[2rem] bg-white p-5 shadow-sm">
         <div>
           <p className="ui-label">Datos de la venta</p>
-          <h2 className="text-xl font-bold text-[var(--brand)]">¿Qué se vendió?</h2>
+          <h2 className="text-xl font-bold text-[var(--brand)]">Que se vendio?</h2>
         </div>
 
         <ClienteSearchField clientes={clientes} defaultClienteId={defaultClienteId} />
@@ -55,7 +56,7 @@ export default async function VentasPage({ searchParams }: { searchParams: Promi
         <CambioPendienteFields productos={productosOptions} defaultProductoId={defaultProductoId} defaultPiezas={defaultPiezas} />
 
         <button className="ui-button-primary gap-2" type="submit">
-          <span aria-hidden="true">✓</span>
+          <Save aria-hidden="true" className="size-5" />
           Guardar
         </button>
       </form>
@@ -63,7 +64,7 @@ export default async function VentasPage({ searchParams }: { searchParams: Promi
       <section className="grid gap-3" aria-label="Ultimas ventas">
         <div className="flex items-center justify-between">
           <h2 className="text-xl font-bold text-[var(--brand)]">Ultimas ventas</h2>
-          <span className="text-2xl" aria-hidden="true">🛍️</span>
+          <ShoppingBag className="size-6 text-[var(--primary)]" aria-hidden="true" />
         </div>
         {ventas.length === 0 ? (
           <p className="rounded-[1.75rem] bg-white p-4 text-[var(--text-muted)] shadow-sm">Todavia no hay ventas registradas.</p>
@@ -72,16 +73,16 @@ export default async function VentasPage({ searchParams }: { searchParams: Promi
             <article className="rounded-[1.75rem] bg-white p-4 shadow-sm" key={venta.id}>
               <div className="flex items-start justify-between gap-4">
                 <div className="flex min-w-0 gap-3">
-                  <span className="grid size-11 shrink-0 place-items-center rounded-2xl bg-[var(--primary-soft)] text-2xl" aria-hidden="true">
-                    📦
+                  <span className="grid size-11 shrink-0 place-items-center rounded-2xl bg-[var(--primary-soft)] text-[var(--primary)]" aria-hidden="true">
+                    <Package className="size-5" />
                   </span>
                   <div className="min-w-0">
-                  <h3 className="font-bold text-[var(--text-main)]">{venta.cliente.nombre}</h3>
-                  <p className="ui-label">
-                    {venta.detalles[0]
-                      ? `${venta.detalles[0].producto.nombre} x ${venta.detalles[0].cantidad}`
-                      : venta.observaciones || "Venta"}
-                  </p>
+                    <h3 className="font-bold text-[var(--text-main)]">{venta.cliente.nombre}</h3>
+                    <p className="ui-label">
+                      {venta.detalles[0]
+                        ? `${venta.detalles[0].producto.nombre} x ${venta.detalles[0].cantidad}`
+                        : venta.observaciones || "Venta"}
+                    </p>
                   </div>
                 </div>
                 <p className="rounded-full bg-[var(--primary-soft)] px-3 py-1 text-sm font-bold text-[var(--primary)]">

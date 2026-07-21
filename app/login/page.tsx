@@ -1,5 +1,6 @@
 import Image from "next/image";
 import { login } from "./actions";
+import { KeyRound, Store } from "@/components/AppIcon";
 import { getConfiguracion } from "@/lib/configuracion";
 
 export default async function LoginPage({ searchParams }: { searchParams: Promise<{ error?: string; next?: string }> }) {
@@ -14,9 +15,7 @@ export default async function LoginPage({ searchParams }: { searchParams: Promis
             {config.logoDataUrl ? (
               <Image alt={config.negocioNombre} className="size-20 object-cover" height={80} src={config.logoDataUrl} unoptimized width={80} />
             ) : (
-              <span className="text-4xl" aria-hidden="true">
-                🏪
-              </span>
+              <Store aria-hidden="true" className="size-9 text-[var(--primary)]" />
             )}
           </div>
           <div className="min-w-0">
@@ -44,7 +43,7 @@ export default async function LoginPage({ searchParams }: { searchParams: Promis
         </label>
 
         <button className="ui-button-primary gap-2" type="submit">
-          <span aria-hidden="true">🔑</span>
+          <KeyRound aria-hidden="true" className="size-5" />
           Entrar
         </button>
       </form>

@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { Banknote, CalendarDays, ChartNoAxesColumnIncreasing, CreditCard, Home, Package, ReceiptText, Search, TrendingUp, Trophy, Wallet } from "@/components/AppIcon";
 import { db } from "@/lib/db";
 
 export const dynamic = "force-dynamic";
@@ -115,51 +116,65 @@ export default async function ReportesPage({ searchParams }: { searchParams: Pro
   return (
     <main className="app-page">
       <header className="flex items-center gap-4 rounded-[2rem] bg-white p-4 shadow-sm">
-        <span className="grid size-14 shrink-0 place-items-center rounded-2xl bg-[var(--primary-soft)] text-3xl" aria-hidden="true">📊</span>
+        <span className="grid size-14 shrink-0 place-items-center rounded-2xl bg-[var(--primary-soft)] text-[var(--primary)]" aria-hidden="true">
+          <ChartNoAxesColumnIncreasing className="size-7" />
+        </span>
         <div className="min-w-0 flex-1">
           <p className="ui-label">Reportes</p>
-          <h1 className="truncate text-3xl font-bold text-[var(--brand)]">Analisis</h1>
+          <h1 className="truncate text-3xl font-bold text-[var(--brand)]">Análisis</h1>
         </div>
         <Link className="grid size-11 place-items-center rounded-2xl bg-[var(--primary-soft)] text-xl text-[var(--primary)]" href="/" aria-label="Inicio" title="Inicio">
-          <span aria-hidden="true">🏠</span>
+          <Home aria-hidden="true" className="size-5" />
         </Link>
       </header>
 
       <form className="grid gap-4 rounded-[2rem] bg-white p-5 shadow-sm sm:grid-cols-[1fr_1fr_auto]" action="/reportes">
         <div>
-          <label className="ui-label" htmlFor="desde">
-            Desde 📅
+          <label className="ui-label inline-flex items-center gap-1" htmlFor="desde">
+            Desde <CalendarDays aria-hidden="true" className="size-4" />
           </label>
           <input className="ui-input mt-2" defaultValue={dateInput(since)} id="desde" name="desde" type="date" />
         </div>
         <div>
-          <label className="ui-label" htmlFor="hasta">
-            Hasta 📅
+          <label className="ui-label inline-flex items-center gap-1" htmlFor="hasta">
+            Hasta <CalendarDays aria-hidden="true" className="size-4" />
           </label>
           <input className="ui-input mt-2" defaultValue={dateInput(until)} id="hasta" name="hasta" type="date" />
         </div>
-        <button className="ui-button-primary self-end px-5" type="submit">
-          🔎 Aplicar
+        <button className="ui-button-primary self-end gap-2 px-5" type="submit">
+          <Search aria-hidden="true" className="size-5" />
+          Aplicar
         </button>
       </form>
 
       <section className="grid grid-cols-2 gap-3" aria-label="Resumen">
-        {[
-          ["🧾", "Ventas", money.format(totalVentas)],
-          ["💵", "Cobrado", money.format(cobrado)],
-          ["📒", "Por cobrar", money.format(porCobrar)],
-          ["📈", "Utilidad", money.format(utilidad)]
-        ].map(([icon, label, value]) => (
-          <article className="rounded-[1.75rem] bg-white p-4 shadow-sm" key={label}>
-            <span className="text-2xl" aria-hidden="true">{icon}</span>
-            <p className="ui-label">{label}</p>
-            <p className="mt-2 text-2xl font-bold text-[var(--brand)]">{value}</p>
-          </article>
-        ))}
+        <article className="rounded-[1.75rem] bg-white p-4 shadow-sm">
+          <ReceiptText aria-hidden="true" className="size-6 text-[var(--primary)]" />
+          <p className="ui-label">Ventas</p>
+          <p className="mt-2 text-2xl font-bold text-[var(--brand)]">{money.format(totalVentas)}</p>
+        </article>
+        <article className="rounded-[1.75rem] bg-white p-4 shadow-sm">
+          <Banknote aria-hidden="true" className="size-6 text-[var(--primary)]" />
+          <p className="ui-label">Cobrado</p>
+          <p className="mt-2 text-2xl font-bold text-[var(--brand)]">{money.format(cobrado)}</p>
+        </article>
+        <article className="rounded-[1.75rem] bg-white p-4 shadow-sm">
+          <Wallet aria-hidden="true" className="size-6 text-[var(--primary)]" />
+          <p className="ui-label">Por cobrar</p>
+          <p className="mt-2 text-2xl font-bold text-[var(--brand)]">{money.format(porCobrar)}</p>
+        </article>
+        <article className="rounded-[1.75rem] bg-white p-4 shadow-sm">
+          <TrendingUp aria-hidden="true" className="size-6 text-[var(--primary)]" />
+          <p className="ui-label">Utilidad</p>
+          <p className="mt-2 text-2xl font-bold text-[var(--brand)]">{money.format(utilidad)}</p>
+        </article>
       </section>
 
       <section className="grid gap-3 rounded-[1.75rem] bg-white p-4 shadow-sm">
-        <h2 className="text-xl font-bold text-[var(--brand)]">📅 Ventas por dia</h2>
+        <h2 className="inline-flex items-center gap-2 text-xl font-bold text-[var(--brand)]">
+          <CalendarDays aria-hidden="true" className="size-5 text-[var(--primary)]" />
+          Ventas por día
+        </h2>
         {ventasPorDia.length === 0 ? (
           <p className="ui-label">No hubo ventas en este rango.</p>
         ) : (
@@ -178,15 +193,20 @@ export default async function ReportesPage({ searchParams }: { searchParams: Pro
       </section>
 
       <section className="grid gap-3 rounded-[1.75rem] bg-white p-4 shadow-sm">
-        <h2 className="text-xl font-bold text-[var(--brand)]">🏆 Top 3 clientes</h2>
+        <h2 className="inline-flex items-center gap-2 text-xl font-bold text-[var(--brand)]">
+          <Trophy aria-hidden="true" className="size-5 text-[var(--primary)]" />
+          Top 3 clientes
+        </h2>
         {topClientes.length === 0 ? (
-          <p className="ui-label">Todavia no hay ventas en este rango.</p>
+          <p className="ui-label">Todavía no hay ventas en este rango.</p>
         ) : (
           topClientes.map((cliente, index) => (
             <div className="grid gap-1" key={cliente.nombre}>
               <div className="flex items-start justify-between gap-3 text-sm">
                 <span>
-                  <strong className="text-[var(--text-main)]">{index + 1}. {cliente.nombre}</strong>
+                  <strong className="text-[var(--text-main)]">
+                    {index + 1}. {cliente.nombre}
+                  </strong>
                   <span className="ui-label block">{cliente.compras} compras · ticket promedio {money.format(cliente.promedio)}</span>
                 </span>
                 <strong>{money.format(cliente.total)}</strong>
@@ -201,14 +221,19 @@ export default async function ReportesPage({ searchParams }: { searchParams: Pro
 
       <section className="grid gap-3 md:grid-cols-2">
         <article className="grid gap-3 rounded-[1.75rem] bg-white p-4 shadow-sm">
-          <h2 className="text-xl font-bold text-[var(--brand)]">📦 Mejores productos</h2>
+          <h2 className="inline-flex items-center gap-2 text-xl font-bold text-[var(--brand)]">
+            <Package aria-hidden="true" className="size-5 text-[var(--primary)]" />
+            Mejores productos
+          </h2>
           {topProductos.length === 0 ? (
-            <p className="ui-label">Todavia no hay ventas.</p>
+            <p className="ui-label">Todavía no hay ventas.</p>
           ) : (
             topProductos.map((item) => (
               <div className="grid gap-1" key={item.nombre}>
                 <div className="flex justify-between gap-3 text-sm">
-                  <span>{item.nombre} x {item.piezas}</span>
+                  <span>
+                    {item.nombre} x {item.piezas}
+                  </span>
                   <strong>{money.format(item.total)}</strong>
                 </div>
                 <div className="h-3 rounded-full bg-[var(--primary-soft)]">
@@ -220,7 +245,10 @@ export default async function ReportesPage({ searchParams }: { searchParams: Pro
         </article>
 
         <article className="grid gap-3 rounded-[1.75rem] bg-white p-4 shadow-sm">
-          <h2 className="text-xl font-bold text-[var(--brand)]">💳 Forma de pago</h2>
+          <h2 className="inline-flex items-center gap-2 text-xl font-bold text-[var(--brand)]">
+            <CreditCard aria-hidden="true" className="size-5 text-[var(--primary)]" />
+            Forma de pago
+          </h2>
           {pagosPorMetodo.map((item) => (
             <div className="grid gap-1" key={item.metodo}>
               <div className="flex justify-between text-sm">
@@ -236,7 +264,10 @@ export default async function ReportesPage({ searchParams }: { searchParams: Pro
       </section>
 
       <section className="grid gap-3 rounded-[1.75rem] bg-white p-4 shadow-sm">
-        <h2 className="text-xl font-bold text-[var(--brand)]">💰 Clientes con deuda</h2>
+        <h2 className="inline-flex items-center gap-2 text-xl font-bold text-[var(--brand)]">
+          <Wallet aria-hidden="true" className="size-5 text-[var(--primary)]" />
+          Clientes con deuda
+        </h2>
         {listaDeudores.length === 0 ? (
           <p className="ui-label">No hay clientes con deuda pendiente.</p>
         ) : (

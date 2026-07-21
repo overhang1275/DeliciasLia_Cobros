@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { ChartNoAxesColumnIncreasing, FileText, Home, Pencil, Phone, Save, Search, User, Users } from "@/components/AppIcon";
 import { crearCliente } from "./actions";
 import { Pagination } from "@/components/Pagination";
 import { db } from "@/lib/db";
@@ -54,13 +55,15 @@ export default async function ClientesPage({ searchParams }: { searchParams: Pro
   return (
     <main className="app-page">
       <header className="flex items-center gap-4 rounded-[2rem] bg-white p-4 shadow-sm">
-        <span className="grid size-14 shrink-0 place-items-center rounded-2xl bg-[var(--primary-soft)] text-3xl" aria-hidden="true">👥</span>
+        <span className="grid size-14 shrink-0 place-items-center rounded-2xl bg-[var(--primary-soft)] text-[var(--primary)]" aria-hidden="true">
+          <Users className="size-7" />
+        </span>
         <div className="min-w-0 flex-1">
           <p className="ui-label">Personas</p>
           <h1 className="truncate text-3xl font-bold text-[var(--brand)]">Clientes</h1>
         </div>
         <Link className="grid size-11 place-items-center rounded-2xl bg-[var(--primary-soft)] text-xl text-[var(--primary)]" href="/" aria-label="Inicio" title="Inicio">
-          <span aria-hidden="true">🏠</span>
+          <Home aria-hidden="true" className="size-5" />
         </Link>
       </header>
 
@@ -70,28 +73,28 @@ export default async function ClientesPage({ searchParams }: { searchParams: Pro
           <h2 className="text-xl font-bold text-[var(--brand)]">Datos de contacto</h2>
         </div>
         <div>
-          <label className="ui-label" htmlFor="nombre">
-            Nombre 👤
+          <label className="ui-label inline-flex items-center gap-1" htmlFor="nombre">
+            Nombre <User aria-hidden="true" className="size-4" />
           </label>
           <input className="ui-input mt-2" id="nombre" name="nombre" required minLength={2} />
         </div>
 
         <div>
-          <label className="ui-label" htmlFor="telefono">
-            Telefono 📱
+          <label className="ui-label inline-flex items-center gap-1" htmlFor="telefono">
+            Telefono <Phone aria-hidden="true" className="size-4" />
           </label>
           <input className="ui-input mt-2" id="telefono" name="telefono" inputMode="tel" />
         </div>
 
         <div>
           <label className="ui-label" htmlFor="notas">
-            Notas 📝
+            Notas
           </label>
           <textarea className="ui-input mt-2 min-h-24 py-4" id="notas" name="notas" />
         </div>
 
         <button className="ui-button-primary gap-2" type="submit">
-          <span aria-hidden="true">✓</span>
+          <Save aria-hidden="true" className="size-5" />
           Guardar
         </button>
       </form>
@@ -99,12 +102,12 @@ export default async function ClientesPage({ searchParams }: { searchParams: Pro
       <section className="grid gap-3" aria-label="Lista de clientes">
         <div className="flex items-center justify-between">
           <h2 className="text-xl font-bold text-[var(--brand)]">Clientes activos</h2>
-          <span className="text-2xl" aria-hidden="true">📇</span>
+          <Users className="size-6 text-[var(--primary)]" aria-hidden="true" />
         </div>
         <form className="flex gap-3 rounded-[1.75rem] bg-white p-3 shadow-sm" action="/clientes">
           <input className="ui-input" defaultValue={q} name="q" placeholder="Buscar cliente" />
           <button className="ui-button-secondary min-h-14 px-4" type="submit" aria-label="Filtrar" title="Filtrar">
-            🔎
+            <Search aria-hidden="true" className="size-5" />
           </button>
         </form>
         {clientes.length === 0 ? (
@@ -115,7 +118,9 @@ export default async function ClientesPage({ searchParams }: { searchParams: Pro
               <article className="relative rounded-[1.75rem] bg-white p-4 pb-14 shadow-sm" key={cliente.id}>
                 <div className="flex items-start justify-between gap-4">
                   <div className="flex min-w-0 gap-3">
-                    <span className="grid size-11 shrink-0 place-items-center rounded-2xl bg-[var(--primary-soft)] text-2xl" aria-hidden="true">👤</span>
+                    <span className="grid size-11 shrink-0 place-items-center rounded-2xl bg-[var(--primary-soft)] text-[var(--primary)]" aria-hidden="true">
+                      <User className="size-5" />
+                    </span>
                     <div className="min-w-0">
                       <h3 className="truncate font-bold text-[var(--text-main)]">{cliente.nombre}</h3>
                       <p className="ui-label">{cliente.telefono || "Sin telefono"}</p>
@@ -142,10 +147,7 @@ export default async function ClientesPage({ searchParams }: { searchParams: Pro
                   href={`/clientes/${cliente.id}/historial`}
                   title="Historial"
                 >
-                  <svg aria-hidden="true" className="size-5" fill="none" stroke="currentColor" strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" viewBox="0 0 24 24">
-                    <path d="M3 3v18h18" />
-                    <path d="m7 14 4-4 3 3 5-6" />
-                  </svg>
+                  <ChartNoAxesColumnIncreasing aria-hidden="true" className="size-5" />
                 </Link>
                 <Link
                   aria-label={`Estado de cuenta de ${cliente.nombre}`}
@@ -153,14 +155,7 @@ export default async function ClientesPage({ searchParams }: { searchParams: Pro
                   href={cliente.estadoToken ? `/estado/${cliente.estadoToken}` : `/clientes/${cliente.id}/estado`}
                   title="Estado de cuenta"
                 >
-                  <svg aria-hidden="true" className="size-5" fill="none" stroke="currentColor" strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" viewBox="0 0 24 24">
-                    <path d="M8 6h13" />
-                    <path d="M8 12h13" />
-                    <path d="M8 18h13" />
-                    <path d="M3 6h.01" />
-                    <path d="M3 12h.01" />
-                    <path d="M3 18h.01" />
-                  </svg>
+                  <FileText aria-hidden="true" className="size-5" />
                 </Link>
                 <Link
                   aria-label={`Editar ${cliente.nombre}`}
@@ -168,10 +163,7 @@ export default async function ClientesPage({ searchParams }: { searchParams: Pro
                   href={`/clientes/${cliente.id}/editar`}
                   title="Editar"
                 >
-                  <svg aria-hidden="true" className="size-5" fill="none" stroke="currentColor" strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" viewBox="0 0 24 24">
-                    <path d="M12 20h9" />
-                    <path d="m16.5 3.5 4 4L7 21H3v-4L16.5 3.5z" />
-                  </svg>
+                  <Pencil aria-hidden="true" className="size-5" />
                 </Link>
               </article>
             );
