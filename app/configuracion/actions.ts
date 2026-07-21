@@ -6,6 +6,8 @@ import { db } from "@/lib/db";
 
 export async function guardarConfiguracion(formData: FormData) {
   const logo = formData.get("logo");
+  const tema = String(formData.get("tema") || "system");
+  const temaGuardado = ["system", "light", "dark"].includes(tema) ? tema : "system";
   let logoDataUrl: string | undefined;
 
   if (logo instanceof File && logo.size > 0) {
@@ -18,6 +20,7 @@ export async function guardarConfiguracion(formData: FormData) {
     create: {
       id: 1,
       negocioNombre: String(formData.get("negocioNombre") || "Delicias Lia"),
+      tema: temaGuardado,
       banco: String(formData.get("banco") || ""),
       titular: String(formData.get("titular") || ""),
       clabe: String(formData.get("clabe") || ""),
@@ -26,6 +29,7 @@ export async function guardarConfiguracion(formData: FormData) {
     },
     update: {
       negocioNombre: String(formData.get("negocioNombre") || "Delicias Lia"),
+      tema: temaGuardado,
       banco: String(formData.get("banco") || ""),
       titular: String(formData.get("titular") || ""),
       clabe: String(formData.get("clabe") || ""),

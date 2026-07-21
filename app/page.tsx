@@ -80,7 +80,7 @@ export default async function HomePage() {
 
       <section className="grid gap-3 sm:grid-cols-2" aria-label="Para atender ahora">
         {metrics.map(([Icon, label, value, hint], index) => (
-          <article className={index < 2 ? "rounded-[1.75rem] border border-red-100 bg-red-50/60 p-4 shadow-sm" : "rounded-[1.75rem] bg-white p-4 shadow-sm"} key={label}>
+          <article className={index < 2 ? "rounded-[1.75rem] border border-red-100 bg-red-50 p-4 shadow-sm" : "rounded-[1.75rem] bg-white p-4 shadow-sm"} key={label}>
             <div className="flex items-center gap-3">
               <span className="grid size-11 shrink-0 place-items-center rounded-2xl bg-[var(--primary-soft)] text-[var(--primary)]" aria-hidden="true">
                 <Icon className="size-6" />

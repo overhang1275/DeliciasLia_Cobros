@@ -48,6 +48,17 @@ export default async function ConfiguracionPage() {
         </div>
 
         <div>
+          <label className="ui-label" htmlFor="tema">
+            Apariencia
+          </label>
+          <select className="ui-input mt-2" defaultValue={config.tema} id="tema" name="tema">
+            <option value="system">Default del sistema</option>
+            <option value="light">Claro</option>
+            <option value="dark">Oscuro</option>
+          </select>
+        </div>
+
+        <div>
           <label className="ui-label inline-flex items-center gap-1" htmlFor="banco">
             Banco <Landmark aria-hidden="true" className="size-4" />
           </label>

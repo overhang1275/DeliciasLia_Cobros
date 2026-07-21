@@ -28,17 +28,22 @@ export async function generateMetadata(): Promise<Metadata> {
 }
 
 export const viewport: Viewport = {
-  themeColor: "#faf9f6",
+  themeColor: [
+    { media: "(prefers-color-scheme: light)", color: "#faf9f6" },
+    { media: "(prefers-color-scheme: dark)", color: "#121212" }
+  ],
   width: "device-width",
   initialScale: 1,
   maximumScale: 1
 };
 
 export default async function RootLayout({ children }: Readonly<{ children: ReactNode }>) {
-  const hasSession = await isValidSessionToken((await cookies()).get(SESSION_COOKIE)?.value);
+  const [cookieStore, config] = await Promise.all([cookies(), getConfiguracion()]);
+  const hasSession = await isValidSessionToken(cookieStore.get(SESSION_COOKIE)?.value);
+  const tema = ["system", "light", "dark"].includes(config.tema) ? config.tema : "system";
 
   return (
-    <html lang="es">
+    <html lang="es" data-theme={tema}>
       <body>
         <RouteMotion>{children}</RouteMotion>
         {hasSession ? <BottomNavigation /> : null}
