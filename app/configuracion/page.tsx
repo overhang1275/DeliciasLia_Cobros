@@ -1,5 +1,6 @@
 import Link from "next/link";
 import Image from "next/image";
+import { ConfigAccordionItem } from "./ConfigAccordionItem";
 import { guardarConfiguracion } from "./actions";
 import { CreditCard, Hash, Home, ImageIcon, Landmark, Save, Settings, Store, Tags, User } from "@/components/AppIcon";
 import { getConfiguracion } from "@/lib/configuracion";
@@ -24,67 +25,73 @@ export default async function ConfiguracionPage() {
         </Link>
       </header>
 
-      <form action={guardarConfiguracion} className="grid gap-4 rounded-[2rem] bg-white p-5 shadow-sm">
-        <div className="flex items-center gap-4">
-          {config.logoDataUrl ? <Image alt="Logo del negocio" className="size-20 rounded-3xl object-cover" height={80} src={config.logoDataUrl} unoptimized width={80} /> : <span className="grid size-20 place-items-center rounded-3xl bg-[var(--primary-soft)] text-[var(--primary)]"><Store className="size-9" /></span>}
-          <div>
-            <p className="ui-label">Identidad</p>
-            <h2 className="text-xl font-bold text-[var(--brand)]">Tu negocio</h2>
+      <form action={guardarConfiguracion} className="grid gap-4">
+        <ConfigAccordionItem defaultOpen description="Logo y nombre que vera la app." title="Identidad del negocio">
+          <div className="flex items-center gap-4">
+            {config.logoDataUrl ? <Image alt="Logo del negocio" className="size-20 rounded-3xl object-cover" height={80} src={config.logoDataUrl} unoptimized width={80} /> : <span className="grid size-20 place-items-center rounded-3xl bg-[var(--primary-soft)] text-[var(--primary)]"><Store className="size-9" /></span>}
+            <div>
+              <p className="ui-label">Identidad</p>
+              <h3 className="text-xl font-bold text-[var(--brand)]">Tu negocio</h3>
+            </div>
           </div>
-        </div>
 
-        <div>
-          <label className="ui-label inline-flex items-center gap-1" htmlFor="logo">
-            Logo <ImageIcon aria-hidden="true" className="size-4" />
-          </label>
-          <input className="ui-input mt-2 py-4" id="logo" name="logo" type="file" accept="image/*" />
-        </div>
+          <div>
+            <label className="ui-label inline-flex items-center gap-1" htmlFor="logo">
+              Logo <ImageIcon aria-hidden="true" className="size-4" />
+            </label>
+            <input className="ui-input mt-2 py-4" id="logo" name="logo" type="file" accept="image/*" />
+          </div>
 
-        <div>
-          <label className="ui-label inline-flex items-center gap-1" htmlFor="negocioNombre">
-            Nombre del negocio <Tags aria-hidden="true" className="size-4" />
-          </label>
-          <input className="ui-input mt-2" defaultValue={config.negocioNombre} id="negocioNombre" name="negocioNombre" required />
-        </div>
+          <div>
+            <label className="ui-label inline-flex items-center gap-1" htmlFor="negocioNombre">
+              Nombre del negocio <Tags aria-hidden="true" className="size-4" />
+            </label>
+            <input className="ui-input mt-2" defaultValue={config.negocioNombre} id="negocioNombre" name="negocioNombre" required />
+          </div>
+        </ConfigAccordionItem>
 
-        <div>
-          <label className="ui-label" htmlFor="tema">
-            Apariencia
-          </label>
-          <select className="ui-input mt-2" defaultValue={config.tema} id="tema" name="tema">
-            <option value="system">Default del sistema</option>
-            <option value="light">Claro</option>
-            <option value="dark">Oscuro</option>
-          </select>
-        </div>
+        <ConfigAccordionItem description="Claro, oscuro o automatico segun el sistema." title="Apariencia">
+          <div>
+            <label className="ui-label" htmlFor="tema">
+              Tema
+            </label>
+            <select className="ui-input mt-2" defaultValue={config.tema} id="tema" name="tema">
+              <option value="system">Default del sistema</option>
+              <option value="light">Claro</option>
+              <option value="dark">Oscuro</option>
+            </select>
+          </div>
+        </ConfigAccordionItem>
 
-        <div>
-          <label className="ui-label inline-flex items-center gap-1" htmlFor="banco">
-            Banco <Landmark aria-hidden="true" className="size-4" />
-          </label>
-          <input className="ui-input mt-2" defaultValue={config.banco} id="banco" name="banco" required />
-        </div>
+        <ConfigAccordionItem description="Cuenta que se muestra en estados de cuenta." title="Datos para deposito">
+          <div>
+            <label className="ui-label inline-flex items-center gap-1" htmlFor="banco">
+              Banco <Landmark aria-hidden="true" className="size-4" />
+            </label>
+            <input className="ui-input mt-2" defaultValue={config.banco} id="banco" name="banco" required />
+          </div>
 
-        <div>
-          <label className="ui-label inline-flex items-center gap-1" htmlFor="titular">
-            A nombre de <User aria-hidden="true" className="size-4" />
-          </label>
-          <input className="ui-input mt-2" defaultValue={config.titular} id="titular" name="titular" required />
-        </div>
+          <div>
+            <label className="ui-label inline-flex items-center gap-1" htmlFor="titular">
+              A nombre de <User aria-hidden="true" className="size-4" />
+            </label>
+            <input className="ui-input mt-2" defaultValue={config.titular} id="titular" name="titular" required />
+          </div>
 
-        <div>
-          <label className="ui-label inline-flex items-center gap-1" htmlFor="clabe">
-            CLABE <Hash aria-hidden="true" className="size-4" />
-          </label>
-          <input className="ui-input mt-2" defaultValue={config.clabe} id="clabe" name="clabe" required />
-        </div>
+          <div>
+            <label className="ui-label inline-flex items-center gap-1" htmlFor="clabe">
+              CLABE <Hash aria-hidden="true" className="size-4" />
+            </label>
+            <input className="ui-input mt-2" defaultValue={config.clabe} id="clabe" name="clabe" required />
+          </div>
 
-        <div>
-          <label className="ui-label inline-flex items-center gap-1" htmlFor="cuenta">
-            Numero de cuenta <CreditCard aria-hidden="true" className="size-4" />
-          </label>
-          <input className="ui-input mt-2" defaultValue={config.cuenta} id="cuenta" name="cuenta" required />
-        </div>
+          <div>
+            <label className="ui-label inline-flex items-center gap-1" htmlFor="cuenta">
+              Numero de cuenta <CreditCard aria-hidden="true" className="size-4" />
+            </label>
+            <input className="ui-input mt-2" defaultValue={config.cuenta} id="cuenta" name="cuenta" required />
+          </div>
+        </ConfigAccordionItem>
 
         <button className="ui-button-primary gap-2" type="submit">
           <Save aria-hidden="true" className="size-5" />
