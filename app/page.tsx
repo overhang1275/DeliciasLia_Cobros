@@ -50,13 +50,20 @@ export default async function HomePage() {
 
   const metrics: [LucideIcon, string, string, string][] = [
     [HandCoins, "Crédito por cobrar", money.format(porCobrar), "Dinero pendiente por cobrar"],
-    [Wallet, "Cambios que debo", money.format(Number(cambiosPendientes._sum.cambioMonto || 0)), "Cambio pendiente por entregar"],
-    [Users, "Clientes activos", clientes.toString(), "Personas registradas"],
-    [Package, "Productos", productos.toString(), "Artículos en catálogo"]
+    [Wallet, "Cambios que debo", money.format(Number(cambiosPendientes._sum.cambioMonto || 0)), "Cambio pendiente por entregar"]
+  ];
+  const resumenCatalogo: [LucideIcon, string, string][] = [
+    [Users, "Clientes activos", clientes.toString()],
+    [Package, "Productos", productos.toString()]
   ];
   const quickLinks: [LucideIcon, string, string, string][] = [
     [ReceiptText, "Créditos", "Cobros pendientes", "/fiados"],
     [User, "Clientes", "Alta y consulta", "/clientes"]
+  ];
+  const ventasHoy: [LucideIcon, string, string][] = [
+    [Package, "Piezas vendidas", String(piezasHoy._sum.cantidad || 0)],
+    [HandCoins, "Cobrado", money.format(Number(cobradoHoy._sum.monto || 0))],
+    [ReceiptText, "Crédito", money.format(Number(creditoHoy._sum.total || 0))]
   ];
 
   return (
@@ -97,8 +104,8 @@ export default async function HomePage() {
       </section>
 
       <section className="grid gap-3 sm:grid-cols-2" aria-label="Para atender ahora">
-        {metrics.map(([Icon, label, value, hint], index) => (
-          <article className={index < 2 ? "rounded-[1.75rem] border border-red-100 bg-red-50 p-4 shadow-sm" : "rounded-[1.75rem] bg-white p-4 shadow-sm"} key={label}>
+        {metrics.map(([Icon, label, value, hint]) => (
+          <article className="rounded-[1.75rem] border border-red-100 bg-red-50 p-4 shadow-sm" key={label}>
             <div className="flex items-center gap-3">
               <span className="grid size-11 shrink-0 place-items-center rounded-2xl bg-[var(--primary-soft)] text-[var(--primary)]" aria-hidden="true">
                 <Icon className="size-6" />
@@ -113,16 +120,28 @@ export default async function HomePage() {
         ))}
       </section>
 
-      <ConfigAccordionItem defaultOpen description="Resumen del día en curso." title="Ventas de Hoy">
+      <section className="grid grid-cols-2 gap-3 rounded-[1.75rem] bg-white p-3 shadow-sm" aria-label="Resumen de catálogo">
+        {resumenCatalogo.map(([Icon, label, value]) => (
+          <div className="flex items-center gap-3 rounded-[1.25rem] bg-[var(--app-bg)] p-3" key={label}>
+            <span className="grid size-10 shrink-0 place-items-center rounded-2xl bg-[var(--primary-soft)] text-[var(--primary)]" aria-hidden="true">
+              <Icon className="size-5" />
+            </span>
+            <div className="min-w-0">
+              <p className="truncate text-sm text-[var(--text-muted)]">{label}</p>
+              <p className="text-lg font-bold text-[var(--brand)]">{value}</p>
+            </div>
+          </div>
+        ))}
+      </section>
+
+      <ConfigAccordionItem defaultOpen description="Resumen del día en curso." title="Ventas de hoy">
         <div className="grid gap-3">
-          {[
-            ["🧁", "Piezas vendidas", String(piezasHoy._sum.cantidad || 0)],
-            ["💰", "Cobrado", money.format(Number(cobradoHoy._sum.monto || 0))],
-            ["📝", "Fiado", money.format(Number(creditoHoy._sum.total || 0))]
-          ].map(([emoji, label, value]) => (
-            <div className="flex items-center justify-between gap-4 rounded-[1.5rem] bg-[var(--app-bg)] p-4" key={label}>
+          {ventasHoy.map(([Icon, label, value]) => (
+            <div className="flex items-center justify-between gap-4 rounded-[1.5rem] bg-[var(--app-bg)] p-4 shadow-sm" key={label}>
               <div className="flex min-w-0 items-center gap-3">
-                <span className="text-2xl" aria-hidden="true">{emoji}</span>
+                <span className="grid size-11 shrink-0 place-items-center rounded-2xl bg-[var(--primary-soft)] text-[var(--primary)]" aria-hidden="true">
+                  <Icon className="size-6" />
+                </span>
                 <p className="font-bold text-[var(--text-main)]">{label}</p>
               </div>
               <p className="shrink-0 text-xl font-bold text-[var(--brand)]">{value}</p>
