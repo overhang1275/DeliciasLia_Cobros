@@ -127,7 +127,7 @@ export default async function HistorialClientePage({ params }: { params: Promise
           <p className="ui-label">Historial de cliente</p>
           <h1 className="truncate text-3xl font-bold text-[var(--brand)]">{cliente.nombre}</h1>
         </div>
-        <Link className="grid size-11 place-items-center rounded-2xl bg-[var(--primary-soft)] text-xl text-[var(--primary)]" href="/clientes" aria-label="Volver" title="Volver">
+        <Link className="ui-icon-button" href="/clientes" aria-label="Volver" title="Volver">
           <ArrowLeft aria-hidden="true" className="size-5" />
         </Link>
       </header>
@@ -171,7 +171,7 @@ export default async function HistorialClientePage({ params }: { params: Promise
               </div>
               {movimiento.pendiente > 0 ? (
                 <div className="mt-3 flex justify-end">
-                  <Link className="ui-button-secondary min-h-10 gap-2 px-4 text-sm" href={`/fiados/${movimiento.ventaId}/pago`}>
+                  <Link className="ui-button-compact gap-2" href={`/fiados/${movimiento.ventaId}/pago`}>
                     <Banknote aria-hidden="true" className="size-4" />
                     Registrar pago
                   </Link>

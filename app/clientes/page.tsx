@@ -2,12 +2,13 @@ import Link from "next/link";
 import { ChartNoAxesColumnIncreasing, FileText, Home, Pencil, Phone, Save, Search, User, Users } from "@/components/AppIcon";
 import { crearCliente } from "./actions";
 import { Pagination } from "@/components/Pagination";
+import { SuccessNotice } from "@/components/SuccessNotice";
 import { db } from "@/lib/db";
 
 export const dynamic = "force-dynamic";
 const pageSize = 6;
 
-export default async function ClientesPage({ searchParams }: { searchParams: Promise<{ page?: string; q?: string }> }) {
+export default async function ClientesPage({ searchParams }: { searchParams: Promise<{ guardado?: string; page?: string; q?: string }> }) {
   const params = await searchParams;
   const q = (params.q || "").trim();
   const page = Math.max(1, Number(params.page) || 1);
@@ -62,10 +63,12 @@ export default async function ClientesPage({ searchParams }: { searchParams: Pro
           <p className="ui-label">Personas</p>
           <h1 className="truncate text-3xl font-bold text-[var(--brand)]">Clientes</h1>
         </div>
-        <Link className="grid size-11 place-items-center rounded-2xl bg-[var(--primary-soft)] text-xl text-[var(--primary)]" href="/" aria-label="Inicio" title="Inicio">
+        <Link className="ui-icon-button" href="/" aria-label="Inicio" title="Inicio">
           <Home aria-hidden="true" className="size-5" />
         </Link>
       </header>
+
+      {params.guardado === "cliente" ? <SuccessNotice>Cliente guardado correctamente.</SuccessNotice> : null}
 
       <form action={crearCliente} className="grid gap-4 rounded-[2rem] bg-white p-5 shadow-sm">
         <div>
@@ -143,7 +146,7 @@ export default async function ClientesPage({ searchParams }: { searchParams: Pro
                 {cliente.notas ? <p className="mt-3 text-sm text-[var(--text-muted)]">{cliente.notas}</p> : null}
                 <Link
                   aria-label={`Historial de ${cliente.nombre}`}
-                  className="absolute bottom-4 right-28 grid size-10 place-items-center rounded-full bg-[var(--primary-soft)] text-[var(--primary)] transition hover:bg-[var(--primary)] hover:text-white focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--primary)] active:scale-95"
+                  className="ui-icon-button absolute bottom-4 right-28 size-10 rounded-full"
                   href={`/clientes/${cliente.id}/historial`}
                   title="Historial"
                 >
@@ -151,7 +154,7 @@ export default async function ClientesPage({ searchParams }: { searchParams: Pro
                 </Link>
                 <Link
                   aria-label={`Estado de cuenta de ${cliente.nombre}`}
-                  className="absolute bottom-4 right-16 grid size-10 place-items-center rounded-full bg-[var(--primary-soft)] text-[var(--primary)] transition hover:bg-[var(--primary)] hover:text-white focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--primary)] active:scale-95"
+                  className="ui-icon-button absolute bottom-4 right-16 size-10 rounded-full"
                   href={cliente.estadoToken ? `/estado/${cliente.estadoToken}` : `/clientes/${cliente.id}/estado`}
                   title="Estado de cuenta"
                 >
@@ -159,7 +162,7 @@ export default async function ClientesPage({ searchParams }: { searchParams: Pro
                 </Link>
                 <Link
                   aria-label={`Editar ${cliente.nombre}`}
-                  className="absolute bottom-4 right-4 grid size-10 place-items-center rounded-full bg-[var(--primary-soft)] text-[var(--primary)] transition hover:bg-[var(--primary)] hover:text-white focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--primary)] active:scale-95"
+                  className="ui-icon-button absolute bottom-4 right-4 size-10 rounded-full"
                   href={`/clientes/${cliente.id}/editar`}
                   title="Editar"
                 >

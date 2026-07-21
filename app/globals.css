@@ -11,6 +11,8 @@
   --text-muted: #70757a;
   --primary: #087f80;
   --primary-soft: #d8e8e5;
+  --danger: #b42318;
+  --danger-soft: #fee4e2;
   --brand: #4b2e2a;
   background: var(--app-bg);
   color: var(--text-main);
@@ -25,6 +27,8 @@
   --text-muted: #a1a1aa;
   --primary: #5cc4bd;
   --primary-soft: #173936;
+  --danger: #fca5a5;
+  --danger-soft: #451a1a;
   --brand: #f2d8cf;
 }
 
@@ -38,6 +42,8 @@
     --text-muted: #a1a1aa;
     --primary: #5cc4bd;
     --primary-soft: #173936;
+    --danger: #fca5a5;
+    --danger-soft: #451a1a;
     --brand: #f2d8cf;
   }
 }
@@ -92,14 +98,52 @@ textarea {
   }
 
   .ui-button-primary {
-    @apply inline-flex min-h-14 items-center justify-center rounded-2xl px-5 font-bold text-white;
+    @apply inline-flex min-h-14 items-center justify-center rounded-2xl px-5 font-bold text-white transition duration-150;
     background: var(--primary);
   }
 
   .ui-button-secondary {
-    @apply inline-flex min-h-14 items-center justify-center rounded-2xl px-5 font-bold;
+    @apply inline-flex min-h-14 items-center justify-center rounded-2xl px-5 font-bold transition duration-150;
     background: var(--primary-soft);
     color: var(--primary);
+  }
+
+  .ui-button-compact {
+    @apply inline-flex min-h-10 items-center justify-center rounded-full px-4 text-sm font-bold transition duration-150;
+    background: var(--primary-soft);
+    color: var(--primary);
+  }
+
+  .ui-button-danger {
+    @apply inline-flex min-h-10 items-center justify-center rounded-full px-4 text-sm font-bold transition duration-150;
+    background: var(--danger-soft);
+    color: var(--danger);
+  }
+
+  .ui-icon-button {
+    @apply grid size-11 place-items-center rounded-2xl text-xl transition duration-150;
+    background: var(--primary-soft);
+    color: var(--primary);
+  }
+
+  .ui-button-primary:hover,
+  .ui-button-secondary:hover,
+  .ui-button-compact:hover,
+  .ui-icon-button:hover {
+    filter: brightness(0.96);
+  }
+
+  .ui-button-danger:hover {
+    filter: saturate(1.15) brightness(0.98);
+  }
+
+  .ui-button-primary:focus-visible,
+  .ui-button-secondary:focus-visible,
+  .ui-button-compact:focus-visible,
+  .ui-button-danger:focus-visible,
+  .ui-icon-button:focus-visible {
+    outline: 2px solid var(--primary);
+    outline-offset: 2px;
   }
 
   .app-bottom-nav {
@@ -116,7 +160,10 @@ textarea {
 
   .app-nav-item:active,
   .ui-button-primary:active,
-  .ui-button-secondary:active {
+  .ui-button-secondary:active,
+  .ui-button-compact:active,
+  .ui-button-danger:active,
+  .ui-icon-button:active {
     transform: scale(0.98);
   }
 

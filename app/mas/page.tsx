@@ -22,7 +22,7 @@ export default function MasPage() {
           <h1 className="truncate text-3xl font-bold text-[var(--brand)]">Herramientas</h1>
           <p className="mt-1 line-clamp-2 text-sm text-[var(--text-muted)]">Todo lo que no usas a cada minuto.</p>
         </div>
-        <Link className="grid size-11 place-items-center rounded-2xl bg-[var(--primary-soft)] text-xl text-[var(--primary)]" href="/" aria-label="Inicio" title="Inicio">
+        <Link className="ui-icon-button" href="/" aria-label="Inicio" title="Inicio">
           <Home aria-hidden="true" className="size-5" />
         </Link>
       </header>

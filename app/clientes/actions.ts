@@ -18,7 +18,7 @@ export async function crearCliente(formData: FormData) {
 
   await db.cliente.create({ data: { ...cliente, estadoToken: estadoToken() } });
   revalidatePath("/clientes");
-  redirect("/clientes?toast=cliente");
+  redirect("/clientes?guardado=cliente");
 }
 
 export async function editarCliente(id: number, formData: FormData) {
@@ -30,5 +30,5 @@ export async function editarCliente(id: number, formData: FormData) {
 
   await db.cliente.update({ where: { id }, data: cliente });
   revalidatePath("/clientes");
-  redirect("/clientes?toast=cliente");
+  redirect("/clientes?guardado=cliente");
 }

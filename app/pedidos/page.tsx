@@ -57,7 +57,7 @@ export default async function PedidosPage({ searchParams }: { searchParams: Prom
           <p className="ui-label">Encargos</p>
           <h1 className="truncate text-3xl font-bold text-[var(--brand)]">Pedidos</h1>
         </div>
-        <Link className="grid size-11 place-items-center rounded-2xl bg-[var(--primary-soft)] text-xl text-[var(--primary)]" href="/" aria-label="Inicio" title="Inicio">
+        <Link className="ui-icon-button" href="/" aria-label="Inicio" title="Inicio">
           <Home aria-hidden="true" className="size-5" />
         </Link>
       </header>
@@ -151,17 +151,17 @@ export default async function PedidosPage({ searchParams }: { searchParams: Prom
                 </p>
               </div>
               <div className="mt-5 grid gap-2 rounded-[1.5rem] bg-[var(--app-bg)] p-3 sm:grid-cols-3">
-                <Link className="ui-button-secondary min-h-10 gap-2 px-4 text-sm" href={orderLink("/ventas", pedido)}>
+                <Link className="ui-button-compact gap-2" href={orderLink("/ventas", pedido)}>
                   <Banknote aria-hidden="true" className="size-4" />
                   Venta
                 </Link>
-                <Link className="ui-button-secondary min-h-10 gap-2 px-4 text-sm" href={orderLink("/fiados", pedido)}>
+                <Link className="ui-button-compact gap-2" href={orderLink("/fiados", pedido)}>
                   <ReceiptText aria-hidden="true" className="size-4" />
                   Crédito
                 </Link>
                 <form action={cancelarPedido}>
                   <input name="pedidoId" type="hidden" value={pedido.id} />
-                  <button className="ui-button-secondary min-h-10 w-full gap-2 px-4 text-sm text-red-700" type="submit">
+                  <button className="ui-button-danger w-full gap-2" type="submit">
                     <X aria-hidden="true" className="size-4" />
                     Cancelar
                   </button>

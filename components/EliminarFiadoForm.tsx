@@ -40,9 +40,9 @@ export function EliminarFiadoForm({ ventaId }: { ventaId: number }) {
     >
       <input name="ventaId" type="hidden" value={ventaId} />
       <input ref={confirmRef} name="confirmacion" type="hidden" />
-      <div className="w-40 overflow-hidden rounded-lg bg-red-50 shadow-sm">
+      <div className="w-40 overflow-hidden rounded-full shadow-sm">
         <motion.button
-          className="min-h-10 w-full px-3 text-sm font-bold text-red-700"
+          className="ui-button-danger w-full"
           onBlur={cancel}
           onKeyDown={(event) => {
             if (event.repeat) return;
@@ -56,7 +56,7 @@ export function EliminarFiadoForm({ ventaId }: { ventaId: number }) {
           style={{ backgroundColor: bg }}
           type="button"
         >
-          Manten para eliminar
+          Mantén para eliminar
         </motion.button>
         <div className="h-1 bg-red-100">
           <motion.div className="h-full origin-left bg-red-600" style={{ scaleX: progress }} />

@@ -11,7 +11,7 @@ export function DarCambioButton({ ventaId, total }: { ventaId: number; total: st
       }}
     >
       <input name="ventaId" type="hidden" value={ventaId} />
-      <button className="rounded-full bg-red-100 px-3 py-1 text-sm font-bold text-red-700" type="submit">
+      <button className="ui-button-danger min-h-8 px-3 py-1" type="submit">
         Dar cambio
       </button>
     </form>

@@ -6,6 +6,7 @@ import { ClienteSearchField } from "@/components/ClienteSearchField";
 import { EliminarFiadoForm } from "@/components/EliminarFiadoForm";
 import { LiquidarDeudaForm } from "@/components/LiquidarDeudaForm";
 import { Pagination } from "@/components/Pagination";
+import { SuccessNotice } from "@/components/SuccessNotice";
 import { db } from "@/lib/db";
 
 export const dynamic = "force-dynamic";
@@ -13,8 +14,14 @@ const pageSize = 6;
 
 const money = new Intl.NumberFormat("es-MX", { currency: "MXN", style: "currency" });
 const today = new Date().toISOString().slice(0, 10);
+const successMessages: Record<string, string> = {
+  credito: "Crédito guardado correctamente.",
+  eliminado: "Crédito eliminado correctamente.",
+  liquidado: "Deuda liquidada correctamente.",
+  pago: "Pago registrado correctamente."
+};
 
-export default async function FiadosPage({ searchParams }: { searchParams: Promise<{ page?: string; q?: string; clienteId?: string; productoId?: string; piezas?: string }> }) {
+export default async function FiadosPage({ searchParams }: { searchParams: Promise<{ page?: string; q?: string; clienteId?: string; guardado?: string; productoId?: string; piezas?: string }> }) {
   const params = await searchParams;
   const q = (params.q || "").trim();
   const page = Math.max(1, Number(params.page) || 1);
@@ -78,10 +85,12 @@ export default async function FiadosPage({ searchParams }: { searchParams: Promi
           <p className="ui-label">Cobros pendientes</p>
           <h1 className="truncate text-3xl font-bold text-[var(--brand)]">Crédito</h1>
         </div>
-        <Link className="grid size-11 place-items-center rounded-2xl bg-[var(--primary-soft)] text-xl text-[var(--primary)]" href="/" aria-label="Inicio" title="Inicio">
+        <Link className="ui-icon-button" href="/" aria-label="Inicio" title="Inicio">
           <Home aria-hidden="true" className="size-5" />
         </Link>
       </header>
+
+      {params.guardado && successMessages[params.guardado] ? <SuccessNotice>{successMessages[params.guardado]}</SuccessNotice> : null}
 
       <form action={registrarFiado} className="grid gap-4 rounded-[2rem] bg-white p-5 shadow-sm">
         <div>
@@ -166,12 +175,12 @@ export default async function FiadosPage({ searchParams }: { searchParams: Promi
               </div>
               <div className="mt-5 grid gap-3 rounded-[1.5rem] bg-[var(--app-bg)] p-3 lg:grid-cols-[auto_1fr]">
                 <div className="grid gap-2 sm:grid-cols-2 lg:flex">
-                  <Link className="ui-button-secondary min-h-10 gap-2 px-4 text-sm" href={`/fiados/${venta.id}/pago`}>
+                  <Link className="ui-button-compact gap-2" href={`/fiados/${venta.id}/pago`}>
                     <Banknote aria-hidden="true" className="size-4" />
                     Registrar pago
                   </Link>
                   <Link
-                    className="ui-button-secondary min-h-10 gap-2 px-4 text-sm"
+                    className="ui-button-compact gap-2"
                     href={venta.cliente.estadoToken ? `/estado/${venta.cliente.estadoToken}` : `/clientes/${venta.clienteId}/estado`}
                   >
                     <FileText aria-hidden="true" className="size-4" />

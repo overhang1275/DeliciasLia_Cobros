@@ -3,6 +3,7 @@ import Image from "next/image";
 import { ConfigAccordionItem } from "./ConfigAccordionItem";
 import { cambiarPasswordAdmin, guardarConfiguracion } from "./actions";
 import { CreditCard, Hash, Home, ImageIcon, KeyRound, Landmark, Save, Settings, Store, Tags, User } from "@/components/AppIcon";
+import { SuccessNotice } from "@/components/SuccessNotice";
 import { getConfiguracion } from "@/lib/configuracion";
 
 export const dynamic = "force-dynamic";
@@ -14,7 +15,7 @@ const passwordMessages: Record<string, string> = {
   ok: "Contraseña actualizada."
 };
 
-export default async function ConfiguracionPage({ searchParams }: { searchParams: Promise<{ password?: string }> }) {
+export default async function ConfiguracionPage({ searchParams }: { searchParams: Promise<{ guardado?: string; password?: string }> }) {
   const [config, params] = await Promise.all([getConfiguracion(), searchParams]);
   const passwordMessage = params.password ? passwordMessages[params.password] : "";
 
@@ -28,10 +29,12 @@ export default async function ConfiguracionPage({ searchParams }: { searchParams
           <p className="ui-label">Sistema</p>
           <h1 className="truncate text-3xl font-bold text-[var(--brand)]">Configuración</h1>
         </div>
-        <Link className="grid size-11 place-items-center rounded-2xl bg-[var(--primary-soft)] text-xl text-[var(--primary)]" href="/" aria-label="Inicio" title="Inicio">
+        <Link className="ui-icon-button" href="/" aria-label="Inicio" title="Inicio">
           <Home aria-hidden="true" className="size-5" />
         </Link>
       </header>
+
+      {params.guardado === "configuracion" ? <SuccessNotice>Configuración guardada correctamente.</SuccessNotice> : null}
 
       <form action={guardarConfiguracion} className="grid gap-4" id="configuracion-form">
         <ConfigAccordionItem defaultOpen description="Logo y nombre que verá la app." title="Identidad del negocio">

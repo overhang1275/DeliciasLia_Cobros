@@ -22,7 +22,7 @@ export async function crearVenta(formData: FormData) {
   revalidatePath("/");
   revalidatePath("/ventas");
   revalidatePath("/fiados");
-  redirect("/ventas?toast=venta");
+  redirect("/ventas?guardado=venta");
 }
 
 export async function darCambio(formData: FormData) {
@@ -35,5 +35,5 @@ export async function darCambio(formData: FormData) {
   });
 
   revalidatePath("/ventas");
-  redirect("/ventas?toast=cambio");
+  redirect("/ventas?guardado=cambio");
 }

@@ -2,6 +2,7 @@ import Link from "next/link";
 import { crearProducto } from "./actions";
 import { HandCoins, Home, Package, Save, Search, Tags } from "@/components/AppIcon";
 import { Pagination } from "@/components/Pagination";
+import { SuccessNotice } from "@/components/SuccessNotice";
 import { db } from "@/lib/db";
 
 export const dynamic = "force-dynamic";
@@ -9,7 +10,7 @@ const pageSize = 6;
 
 const money = new Intl.NumberFormat("es-MX", { currency: "MXN", style: "currency" });
 
-export default async function ProductosPage({ searchParams }: { searchParams: Promise<{ page?: string; q?: string }> }) {
+export default async function ProductosPage({ searchParams }: { searchParams: Promise<{ guardado?: string; page?: string; q?: string }> }) {
   const params = await searchParams;
   const q = (params.q || "").trim();
   const page = Math.max(1, Number(params.page) || 1);
@@ -42,10 +43,12 @@ export default async function ProductosPage({ searchParams }: { searchParams: Pr
           <p className="ui-label">Catálogo</p>
           <h1 className="truncate text-3xl font-bold text-[var(--brand)]">Productos</h1>
         </div>
-        <Link className="grid size-11 place-items-center rounded-2xl bg-[var(--primary-soft)] text-xl text-[var(--primary)]" href="/" aria-label="Inicio" title="Inicio">
+        <Link className="ui-icon-button" href="/" aria-label="Inicio" title="Inicio">
           <Home aria-hidden="true" className="size-5" />
         </Link>
       </header>
+
+      {params.guardado === "producto" ? <SuccessNotice>Producto guardado correctamente.</SuccessNotice> : null}
 
       <form action={crearProducto} className="grid gap-4 rounded-[2rem] bg-white p-5 shadow-sm">
         <div>

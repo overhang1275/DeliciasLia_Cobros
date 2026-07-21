@@ -42,7 +42,7 @@ export async function guardarConfiguracion(formData: FormData) {
   revalidatePath("/");
   revalidatePath("/configuracion");
   revalidatePath("/clientes");
-  redirect("/configuracion?toast=configuracion");
+  redirect("/configuracion?guardado=configuracion");
 }
 
 export async function cambiarPasswordAdmin(formData: FormData) {

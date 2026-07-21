@@ -56,7 +56,7 @@ export default async function HomePage() {
           <h1 className="truncate text-3xl font-bold text-[var(--brand)]">{config.negocioNombre}</h1>
         </div>
         <form action={logout}>
-          <button className="grid size-11 place-items-center rounded-2xl bg-[var(--primary-soft)] text-xl text-[var(--primary)]" aria-label="Salir" title="Salir" type="submit">
+          <button className="ui-icon-button" aria-label="Salir" title="Salir" type="submit">
             <LogOut aria-hidden="true" className="size-6" />
           </button>
         </form>

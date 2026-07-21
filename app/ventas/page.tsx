@@ -4,13 +4,14 @@ import { CambioPendienteFields } from "./CambioPendienteFields";
 import { DarCambioButton } from "./DarCambioButton";
 import { Home, Package, ReceiptText, Save, ShoppingBag } from "@/components/AppIcon";
 import { ClienteSearchField } from "@/components/ClienteSearchField";
+import { SuccessNotice } from "@/components/SuccessNotice";
 import { db } from "@/lib/db";
 
 export const dynamic = "force-dynamic";
 
 const money = new Intl.NumberFormat("es-MX", { currency: "MXN", style: "currency" });
 
-export default async function VentasPage({ searchParams }: { searchParams: Promise<{ clienteId?: string; productoId?: string; piezas?: string }> }) {
+export default async function VentasPage({ searchParams }: { searchParams: Promise<{ clienteId?: string; guardado?: string; productoId?: string; piezas?: string }> }) {
   const params = await searchParams;
   const defaultClienteId = Number(params.clienteId) || undefined;
   const defaultProductoId = Number(params.productoId) || undefined;
@@ -40,10 +41,13 @@ export default async function VentasPage({ searchParams }: { searchParams: Promi
           <p className="ui-label">Venta rápida</p>
           <h1 className="truncate text-3xl font-bold text-[var(--brand)]">Nueva venta</h1>
         </div>
-        <Link className="grid size-11 place-items-center rounded-2xl bg-[var(--primary-soft)] text-xl text-[var(--primary)]" href="/" aria-label="Inicio" title="Inicio">
+        <Link className="ui-icon-button" href="/" aria-label="Inicio" title="Inicio">
           <Home aria-hidden="true" className="size-5" />
         </Link>
       </header>
+
+      {params.guardado === "venta" ? <SuccessNotice>Venta guardada correctamente.</SuccessNotice> : null}
+      {params.guardado === "cambio" ? <SuccessNotice>Cambio marcado como entregado.</SuccessNotice> : null}
 
       <form action={crearVenta} className="grid gap-4 rounded-[2rem] bg-white p-5 shadow-sm">
         <div>

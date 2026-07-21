@@ -18,7 +18,7 @@ export async function registrarFiado(formData: FormData) {
 
   revalidatePath("/");
   revalidatePath("/fiados");
-  redirect("/fiados");
+  redirect("/fiados?guardado=credito");
 }
 
 export async function registrarPagoFiado(formData: FormData) {
@@ -46,7 +46,7 @@ export async function registrarPagoFiado(formData: FormData) {
 
   revalidatePath("/");
   revalidatePath("/fiados");
-  redirect("/fiados");
+  redirect("/fiados?guardado=pago");
 }
 
 export async function liquidarDeudaCliente(formData: FormData) {
@@ -76,7 +76,7 @@ export async function liquidarDeudaCliente(formData: FormData) {
   revalidatePath("/");
   revalidatePath("/fiados");
   revalidatePath("/clientes");
-  redirect("/fiados");
+  redirect("/fiados?guardado=liquidado");
 }
 
 export async function eliminarFiado(formData: FormData) {
@@ -104,5 +104,5 @@ export async function eliminarFiado(formData: FormData) {
   revalidatePath("/fiados");
   revalidatePath("/clientes");
   revalidatePath("/reportes");
-  redirect("/fiados");
+  redirect("/fiados?guardado=eliminado");
 }

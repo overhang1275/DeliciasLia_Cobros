@@ -163,7 +163,7 @@ export default async function ReportesPage({ searchParams }: { searchParams: Pro
           <p className="ui-label">Reportes</p>
           <h1 className="truncate text-3xl font-bold text-[var(--brand)]">Análisis</h1>
         </div>
-        <Link className="grid size-11 place-items-center rounded-2xl bg-[var(--primary-soft)] text-xl text-[var(--primary)]" href="/" aria-label="Inicio" title="Inicio">
+        <Link className="ui-icon-button" href="/" aria-label="Inicio" title="Inicio">
           <Home aria-hidden="true" className="size-5" />
         </Link>
       </header>
