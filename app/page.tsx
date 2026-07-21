@@ -53,7 +53,7 @@ export default async function HomePage() {
     [Wallet, "Cambios que debo", money.format(Number(cambiosPendientes._sum.cambioMonto || 0)), "Cambio pendiente por entregar"]
   ];
   const resumenCatalogo: [LucideIcon, string, string][] = [
-    [Users, "Clientes activos", clientes.toString()],
+    [Users, "Clientes", clientes.toString()],
     [Package, "Productos", productos.toString()]
   ];
   const quickLinks: [LucideIcon, string, string, string][] = [
