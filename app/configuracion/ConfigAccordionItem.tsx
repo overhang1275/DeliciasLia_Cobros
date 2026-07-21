@@ -5,9 +5,29 @@ import { useId, useState } from "react";
 import type { ReactNode } from "react";
 import { ChevronRight } from "@/components/AppIcon";
 
-export function ConfigAccordionItem({ children, defaultOpen = false, description, title }: { children: ReactNode; defaultOpen?: boolean; description: string; title: string }) {
-  const [isOpen, setIsOpen] = useState(defaultOpen);
+export function ConfigAccordionItem({
+  children,
+  defaultOpen = false,
+  description,
+  isOpen: controlledOpen,
+  onOpenChange,
+  title
+}: {
+  children: ReactNode;
+  defaultOpen?: boolean;
+  description: ReactNode;
+  isOpen?: boolean;
+  onOpenChange?: (isOpen: boolean) => void;
+  title: string;
+}) {
+  const [localOpen, setLocalOpen] = useState(defaultOpen);
+  const isOpen = controlledOpen ?? localOpen;
   const contentId = useId();
+  const toggleOpen = () => {
+    const nextOpen = !isOpen;
+    setLocalOpen(nextOpen);
+    onOpenChange?.(nextOpen);
+  };
 
   return (
     <section className="rounded-[1.75rem] border bg-white shadow-sm">
@@ -17,7 +37,7 @@ export function ConfigAccordionItem({ children, defaultOpen = false, description
           aria-expanded={isOpen}
           className="flex w-full items-center gap-3 p-4 text-left"
           type="button"
-          onClick={() => setIsOpen((open) => !open)}
+          onClick={toggleOpen}
         >
           <span className="min-w-0 flex-1">
             <span className="block text-lg font-bold text-[var(--brand)]">{title}</span>

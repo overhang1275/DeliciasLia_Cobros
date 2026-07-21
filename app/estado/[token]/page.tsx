@@ -2,9 +2,9 @@ import { cookies } from "next/headers";
 import Image from "next/image";
 import Link from "next/link";
 import { notFound } from "next/navigation";
-import { Check, ClipboardList, ReceiptText, Store, Wallet } from "@/components/AppIcon";
+import { ClipboardList, Store, Wallet } from "@/components/AppIcon";
 import { CopyButton } from "@/components/CopyButton";
-import { Pagination } from "@/components/Pagination";
+import { EstadoMovimientosAccordion } from "@/components/EstadoMovimientosAccordion";
 import { PrintButton } from "@/components/PrintButton";
 import { ShareStatementButton } from "@/components/ShareStatementButton";
 import { getConfiguracion } from "@/lib/configuracion";
@@ -15,14 +15,12 @@ export const dynamic = "force-dynamic";
 
 const money = new Intl.NumberFormat("es-MX", { currency: "MXN", style: "currency" });
 const date = new Intl.DateTimeFormat("es-MX", { dateStyle: "medium" });
+const time = new Intl.DateTimeFormat("es-MX", { hour: "2-digit", minute: "2-digit" });
 const generatedAt = new Intl.DateTimeFormat("es-MX", { dateStyle: "medium", timeStyle: "short" });
-const pageSize = 10;
 const ticketId = (id: number) => String(id).padStart(6, "0");
 
-export default async function EstadoPublicoPage({ params, searchParams }: { params: Promise<{ token: string }>; searchParams: Promise<{ page?: string }> }) {
+export default async function EstadoPublicoPage({ params }: { params: Promise<{ token: string }> }) {
   const { token } = await params;
-  const { page: pageParam } = await searchParams;
-  const page = Math.max(1, Number(pageParam) || 1);
   const [cliente, config] = await Promise.all([
     db.cliente.findUnique({
       where: { estadoToken: token },
@@ -59,7 +57,7 @@ export default async function EstadoPublicoPage({ params, searchParams }: { para
       concepto: venta.detalles[0] ? `${venta.detalles[0].producto.nombre} x ${venta.detalles[0].cantidad}` : venta.observaciones || "Venta",
       detalle: `Cargo - ${venta.estado.toLowerCase()}`,
       monto: Number(venta.total),
-      tipo: "cargo"
+      tipo: "cargo" as const
     })),
     ...pagos.map((pago) => ({
       id: `pago-${pago.id}`,
@@ -68,11 +66,45 @@ export default async function EstadoPublicoPage({ params, searchParams }: { para
       concepto: pago.venta.detalles[0]?.producto.nombre || pago.venta.observaciones || "Pago",
       detalle: `Abono - ${pago.metodo.toLowerCase()}`,
       monto: -Number(pago.monto),
-      tipo: "abono"
+      tipo: "abono" as const
     }))
   ].sort((a, b) => a.fecha.getTime() - b.fecha.getTime() || a.id.localeCompare(b.id));
-  const totalPages = Math.max(1, Math.ceil(movimientos.length / pageSize));
-  const pageMovimientos = movimientos.slice((Math.min(page, totalPages) - 1) * pageSize, Math.min(page, totalPages) * pageSize);
+  const gruposMap = new Map<
+    string,
+    {
+      cargos: number;
+      fecha: string;
+      key: string;
+      movimientos: { concepto: string; detalle: string; folio: string; hora: string; id: string; importe: string; tipo: "abono" | "cargo" }[];
+      pagos: number;
+    }
+  >();
+
+  for (const movimiento of movimientos) {
+    const key = `${movimiento.fecha.getFullYear()}-${String(movimiento.fecha.getMonth() + 1).padStart(2, "0")}-${String(movimiento.fecha.getDate()).padStart(2, "0")}`;
+    const grupo = gruposMap.get(key) || { cargos: 0, fecha: date.format(movimiento.fecha), key, movimientos: [], pagos: 0 };
+    grupo.cargos += movimiento.tipo === "cargo" ? movimiento.monto : 0;
+    grupo.pagos += movimiento.tipo === "abono" ? Math.abs(movimiento.monto) : 0;
+    grupo.movimientos.push({
+      concepto: movimiento.concepto,
+      detalle: movimiento.detalle,
+      folio: movimiento.folio,
+      hora: time.format(movimiento.fecha),
+      id: movimiento.id,
+      importe: money.format(Math.abs(movimiento.monto)),
+      tipo: movimiento.tipo
+    });
+    gruposMap.set(key, grupo);
+  }
+
+  const gruposMovimientos = Array.from(gruposMap.values())
+    .sort((a, b) => b.key.localeCompare(a.key))
+    .map((grupo) => ({
+      ...grupo,
+      cargos: money.format(grupo.cargos),
+      pagos: money.format(grupo.pagos),
+      saldo: money.format(grupo.cargos - grupo.pagos)
+    }));
   const isAdmin = await isValidSessionToken((await cookies()).get(SESSION_COOKIE)?.value);
   const fechaGenerado = generatedAt.format(new Date());
 
@@ -154,39 +186,11 @@ export default async function EstadoPublicoPage({ params, searchParams }: { para
             </div>
           </div>
         </div>
-        {pageMovimientos.length === 0 ? (
+        {gruposMovimientos.length === 0 ? (
           <p className="rounded-[1.75rem] bg-white p-4 text-[var(--text-muted)] shadow-sm">Todavía no hay movimientos registrados.</p>
         ) : (
-          pageMovimientos.map((movimiento) => (
-            <article className="rounded-[1.75rem] bg-white p-4 shadow-sm" key={movimiento.id}>
-              <div className="flex items-start justify-between gap-4">
-                <div className="flex min-w-0 gap-3">
-                  <span
-                    className={`grid size-11 shrink-0 place-items-center rounded-2xl ${
-                      movimiento.tipo === "abono" ? "bg-green-50 text-green-700" : "bg-red-50 text-red-700"
-                    }`}
-                    aria-hidden="true"
-                  >
-                    {movimiento.tipo === "abono" ? <Check className="size-5" /> : <ReceiptText className="size-5" />}
-                  </span>
-                  <div className="min-w-0">
-                    <p className="font-bold text-[var(--text-main)]">{movimiento.folio}</p>
-                    <p className="text-sm text-[var(--text-main)]">{movimiento.concepto}</p>
-                    <p className="ui-label">
-                      {date.format(movimiento.fecha)} - {movimiento.detalle}
-                    </p>
-                  </div>
-                </div>
-                <p className={`shrink-0 rounded-full px-3 py-1 text-sm font-bold ${movimiento.tipo === "abono" ? "bg-green-50 text-green-700" : "bg-red-50 text-red-700"}`}>
-                  {money.format(Math.abs(movimiento.monto))}
-                </p>
-              </div>
-            </article>
-          ))
+          <EstadoMovimientosAccordion grupos={gruposMovimientos} />
         )}
-        <div className="no-print">
-          <Pagination basePath={`/estado/${token}`} page={Math.min(page, totalPages)} q="" totalPages={totalPages} />
-        </div>
       </section>
     </main>
   );
