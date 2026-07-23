@@ -52,3 +52,4 @@ export async function eliminarCliente(formData: FormData) {
   revalidatePath("/reportes");
   redirect("/clientes?guardado=cliente-eliminado");
 }
+
