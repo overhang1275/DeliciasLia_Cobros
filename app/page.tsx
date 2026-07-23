@@ -6,17 +6,14 @@ import { ConfigAccordionItem } from "@/app/configuracion/ConfigAccordionItem";
 import { ChevronRight, HandCoins, LogOut, Package, Plus, ReceiptText, Store, User, Users, Wallet } from "@/components/AppIcon";
 import { getConfiguracion } from "@/lib/configuracion";
 import { db } from "@/lib/db";
+import { todayRange } from "@/lib/timezone";
 
 export const dynamic = "force-dynamic";
 
 const money = new Intl.NumberFormat("es-MX", { currency: "MXN", style: "currency" });
 
 export default async function HomePage() {
-  const inicioHoy = new Date();
-  inicioHoy.setHours(0, 0, 0, 0);
-  const finHoy = new Date(inicioHoy);
-  finHoy.setHours(23, 59, 59, 999);
-  const rangoHoy = { gte: inicioHoy, lte: finHoy };
+  const rangoHoy = todayRange();
   const [config, clientes, productos, ventasFiadas, cambiosPendientes, piezasHoy, cobradoHoy, creditoHoy] = await Promise.all([
     getConfiguracion(),
     db.cliente.count({ where: { activo: true } }),

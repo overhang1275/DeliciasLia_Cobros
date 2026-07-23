@@ -4,6 +4,7 @@ set -euo pipefail
 APP_DIR="${APP_DIR:-/opt/delicias-lia}"
 APP_USER="${APP_USER:-deliciaslia}"
 SERVICE_NAME="${SERVICE_NAME:-delicias-lia}"
+APP_TZ="${APP_TZ:-America/Mexico_City}"
 
 if [ "$(id -u)" -ne 0 ]; then
   echo "Ejecuta como root: sudo bash $0"
@@ -27,6 +28,12 @@ if [ -f "$APP_DIR/database/database.sqlite" ]; then
 fi
 
 systemctl stop "$SERVICE_NAME" || true
+
+SERVICE_FILE="/etc/systemd/system/${SERVICE_NAME}.service"
+if [ -f "$SERVICE_FILE" ] && ! grep -q '^Environment=TZ=' "$SERVICE_FILE"; then
+  sed -i "/^Environment=PORT=/a Environment=TZ=${APP_TZ}" "$SERVICE_FILE"
+  systemctl daemon-reload
+fi
 
 git -C "$APP_DIR" pull --ff-only
 chown -R "$APP_USER:$APP_USER" "$APP_DIR"

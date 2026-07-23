@@ -11,13 +11,14 @@ import { ShareStatementButton } from "@/components/ShareStatementButton";
 import { getConfiguracion } from "@/lib/configuracion";
 import { db } from "@/lib/db";
 import { isValidSessionToken, SESSION_COOKIE } from "@/lib/session";
+import { appDateFormatter, dateInputValue } from "@/lib/timezone";
 
 export const dynamic = "force-dynamic";
 
 const money = new Intl.NumberFormat("es-MX", { currency: "MXN", style: "currency" });
-const date = new Intl.DateTimeFormat("es-MX", { dateStyle: "medium" });
-const time = new Intl.DateTimeFormat("es-MX", { hour: "2-digit", minute: "2-digit" });
-const generatedAt = new Intl.DateTimeFormat("es-MX", { dateStyle: "medium", timeStyle: "short" });
+const date = appDateFormatter({ dateStyle: "medium" });
+const time = appDateFormatter({ hour: "2-digit", minute: "2-digit" });
+const generatedAt = appDateFormatter({ dateStyle: "medium", timeStyle: "short" });
 const pageSize = 5;
 const ticketId = (id: number) => String(id).padStart(6, "0");
 
@@ -85,7 +86,7 @@ export default async function EstadoPublicoPage({ params, searchParams }: { para
   >();
 
   for (const movimiento of movimientos) {
-    const key = `${movimiento.fecha.getFullYear()}-${String(movimiento.fecha.getMonth() + 1).padStart(2, "0")}-${String(movimiento.fecha.getDate()).padStart(2, "0")}`;
+    const key = dateInputValue(movimiento.fecha);
     const grupo = gruposMap.get(key) || { cargos: 0, fecha: date.format(movimiento.fecha), key, movimientos: [], pagos: 0 };
     grupo.cargos += movimiento.tipo === "cargo" ? movimiento.monto : 0;
     grupo.pagos += movimiento.tipo === "abono" ? Math.abs(movimiento.monto) : 0;

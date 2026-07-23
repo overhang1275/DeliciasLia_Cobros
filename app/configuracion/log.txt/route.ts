@@ -1,8 +1,9 @@
 import { db } from "@/lib/db";
+import { appDateFormatter, dateInputValue } from "@/lib/timezone";
 
 export const dynamic = "force-dynamic";
 
-const fecha = new Intl.DateTimeFormat("es-MX", { dateStyle: "medium", timeStyle: "short" });
+const fecha = appDateFormatter({ dateStyle: "medium", timeStyle: "short" });
 const acciones: Record<string, string> = {
   actualizar: "Actualizó",
   cancelar: "Canceló",
@@ -22,7 +23,7 @@ export async function GET() {
 
   return new Response(body, {
     headers: {
-      "Content-Disposition": `attachment; filename="audit-log-${new Date().toISOString().slice(0, 10)}.txt"`,
+      "Content-Disposition": `attachment; filename="audit-log-${dateInputValue()}.txt"`,
       "Content-Type": "text/plain; charset=utf-8"
     }
   });

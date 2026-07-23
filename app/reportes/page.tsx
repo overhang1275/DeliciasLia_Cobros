@@ -13,26 +13,16 @@ import {
   Wallet
 } from "@/components/AppIcon";
 import { db } from "@/lib/db";
+import { appDateFormatter, dateInputValue, parseDateInput } from "@/lib/timezone";
 
 export const dynamic = "force-dynamic";
 
 const money = new Intl.NumberFormat("es-MX", { currency: "MXN", style: "currency" });
-const day = new Intl.DateTimeFormat("es-MX", { day: "2-digit", month: "short" });
+const day = appDateFormatter({ day: "2-digit", month: "short" });
 const percent = new Intl.NumberFormat("es-MX", { maximumFractionDigits: 1, style: "percent" });
 
 function barWidth(value: number, max: number) {
   return `${max > 0 ? Math.max(6, Math.round((value / max) * 100)) : 0}%`;
-}
-
-function dateInput(date: Date) {
-  return date.toISOString().slice(0, 10);
-}
-
-function parseDate(value: string | undefined, fallback: Date, endOfDay = false) {
-  const date = value ? new Date(`${value}T00:00:00`) : new Date(fallback);
-  if (Number.isNaN(date.getTime())) return fallback;
-  date.setHours(endOfDay ? 23 : 0, endOfDay ? 59 : 0, endOfDay ? 59 : 0, endOfDay ? 999 : 0);
-  return date;
 }
 
 function percentText(value: number, total: number) {
@@ -45,8 +35,8 @@ export default async function ReportesPage({ searchParams }: { searchParams: Pro
   const defaultDesde = new Date();
   defaultDesde.setDate(defaultHasta.getDate() - 13);
 
-  const since = parseDate(params.desde, defaultDesde);
-  const until = parseDate(params.hasta, defaultHasta, true);
+  const since = parseDateInput(params.desde, defaultDesde);
+  const until = parseDateInput(params.hasta, defaultHasta, true);
   const days = Math.max(1, Math.min(60, Math.ceil((until.getTime() - since.getTime()) / 86400000) + 1));
   const range = { gte: since, lte: until };
 
@@ -90,8 +80,8 @@ export default async function ReportesPage({ searchParams }: { searchParams: Pro
   const ventasPorDia = Array.from({ length: days }, (_, i) => {
     const date = new Date(since);
     date.setDate(since.getDate() + i);
-    const key = date.toISOString().slice(0, 10);
-    const ventasDia = ventas.filter((venta) => venta.fecha.toISOString().slice(0, 10) === key);
+    const key = dateInputValue(date);
+    const ventasDia = ventas.filter((venta) => dateInputValue(venta.fecha) === key);
     const total = ventasDia.reduce((sum, venta) => sum + Number(venta.total), 0);
     return { label: day.format(date), total };
   }).filter((item) => item.total > 0);
@@ -173,13 +163,13 @@ export default async function ReportesPage({ searchParams }: { searchParams: Pro
           <label className="ui-label inline-flex items-center gap-1" htmlFor="desde">
             Desde <CalendarDays aria-hidden="true" className="size-4" />
           </label>
-          <input className="ui-input mt-2" defaultValue={dateInput(since)} id="desde" name="desde" type="date" />
+          <input className="ui-input mt-2" defaultValue={dateInputValue(since)} id="desde" name="desde" type="date" />
         </div>
         <div>
           <label className="ui-label inline-flex items-center gap-1" htmlFor="hasta">
             Hasta <CalendarDays aria-hidden="true" className="size-4" />
           </label>
-          <input className="ui-input mt-2" defaultValue={dateInput(until)} id="hasta" name="hasta" type="date" />
+          <input className="ui-input mt-2" defaultValue={dateInputValue(until)} id="hasta" name="hasta" type="date" />
         </div>
         <button className="ui-button-primary self-end gap-2 px-5" type="submit">
           <Search aria-hidden="true" className="size-5" />

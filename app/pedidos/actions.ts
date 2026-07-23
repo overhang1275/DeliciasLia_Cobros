@@ -4,9 +4,10 @@ import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { registrarLog } from "@/lib/audit";
 import { db } from "@/lib/db";
+import { appDateFormatter } from "@/lib/timezone";
 import { pedidoSchema } from "@/lib/validators/pedidos";
 
-const fecha = new Intl.DateTimeFormat("es-MX", { dateStyle: "medium" });
+const fecha = appDateFormatter({ dateStyle: "medium" });
 
 export async function crearPedido(formData: FormData) {
   const pedido = pedidoSchema.parse({

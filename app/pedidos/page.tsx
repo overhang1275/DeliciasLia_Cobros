@@ -6,12 +6,13 @@ import { ClienteSearchField } from "@/components/ClienteSearchField";
 import { ConfirmSubmitButton } from "@/components/ConfirmSubmitButton";
 import { Pagination } from "@/components/Pagination";
 import { db } from "@/lib/db";
+import { appDateFormatter, dateInputValue } from "@/lib/timezone";
 
 export const dynamic = "force-dynamic";
 const pageSize = 6;
 
-const date = new Intl.DateTimeFormat("es-MX", { day: "2-digit", month: "short", year: "numeric" });
-const today = new Date().toISOString().slice(0, 10);
+const date = appDateFormatter({ day: "2-digit", month: "short", year: "numeric" });
+const today = dateInputValue();
 
 function orderLink(path: string, pedido: { clienteId: number; productoId: number; piezas: number }) {
   const params = new URLSearchParams({

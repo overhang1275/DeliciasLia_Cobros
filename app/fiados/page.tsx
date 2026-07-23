@@ -7,13 +7,14 @@ import { EliminarFiadoForm } from "@/components/EliminarFiadoForm";
 import { LiquidarDeudaForm } from "@/components/LiquidarDeudaForm";
 import { Pagination } from "@/components/Pagination";
 import { db } from "@/lib/db";
+import { appDateFormatter, dateInputValue } from "@/lib/timezone";
 
 export const dynamic = "force-dynamic";
 const pageSize = 6;
 
 const money = new Intl.NumberFormat("es-MX", { currency: "MXN", style: "currency" });
-const date = new Intl.DateTimeFormat("es-MX", { day: "2-digit", month: "short", year: "numeric" });
-const today = new Date().toISOString().slice(0, 10);
+const date = appDateFormatter({ day: "2-digit", month: "short", year: "numeric" });
+const today = dateInputValue();
 
 export default async function FiadosPage({ searchParams }: { searchParams: Promise<{ page?: string; q?: string; clienteId?: string; guardado?: string; productoId?: string; piezas?: string }> }) {
   const params = await searchParams;

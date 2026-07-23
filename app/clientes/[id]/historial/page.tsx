@@ -3,11 +3,12 @@ import { notFound } from "next/navigation";
 import type { LucideIcon } from "lucide-react";
 import { ArrowLeft, Banknote, CalendarDays, Check, ReceiptText, TrendingUp, Wallet } from "@/components/AppIcon";
 import { db } from "@/lib/db";
+import { appDateFormatter } from "@/lib/timezone";
 
 export const dynamic = "force-dynamic";
 
 const money = new Intl.NumberFormat("es-MX", { currency: "MXN", style: "currency" });
-const date = new Intl.DateTimeFormat("es-MX", { dateStyle: "medium" });
+const date = appDateFormatter({ dateStyle: "medium" });
 const ticketId = (id: number) => String(id).padStart(6, "0");
 
 export default async function HistorialClientePage({ params }: { params: Promise<{ id: string }> }) {

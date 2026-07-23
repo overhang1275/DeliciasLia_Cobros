@@ -39,12 +39,14 @@ rm -f "$APP_DIR/database/database.sqlite" "$APP_DIR/database/database.sqlite-jou
 chown -R "$APP_USER:$APP_USER" "$APP_DIR"
 
 AUTH_SECRET="${AUTH_SECRET:-$(openssl rand -hex 32)}"
+APP_TZ="${APP_TZ:-America/Mexico_City}"
 cat > "$APP_DIR/.env" <<ENV
 DATABASE_URL="file:../database/database.sqlite"
 AUTH_SECRET="${AUTH_SECRET}"
 AUTH_SECURE_COOKIE="${AUTH_SECURE_COOKIE:-false}"
 ADMIN_PASSWORD="${ADMIN_PASSWORD}"
 ALLOW_DEMO_RESET="1"
+TZ="${APP_TZ}"
 ENV
 chown "$APP_USER:$APP_USER" "$APP_DIR/.env"
 chmod 600 "$APP_DIR/.env"
@@ -66,6 +68,7 @@ User=${APP_USER}
 WorkingDirectory=${APP_DIR}
 Environment=NODE_ENV=production
 Environment=PORT=${PORT}
+Environment=TZ=${APP_TZ}
 ExecStart=/usr/bin/npm run start -- -H 0.0.0.0 -p ${PORT}
 Restart=always
 RestartSec=5
