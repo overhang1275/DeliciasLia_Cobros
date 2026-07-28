@@ -197,7 +197,10 @@ export function StatementPDF({ cliente, grupos, saldo, config, fechaGenerado }: 
       <Page size="A4" style={styles.page}>
         {/* Header */}
         <View style={styles.header}>
-          {config.logoDataUrl && <Image src={config.logoDataUrl} style={styles.logo} alt="" />}
+          {config.logoDataUrl && (
+            // eslint-disable-next-line jsx-a11y/alt-text
+            <Image src={config.logoDataUrl} style={styles.logo} />
+          )}
           <View style={styles.headerText}>
             <Text style={styles.negocioNombre}>{config.negocioNombre}</Text>
             <Text style={styles.negocioSubtitulo}>Estado de cuenta</Text>
