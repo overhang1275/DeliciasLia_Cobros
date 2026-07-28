@@ -2,6 +2,36 @@
 
 import { Document, Page, Text, View, StyleSheet, Image } from "@react-pdf/renderer";
 
+export interface StatementData {
+  cliente: {
+    nombre: string;
+    telefono?: string | null;
+  };
+  grupos: Array<{
+    key: string;
+    fecha: string;
+    movimientos: Array<{
+      id: string;
+      concepto: string;
+      detalle: string;
+      folio: string;
+      importe: string;
+      tipo: "cargo" | "abono";
+    }>;
+    saldo: string;
+  }>;
+  saldo: number;
+  config: {
+    negocioNombre: string;
+    logoDataUrl?: string | null;
+    banco: string;
+    titular: string;
+    clabe: string;
+    cuenta: string;
+  };
+  fechaGenerado: string;
+}
+
 const styles = StyleSheet.create({
   page: {
     padding: 40,
@@ -161,13 +191,13 @@ const styles = StyleSheet.create({
 
 const money = new Intl.NumberFormat("es-MX", { currency: "MXN", style: "currency" });
 
-export function StatementPDF({ cliente, grupos, saldo, config, fechaGenerado }: any) {
+export function StatementPDF({ cliente, grupos, saldo, config, fechaGenerado }: StatementData) {
   return (
     <Document>
       <Page size="A4" style={styles.page}>
         {/* Header */}
         <View style={styles.header}>
-          {config.logoDataUrl && <Image src={config.logoDataUrl} style={styles.logo} />}
+          {config.logoDataUrl && <Image src={config.logoDataUrl} style={styles.logo} alt="" />}
           <View style={styles.headerText}>
             <Text style={styles.negocioNombre}>{config.negocioNombre}</Text>
             <Text style={styles.negocioSubtitulo}>Estado de cuenta</Text>
@@ -188,7 +218,7 @@ export function StatementPDF({ cliente, grupos, saldo, config, fechaGenerado }: 
           <View style={styles.resumenRow}>
             <Text style={styles.resumenLabel}>Número de movimientos</Text>
             <Text style={styles.resumenValue}>
-              {grupos.reduce((acc: number, g: any) => acc + g.movimientos.length, 0)}
+              {grupos.reduce((acc, g) => acc + g.movimientos.length, 0)}
             </Text>
           </View>
         </View>
@@ -196,10 +226,10 @@ export function StatementPDF({ cliente, grupos, saldo, config, fechaGenerado }: 
         {/* Movimientos */}
         <Text style={styles.sectionTitle}>Detalle de movimientos</Text>
 
-        {grupos.map((grupo: any) => (
+        {grupos.map((grupo) => (
           <View key={grupo.key} style={styles.grupo}>
             <Text style={styles.grupoFecha}>{grupo.fecha}</Text>
-            {grupo.movimientos.map((mov: any) => (
+            {grupo.movimientos.map((mov) => (
               <View key={mov.id} style={styles.movimientoRow}>
                 <View style={styles.movimientoCol}>
                   <Text style={styles.movimientoConcepto}>{mov.concepto}</Text>
@@ -241,4 +271,5 @@ export function StatementPDF({ cliente, grupos, saldo, config, fechaGenerado }: 
     </Document>
   );
 }
+
 

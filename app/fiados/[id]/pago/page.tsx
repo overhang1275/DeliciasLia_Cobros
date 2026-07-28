@@ -1,7 +1,7 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { registrarPagoFiado } from "../../actions";
-import { ArrowLeft, Banknote, CreditCard, HandCoins, Landmark, ReceiptText, Save } from "@/components/AppIcon";
+import { ArrowLeft, Banknote, CreditCard, HandCoins, ReceiptText, Save } from "@/components/AppIcon";
 import { db } from "@/lib/db";
 
 export const dynamic = "force-dynamic";
