@@ -6,7 +6,7 @@ import { ClipboardList, Landmark, Store, Wallet } from "@/components/AppIcon";
 import { CopyButton } from "@/components/CopyButton";
 import { EstadoMovimientosAccordion } from "@/components/EstadoMovimientosAccordion";
 import { Pagination } from "@/components/Pagination";
-import { PrintButton } from "@/components/PrintButton";
+import { DownloadStatementButton } from "@/components/DownloadStatementButton";
 import { ShareStatementButton } from "@/components/ShareStatementButton";
 import { getConfiguracion } from "@/lib/configuracion";
 import { db } from "@/lib/db";
@@ -149,7 +149,13 @@ export default async function EstadoPublicoPage({ params, searchParams }: { para
         {isAdmin ? (
           <div className="mt-4 flex flex-wrap gap-2 no-print">
             <ShareStatementButton cliente={cliente.nombre} telefono={cliente.telefono} />
-            <PrintButton />
+            <DownloadStatementButton
+              cliente={cliente}
+              grupos={gruposMovimientos}
+              saldo={saldo}
+              config={config}
+              fechaGenerado={fechaGenerado}
+            />
             <Link className="ui-button-compact" href="/clientes">
               Volver
             </Link>
