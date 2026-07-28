@@ -66,7 +66,8 @@ export async function registrarPagoFiado(formData: FormData) {
 
   revalidatePath("/");
   revalidatePath("/fiados");
-  redirect("/fiados?guardado=pago");
+  revalidatePath(`/clientes/${venta.clienteId}/estado`);
+  redirect(`/clientes/${venta.clienteId}/estado?guardado=pago`);
 }
 
 export async function liquidarDeudaCliente(formData: FormData) {
