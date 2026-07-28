@@ -19,7 +19,10 @@ export async function registrarFiado(formData: FormData) {
     db.cliente.findUnique({ where: { id: fiado.clienteId }, select: { nombre: true } }),
     db.producto.findUnique({ where: { id: fiado.productoId }, select: { nombre: true } })
   ]);
-  const creada = await registrarVenta({ ...fiado, estado: "FIADA" });
+  // combinamos la fecha del input (sin hora) con la hora actual para que no aparezca 12:00 a.m.
+  const fechaConHora = new Date(fiado.fecha);
+  fechaConHora.setHours(new Date().getHours(), new Date().getMinutes(), new Date().getSeconds(), new Date().getMilliseconds());
+  const creada = await registrarVenta({ ...fiado, fecha: fechaConHora, estado: "FIADA" });
   await registrarLog({
     accion: "crear",
     entidad: "Crédito",
@@ -48,7 +51,7 @@ export async function registrarPagoFiado(formData: FormData) {
   const monto = Math.min(pago.monto, pendiente);
 
   const [pagoCreado] = await db.$transaction([
-    db.pago.create({ data: { ventaId: venta.id, monto, metodo: pago.metodo } }),
+    db.pago.create({ data: { ventaId: venta.id, monto, metodo: pago.metodo, fecha: new Date() } }),
     db.venta.update({
       where: { id: venta.id },
       data: { estado: pendiente - monto <= 0 ? "PAGADA" : "PARCIAL" }
@@ -85,7 +88,7 @@ export async function liquidarDeudaCliente(formData: FormData) {
     if (pendiente <= 0) return [];
     totalLiquidado += pendiente;
     return [
-      db.pago.create({ data: { ventaId: venta.id, monto: pendiente, metodo } }),
+      db.pago.create({ data: { ventaId: venta.id, monto: pendiente, metodo, fecha: new Date() } }),
       db.venta.update({ where: { id: venta.id }, data: { estado: "PAGADA" } })
     ];
   });

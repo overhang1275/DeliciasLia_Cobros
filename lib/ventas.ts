@@ -45,7 +45,8 @@ export async function registrarVenta({ clienteId, productoId, piezas, estado, me
           ? {
               create: {
                 monto: total,
-                metodo: metodoPago
+                metodo: metodoPago,
+                fecha: fecha || new Date()
               }
             }
           : undefined

@@ -3,7 +3,7 @@ import Link from "next/link";
 import type { LucideIcon } from "lucide-react";
 import { logout } from "@/app/login/actions";
 import { ConfigAccordionItem } from "@/app/configuracion/ConfigAccordionItem";
-import { ChevronRight, HandCoins, LogOut, Package, Plus, ReceiptText, Store, User, Users, Wallet } from "@/components/AppIcon";
+import { ChevronRight, CreditCard, HandCoins, LogOut, Package, Plus, ReceiptText, Store, User, Users, Wallet } from "@/components/AppIcon";
 import { getConfiguracion } from "@/lib/configuracion";
 import { db } from "@/lib/db";
 import { todayRange } from "@/lib/timezone";
@@ -14,7 +14,7 @@ const money = new Intl.NumberFormat("es-MX", { currency: "MXN", style: "currency
 
 export default async function HomePage() {
   const rangoHoy = todayRange();
-  const [config, clientes, productos, ventasFiadas, cambiosPendientes, piezasHoy, cobradoHoy, creditoHoy] = await Promise.all([
+  const [config, clientes, productos, ventasFiadas, cambiosPendientes, piezasHoy, cobradoHoy, creditoHoy, pagosHoy] = await Promise.all([
     getConfiguracion(),
     db.cliente.count({ where: { activo: true } }),
     db.producto.count({ where: { activo: true } }),
@@ -37,6 +37,11 @@ export default async function HomePage() {
     db.venta.aggregate({
       where: { fecha: rangoHoy, estado: { in: ["FIADA", "PARCIAL"] } },
       _sum: { total: true }
+    }),
+    db.pago.groupBy({
+      by: ["metodo"],
+      where: { fecha: rangoHoy },
+      _sum: { monto: true }
     })
   ]);
 
@@ -62,6 +67,18 @@ export default async function HomePage() {
     [HandCoins, "Cobrado", money.format(Number(cobradoHoy._sum.monto || 0))],
     [ReceiptText, "Crédito", money.format(Number(creditoHoy._sum.total || 0))]
   ];
+
+  const pagosHoyPorMetodo = pagosHoy.map((item) => ({
+    metodo: item.metodo,
+    total: Number(item._sum.monto || 0)
+  }));
+  const totalHoyPorMetodo = pagosHoyPorMetodo.reduce((sum, item) => sum + item.total, 0);
+  const efectivo = pagosHoyPorMetodo.find((item) => item.metodo === "EFECTIVO")?.total || 0;
+  const efectivoPct = totalHoyPorMetodo > 0 ? Math.round((efectivo / totalHoyPorMetodo) * 100) : 0;
+
+  function percentText(value: number, total: number) {
+    return total > 0 ? new Intl.NumberFormat("es-MX", { maximumFractionDigits: 1, style: "percent" }).format(value / total) : "0%";
+  }
 
   return (
     <main className="app-page">
@@ -145,6 +162,44 @@ export default async function HomePage() {
             </div>
           ))}
         </div>
+        <section className="mt-4 grid gap-3 rounded-[1.75rem] bg-white p-4 shadow-sm">
+          <h3 className="inline-flex items-center gap-2 text-lg font-bold text-[var(--brand)]">
+            <CreditCard className="size-5 text-[var(--primary)]" />
+            Forma de pago
+          </h3>
+          {totalHoyPorMetodo <= 0 ? (
+            <p className="ui-label">Sin pagos hoy.</p>
+          ) : (
+            <div className="grid gap-4 sm:grid-cols-[auto_1fr] sm:items-center">
+              <div
+                className="mx-auto grid size-36 place-items-center rounded-full"
+                style={{ background: `conic-gradient(var(--primary) 0 ${efectivoPct}%, var(--brand) ${efectivoPct}% 100%)` }}
+                aria-label={`Efectivo ${percentText(efectivo, totalHoyPorMetodo)}, transferencia ${percentText(totalHoyPorMetodo - efectivo, totalHoyPorMetodo)}`}
+              >
+                <div className="grid size-24 place-items-center rounded-full bg-white text-center shadow-sm">
+                  <span>
+                    <strong className="block text-xl text-[var(--brand)]">{percentText(efectivo, totalHoyPorMetodo)}</strong>
+                    <span className="ui-label">Efectivo</span>
+                  </span>
+                </div>
+              </div>
+              <div className="grid gap-3">
+                {pagosHoyPorMetodo.map((item) => (
+                  <div className="flex items-center justify-between gap-3" key={item.metodo}>
+                    <span className="flex items-center gap-2 text-sm font-bold text-[var(--text-main)]">
+                      <span className={`size-3 rounded-full ${item.metodo === "EFECTIVO" ? "bg-[var(--primary)]" : "bg-[var(--brand)]"}`} />
+                      {item.metodo === "EFECTIVO" ? "Efectivo" : "Transferencia"}
+                    </span>
+                    <span className="text-right text-sm">
+                      <strong className="block">{money.format(item.total)}</strong>
+                      <span className="ui-label">{percentText(item.total, totalHoyPorMetodo)}</span>
+                    </span>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+        </section>
       </ConfigAccordionItem>
 
       <section className="grid gap-3" aria-label="Accesos rapidos">
