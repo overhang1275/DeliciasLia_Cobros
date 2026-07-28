@@ -65,7 +65,7 @@ export default async function ConfiguracionPage({ searchParams }: { searchParams
             <label className="ui-label inline-flex items-center gap-1" htmlFor="negocioNombre">
               Nombre del negocio <Tags aria-hidden="true" className="size-4" />
             </label>
-            <input className="ui-input mt-2" defaultValue={config.negocioNombre} id="negocioNombre" name="negocioNombre" required />
+            <input className="ui-input mt-2" defaultValue={config.negocioNombre} id="negocioNombre" name="negocioNombre" placeholder="Mi negocio" required />
           </div>
         </ConfigAccordionItem>
 
@@ -87,28 +87,28 @@ export default async function ConfiguracionPage({ searchParams }: { searchParams
             <label className="ui-label inline-flex items-center gap-1" htmlFor="banco">
               Banco <Landmark aria-hidden="true" className="size-4" />
             </label>
-            <input className="ui-input mt-2" defaultValue={config.banco} id="banco" name="banco" required />
+            <input className="ui-input mt-2" defaultValue={config.banco} id="banco" name="banco" placeholder="Banco XYZ" required />
           </div>
 
           <div>
             <label className="ui-label inline-flex items-center gap-1" htmlFor="titular">
               A nombre de <User aria-hidden="true" className="size-4" />
             </label>
-            <input className="ui-input mt-2" defaultValue={config.titular} id="titular" name="titular" required />
+            <input className="ui-input mt-2" defaultValue={config.titular} id="titular" name="titular" placeholder="Nombre del titular" required />
           </div>
 
           <div>
             <label className="ui-label inline-flex items-center gap-1" htmlFor="clabe">
               CLABE <Hash aria-hidden="true" className="size-4" />
             </label>
-            <input className="ui-input mt-2" defaultValue={config.clabe} id="clabe" name="clabe" required />
+            <input className="ui-input mt-2" defaultValue={config.clabe} id="clabe" name="clabe" placeholder="012345678901234567" required />
           </div>
 
           <div>
             <label className="ui-label inline-flex items-center gap-1" htmlFor="cuenta">
               Número de cuenta <CreditCard aria-hidden="true" className="size-4" />
             </label>
-            <input className="ui-input mt-2" defaultValue={config.cuenta} id="cuenta" name="cuenta" required />
+            <input className="ui-input mt-2" defaultValue={config.cuenta} id="cuenta" name="cuenta" placeholder="1234567890" required />
           </div>
         </ConfigAccordionItem>
 
@@ -126,21 +126,21 @@ export default async function ConfiguracionPage({ searchParams }: { searchParams
             <label className="ui-label inline-flex items-center gap-1" htmlFor="passwordActual">
               Contraseña actual <KeyRound aria-hidden="true" className="size-4" />
             </label>
-            <input autoComplete="current-password" className="ui-input mt-2" id="passwordActual" name="passwordActual" required type="password" />
+            <input autoComplete="current-password" className="ui-input mt-2" id="passwordActual" name="passwordActual" placeholder="Contraseña actual" required type="password" />
           </div>
 
           <div>
             <label className="ui-label inline-flex items-center gap-1" htmlFor="passwordNueva">
               Nueva contraseña <KeyRound aria-hidden="true" className="size-4" />
             </label>
-            <input autoComplete="new-password" className="ui-input mt-2" id="passwordNueva" minLength={8} name="passwordNueva" required type="password" />
+            <input autoComplete="new-password" className="ui-input mt-2" id="passwordNueva" minLength={8} name="passwordNueva" placeholder="Nueva contraseña" required type="password" />
           </div>
 
           <div>
             <label className="ui-label inline-flex items-center gap-1" htmlFor="passwordConfirmar">
               Confirmar contraseña <KeyRound aria-hidden="true" className="size-4" />
             </label>
-            <input autoComplete="new-password" className="ui-input mt-2" id="passwordConfirmar" minLength={8} name="passwordConfirmar" required type="password" />
+            <input autoComplete="new-password" className="ui-input mt-2" id="passwordConfirmar" minLength={8} name="passwordConfirmar" placeholder="Confirmar contraseña" required type="password" />
           </div>
 
           <button className="ui-button-primary gap-2" type="submit">

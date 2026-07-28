@@ -77,21 +77,21 @@ export default async function ClientesPage({ searchParams }: { searchParams: Pro
           <label className="ui-label inline-flex items-center gap-1" htmlFor="nombre">
             Nombre <User aria-hidden="true" className="size-4" />
           </label>
-          <input className="ui-input mt-2" id="nombre" name="nombre" required minLength={2} />
+          <input className="ui-input mt-2" id="nombre" name="nombre" placeholder="Ej. María López" required minLength={2} />
         </div>
 
         <div>
           <label className="ui-label inline-flex items-center gap-1" htmlFor="telefono">
             Teléfono <Phone aria-hidden="true" className="size-4" />
           </label>
-          <input className="ui-input mt-2" id="telefono" name="telefono" inputMode="tel" />
+          <input className="ui-input mt-2" id="telefono" name="telefono" placeholder="55 1234 5678" inputMode="tel" />
         </div>
 
         <div>
           <label className="ui-label" htmlFor="notas">
             Notas
           </label>
-          <textarea className="ui-input mt-2 min-h-24 py-4" id="notas" name="notas" />
+          <textarea className="ui-input mt-2 min-h-24 py-4" id="notas" name="notas" placeholder="Notas adicionales" />
         </div>
 
         <button className="ui-button-primary gap-2" type="submit">

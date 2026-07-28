@@ -1,4 +1,5 @@
 import Link from "next/link";
+import React from "react";
 import { EstadoVenta } from "@prisma/client";
 import { registrarFiado } from "./actions";
 import { Banknote, CalendarDays, FileText, HandCoins, Home, Package, ReceiptText, Save, Search } from "@/components/AppIcon";
@@ -116,7 +117,7 @@ export default async function FiadosPage({ searchParams }: { searchParams: Promi
           <label className="ui-label" htmlFor="piezas">
             Piezas
           </label>
-          <input className="ui-input mt-2" defaultValue={defaultPiezas} id="piezas" inputMode="numeric" min="1" name="piezas" placeholder="1" required type="number" />
+          <input className="ui-input mt-2" defaultValue={defaultPiezas} id="piezas" inputMode="numeric" min="1" name="piezas" placeholder="Cantidad" required type="number" />
         </div>
 
         <div>
@@ -146,53 +147,60 @@ export default async function FiadosPage({ searchParams }: { searchParams: Promi
         {pendientes.length === 0 ? (
           <p className="rounded-[1.75rem] bg-white p-4 text-[var(--text-muted)] shadow-sm">No hay créditos pendientes.</p>
         ) : (
-          pendientes.map((venta) => (
-            <article className="rounded-[1.75rem] bg-white p-5 shadow-sm" key={venta.id}>
-              <div className="flex items-start justify-between gap-5">
-                <div className="flex min-w-0 flex-1 gap-3">
-                  <span className="grid size-11 shrink-0 place-items-center rounded-2xl bg-[var(--primary-soft)] text-[var(--primary)]" aria-hidden="true">
-                    <ReceiptText className="size-5" />
-                  </span>
-                  <div className="min-w-0">
-                    <h3 className="truncate font-bold text-[var(--text-main)]">{venta.cliente.nombre}</h3>
-                    <p className="ui-label">
-                      {venta.detalles[0]
-                        ? `${venta.detalles[0].producto.nombre} x ${venta.detalles[0].cantidad}`
-                        : venta.observaciones || "Crédito"}
-                    </p>
-                    <p className="mt-1 inline-flex items-center gap-1 text-sm text-[var(--text-muted)]">
-                      <CalendarDays aria-hidden="true" className="size-4" />
-                      {date.format(venta.fecha)}
+          pendientes.map((venta, index) => {
+            const prevVenta = index > 0 ? pendientes[index - 1] : null;
+            const showDateSeparator = !prevVenta || date.format(venta.fecha) !== date.format(prevVenta.fecha);
+            return (
+              <React.Fragment key={venta.id}>
+                {showDateSeparator && (
+                  <div className="ui-label date-separator text-sm text-gray-500">
+                    {date.format(venta.fecha)}
+                  </div>
+                )}
+                <article className="rounded-[1.75rem] bg-white p-5 shadow-sm">
+                  <div className="flex items-start justify-between gap-5">
+                    <div className="flex min-w-0 flex-1 gap-3">
+                      <span className="grid size-11 shrink-0 place-items-center rounded-2xl bg-[var(--primary-soft)] text-[var(--primary)]" aria-hidden="true">
+                        <ReceiptText className="size-5" />
+                      </span>
+                      <div className="min-w-0">
+                        <h3 className="truncate font-bold text-[var(--text-main)]">{venta.cliente.nombre}</h3>
+                        <p className="ui-label">
+                          {venta.detalles[0]
+                            ? `${venta.detalles[0].producto.nombre} x ${venta.detalles[0].cantidad}`
+                            : venta.observaciones || "Crédito"}
+                        </p>
+                      </div>
+                    </div>
+                    <p className="shrink-0 rounded-full bg-[var(--primary-soft)] px-3 py-1 text-sm font-bold text-[var(--primary)]">
+                      {money.format(venta.pendiente)}
                     </p>
                   </div>
-                </div>
-                <p className="shrink-0 rounded-full bg-[var(--primary-soft)] px-3 py-1 text-sm font-bold text-[var(--primary)]">
-                  {money.format(venta.pendiente)}
-                </p>
-              </div>
-              <div className="mt-5 grid gap-3 rounded-[1.5rem] bg-[var(--app-bg)] p-3 lg:grid-cols-[auto_1fr]">
-                <div className="grid gap-2 sm:grid-cols-2 lg:flex">
-                  <Link className="ui-button-compact gap-2" href={`/fiados/${venta.id}/pago`}>
-                    <Banknote aria-hidden="true" className="size-4" />
-                    Registrar pago
-                  </Link>
-                  <Link
-                    className="ui-button-compact gap-2"
-                    href={venta.cliente.estadoToken ? `/estado/${venta.cliente.estadoToken}` : `/clientes/${venta.clienteId}/estado`}
-                  >
-                    <FileText aria-hidden="true" className="size-4" />
-                    Estado de cuenta
-                  </Link>
-                </div>
-                <div className="lg:justify-self-end">
-                  <LiquidarDeudaForm clienteId={venta.clienteId} total={money.format(totalPorCliente.get(venta.clienteId) || venta.pendiente)} />
-                </div>
-              </div>
-              <div className="mt-3 flex justify-end">
-                <EliminarFiadoForm ventaId={venta.id} />
-              </div>
-            </article>
-          ))
+                  <div className="mt-5 grid gap-3 rounded-[1.5rem] bg-[var(--app-bg)] p-3 lg:grid-cols-[auto_1fr]">
+                    <div className="grid gap-2 sm:grid-cols-2 lg:flex">
+                      <Link className="ui-button-compact gap-2" href={`/fiados/${venta.id}/pago`}>
+                        <Banknote aria-hidden="true" className="size-4" />
+                        Registrar pago
+                      </Link>
+                      <Link
+                        className="ui-button-compact gap-2"
+                        href={venta.cliente.estadoToken ? `/estado/${venta.cliente.estadoToken}` : `/clientes/${venta.clienteId}/estado`}
+                      >
+                        <FileText aria-hidden="true" className="size-4" />
+                        Estado de cuenta
+                      </Link>
+                    </div>
+                    <div className="lg:justify-self-end">
+                      <LiquidarDeudaForm clienteId={venta.clienteId} total={money.format(totalPorCliente.get(venta.clienteId) || venta.pendiente)} />
+                    </div>
+                  </div>
+                  <div className="mt-3 flex justify-end">
+                    <EliminarFiadoForm ventaId={venta.id} />
+                  </div>
+                </article>
+              </React.Fragment>
+            );
+          })
         )}
         <Pagination basePath="/fiados" page={page} q={q} totalPages={totalPages} />
       </section>
