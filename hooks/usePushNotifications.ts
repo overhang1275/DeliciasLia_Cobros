@@ -9,6 +9,13 @@ function urlBase64ToArrayBuffer(base64String: string): ArrayBuffer {
   return Uint8Array.from(rawData, (c) => c.charCodeAt(0)).buffer;
 }
 
+async function getVapidKey() {
+  if (process.env.NEXT_PUBLIC_VAPID_PUBLIC_KEY) return process.env.NEXT_PUBLIC_VAPID_PUBLIC_KEY;
+  const res = await fetch("/api/push/public-key");
+  if (!res.ok) return "";
+  return ((await res.json()) as { publicKey?: string }).publicKey || "";
+}
+
 interface PushSubscriptionJSON {
   endpoint: string;
   keys: { p256dh: string; auth: string };
@@ -38,7 +45,7 @@ export function usePushNotifications(clienteId?: number) {
     setError("");
     setLoading(true);
     try {
-      const vapidKey = process.env.NEXT_PUBLIC_VAPID_PUBLIC_KEY;
+      const vapidKey = await getVapidKey();
       if (!vapidKey) throw new Error("Falta VAPID key");
       if (Notification.permission !== "granted" && (await Notification.requestPermission()) !== "granted") {
         throw new Error("Permiso denegado");

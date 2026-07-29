@@ -53,9 +53,9 @@ AUTH_SECURE_COOKIE="${AUTH_SECURE_COOKIE:-false}"
 APP_TZ="${APP_TZ:-America/Mexico_City}"
 VAPID_SUBJECT="${VAPID_SUBJECT:-mailto:admin@delicias-lia.local}"
 if [ -z "${VAPID_PUBLIC_KEY:-}" ] || [ -z "${VAPID_PRIVATE_KEY:-}" ]; then
-  VAPID_KEYS="$(runuser -u "$APP_USER" -- bash -lc "cd '$APP_DIR' && node -e \"const webpush=require('web-push'); const k=webpush.generateVAPIDKeys(); console.log(k.publicKey + ' ' + k.privateKey)\"")"
-  VAPID_PUBLIC_KEY="${VAPID_PUBLIC_KEY:-${VAPID_KEYS%% *}}"
-  VAPID_PRIVATE_KEY="${VAPID_PRIVATE_KEY:-${VAPID_KEYS#* }}"
+  VAPID_KEYS="$(runuser -u "$APP_USER" -- bash -lc "cd '$APP_DIR' && npx web-push generate-vapid-keys --json")"
+  VAPID_PUBLIC_KEY="${VAPID_PUBLIC_KEY:-$(printf '%s' "$VAPID_KEYS" | sed -n 's/.*"publicKey"[[:space:]]*:[[:space:]]*"\([^"]*\)".*/\1/p')}"
+  VAPID_PRIVATE_KEY="${VAPID_PRIVATE_KEY:-$(printf '%s' "$VAPID_KEYS" | sed -n 's/.*"privateKey"[[:space:]]*:[[:space:]]*"\([^"]*\)".*/\1/p')}"
 fi
 cat > "$APP_DIR/.env" <<ENV
 DATABASE_URL="file:../database/database.sqlite"

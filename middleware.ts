@@ -15,6 +15,7 @@ export async function middleware(request: NextRequest) {
     pathname === "/manifest.webmanifest" ||
     pathname === "/sw.js" ||
     pathname === "/push-sw.js" ||
+    pathname === "/api/push/public-key" ||
     pathname === "/api/push/subscribe" ||
     pathname === "/api/push/unsubscribe" ||
     pathname.startsWith("/icons/")
