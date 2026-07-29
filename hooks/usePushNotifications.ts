@@ -45,11 +45,12 @@ export function usePushNotifications(clienteId?: number) {
     setError("");
     setLoading(true);
     try {
+      if (Notification.permission !== "granted" && (await Notification.requestPermission()) !== "granted") {
+        throw new Error("Permiso bloqueado en el navegador");
+      }
+
       const vapidKey = await getVapidKey();
       if (!vapidKey) throw new Error("Falta VAPID key");
-      if (Notification.permission !== "granted" && (await Notification.requestPermission()) !== "granted") {
-        throw new Error("Permiso denegado");
-      }
 
       const reg = await navigator.serviceWorker.ready;
       const s = await reg.pushManager.subscribe({
