@@ -1,11 +1,9 @@
 import { db } from "@/lib/db";
+import { publicEstadoUrl } from "@/lib/public-url";
 
 type ReminderTarget = { clienteId: number } | { token: string };
 
-function estadoUrl(token: string) {
-  const base = process.env.NEXT_PUBLIC_BASE_URL?.replace(/\/$/, "");
-  return base ? `${base}/estado/${token}` : `/estado/${token}`;
-}
+const money = new Intl.NumberFormat("es-MX", { currency: "MXN", style: "currency" });
 
 function saldoPendiente(ventas: { total: unknown; pagos: { monto: unknown }[] }[]) {
   return ventas.reduce((sum, venta) => {
@@ -41,9 +39,9 @@ export async function enviarRecordatorioPago(target: ReminderTarget) {
       await webpush.sendNotification(
         { endpoint: sub.endpoint, keys: { auth: sub.auth, p256dh: sub.p256dh } },
         JSON.stringify({
-          body: `Tienes un saldo pendiente. Puedes ver tu estado de cuenta aquí.`,
+          body: `Tienes un saldo pendiente de ${money.format(saldo)}. Puedes ver tu estado de cuenta aquí.`,
           title: "Recordatorio de pago",
-          url: estadoUrl(cliente.estadoToken)
+          url: publicEstadoUrl(cliente.estadoToken)
         })
       );
       sent++;

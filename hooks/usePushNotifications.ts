@@ -45,8 +45,12 @@ export function usePushNotifications(clienteId?: number) {
     setError("");
     setLoading(true);
     try {
+      if (Notification.permission === "denied") {
+        throw new Error(`Permiso bloqueado para ${window.location.origin}`);
+      }
+
       if (Notification.permission !== "granted" && (await Notification.requestPermission()) !== "granted") {
-        throw new Error("Permiso bloqueado en el navegador");
+        throw new Error(`Permiso no activado para ${window.location.origin}`);
       }
 
       const vapidKey = await getVapidKey();

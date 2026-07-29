@@ -10,6 +10,7 @@ import { DownloadStatementButton } from "@/components/DownloadStatementButton";
 import { ShareStatementButton } from "@/components/ShareStatementButton";
 import { getConfiguracion } from "@/lib/configuracion";
 import { db } from "@/lib/db";
+import { publicEstadoUrl } from "@/lib/public-url";
 import { isValidSessionToken, SESSION_COOKIE } from "@/lib/session";
 import { appDateFormatter, dateInputValue } from "@/lib/timezone";
 import { AdminNotifyButton } from "@/components/AdminNotifyButton";
@@ -122,6 +123,7 @@ export default async function EstadoPublicoPage({ params, searchParams }: { para
   const pageGruposMovimientos = gruposMovimientos.slice((currentPage - 1) * pageSize, currentPage * pageSize);
   const isAdmin = await isValidSessionToken((await cookies()).get(SESSION_COOKIE)?.value);
   const fechaGenerado = generatedAt.format(new Date());
+  const estadoUrl = publicEstadoUrl(token);
 
   return (
     <main className="app-page">
@@ -157,7 +159,7 @@ export default async function EstadoPublicoPage({ params, searchParams }: { para
           {!isAdmin ? <PushSubscriptionButton clienteId={cliente.id} /> : null}
           {isAdmin ? (
             <>
-              <ShareStatementButton cliente={cliente.nombre} telefono={cliente.telefono} />
+              <ShareStatementButton cliente={cliente.nombre} telefono={cliente.telefono} url={estadoUrl} />
               <DownloadStatementButton
                 cliente={clienteSerialized}
                 grupos={gruposMovimientos}

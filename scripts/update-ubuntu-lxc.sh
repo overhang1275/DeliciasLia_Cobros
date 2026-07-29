@@ -49,7 +49,13 @@ if ! grep -q '^TZ=' "$APP_DIR/.env"; then
   echo "TZ=\"${APP_TZ}\"" >> "$APP_DIR/.env"
 fi
 if ! grep -q '^NEXT_PUBLIC_BASE_URL=' "$APP_DIR/.env"; then
-  echo "NEXT_PUBLIC_BASE_URL=\"${NEXT_PUBLIC_BASE_URL:-http://localhost:3000}\"" >> "$APP_DIR/.env"
+  echo "NEXT_PUBLIC_BASE_URL=\"${NEXT_PUBLIC_BASE_URL:-${TUNNEL_URL:-http://localhost:3000}}\"" >> "$APP_DIR/.env"
+fi
+if [ -n "${TUNNEL_URL:-}" ] && ! grep -q '^TUNNEL_URL=' "$APP_DIR/.env"; then
+  echo "TUNNEL_URL=\"${TUNNEL_URL}\"" >> "$APP_DIR/.env"
+fi
+if [ -n "${TUNNEL_URL:-}" ] && ! grep -q '^NEXT_PUBLIC_TUNNEL_URL=' "$APP_DIR/.env"; then
+  echo "NEXT_PUBLIC_TUNNEL_URL=\"${TUNNEL_URL}\"" >> "$APP_DIR/.env"
 fi
 if ! grep -q '^VAPID_PUBLIC_KEY=' "$APP_DIR/.env" || ! grep -q '^VAPID_PRIVATE_KEY=' "$APP_DIR/.env"; then
   if [ ! -d "$APP_DIR/node_modules/web-push" ]; then

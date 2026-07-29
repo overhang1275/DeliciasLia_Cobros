@@ -8,11 +8,10 @@ function whatsappPhone(phone?: string | null) {
   return digits.length === 10 ? `52${digits}` : digits;
 }
 
-export function ShareStatementButton({ cliente, telefono }: { cliente: string; telefono?: string | null }) {
+export function ShareStatementButton({ cliente, telefono, url }: { cliente: string; telefono?: string | null; url: string }) {
   const [done, setDone] = useState(false);
 
   async function share() {
-    const url = window.location.href;
     const text = `Hola ${cliente}.\n\nTe dejo tu estado de cuenta:\n${url}\n\nCualquier duda, favor de mandar mensaje.`;
     const phone = whatsappPhone(telefono);
 
