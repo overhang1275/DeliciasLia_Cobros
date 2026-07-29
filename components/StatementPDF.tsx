@@ -1,6 +1,6 @@
 "use client";
 
-import { Document, Page, Text, View, StyleSheet, Image } from "@react-pdf/renderer";
+import { Document, Image, Page, StyleSheet, Text, View } from "@react-pdf/renderer";
 
 export interface StatementData {
   cliente: {
@@ -16,7 +16,7 @@ export interface StatementData {
       detalle: string;
       folio: string;
       importe: string;
-      tipo: "cargo" | "abono";
+      tipo: "cargo" | "abono" | "cambio";
     }>;
     saldo: string;
   }>;
@@ -34,16 +34,17 @@ export interface StatementData {
 
 const styles = StyleSheet.create({
   page: {
-    padding: 40,
+    padding: 36,
     fontSize: 10,
     fontFamily: "Helvetica",
     backgroundColor: "#ffffff",
   },
   header: {
     flexDirection: "row",
-    marginBottom: 24,
-    paddingBottom: 12,
-    borderBottom: "2px solid #1a3a5c",
+    justifyContent: "space-between",
+    marginBottom: 18,
+    paddingBottom: 14,
+    borderBottom: "3px solid #14324d",
   },
   logo: {
     width: 50,
@@ -55,35 +56,63 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   negocioNombre: {
-    fontSize: 18,
-    fontWeight: "bold",
-    color: "#1a3a5c",
-  },
-  negocioSubtitulo: {
     fontSize: 10,
-    color: "#4a6a8c",
+    color: "#5f6f7f",
     marginBottom: 4,
   },
-  clienteNombre: {
-    fontSize: 14,
+  documentTitle: {
+    fontSize: 22,
     fontWeight: "bold",
-    color: "#1a3a5c",
+    color: "#14324d",
   },
-  clienteDetalle: {
+  negocioSubtitulo: {
     fontSize: 9,
-    color: "#666",
+    color: "#5f6f7f",
+    marginTop: 3,
+    textTransform: "uppercase",
   },
-  fechaGen: {
+  codeBox: {
+    width: 82,
+    padding: 8,
+    border: "1px solid #d9e1e8",
+    borderRadius: 4,
+    alignItems: "center",
+  },
+  codeText: {
+    fontSize: 20,
+    fontWeight: "bold",
+    color: "#14324d",
+  },
+  codeLabel: {
+    fontSize: 9,
+    color: "#5f6f7f",
+  },
+  detailGrid: {
+    flexDirection: "row",
+    marginBottom: 16,
+  },
+  detailCol: {
+    flex: 1,
+    paddingRight: 18,
+  },
+  detailTitle: {
+    fontSize: 12,
+    fontWeight: "bold",
+    color: "#14324d",
+    marginBottom: 8,
+  },
+  detailRow: {
+    marginBottom: 7,
+  },
+  detailLabel: {
     fontSize: 8,
-    color: "#999",
-    marginTop: 2,
+    color: "#6b7280",
+    textTransform: "uppercase",
   },
-  resumenBox: {
-    backgroundColor: "#f2f6fa",
-    padding: 12,
-    borderRadius: 6,
-    marginBottom: 20,
-    border: "1px solid #d0dce8",
+  detailValue: {
+    fontSize: 10,
+    color: "#111827",
+    marginTop: 2,
   },
   resumenRow: {
     flexDirection: "row",
@@ -98,83 +127,83 @@ const styles = StyleSheet.create({
   resumenValue: {
     fontSize: 12,
     fontWeight: "bold",
-    color: "#1a3a5c",
+    color: "#14324d",
   },
   saldoValue: {
     fontSize: 16,
     fontWeight: "bold",
     color: "#c62828",
   },
+  noteBox: {
+    backgroundColor: "#f6f8fa",
+    padding: 10,
+    borderRadius: 4,
+    marginBottom: 16,
+    border: "1px solid #e5ebf0",
+  },
+  noteText: {
+    color: "#4b5563",
+    lineHeight: 1.4,
+  },
   sectionTitle: {
     fontSize: 14,
     fontWeight: "bold",
-    color: "#1a3a5c",
+    color: "#14324d",
     marginBottom: 10,
     paddingBottom: 4,
-    borderBottom: "1px solid #d0dce8",
+    borderBottom: "1px solid #d9e1e8",
   },
-  grupo: {
-    marginBottom: 12,
-    border: "1px solid #e8edf2",
+  table: {
+    border: "1px solid #d9e1e8",
     borderRadius: 4,
     overflow: "hidden",
   },
-  grupoFecha: {
-    backgroundColor: "#e8edf2",
-    padding: 6,
-    paddingHorizontal: 10,
-    fontSize: 11,
+  tableHeader: {
+    flexDirection: "row",
+    backgroundColor: "#e9eef3",
+    paddingVertical: 6,
+    paddingHorizontal: 7,
+  },
+  tableHeadText: {
     fontWeight: "bold",
-    color: "#1a3a5c",
+    color: "#14324d",
+    fontSize: 8,
+    textTransform: "uppercase",
   },
   movimientoRow: {
     flexDirection: "row",
-    paddingVertical: 4,
-    paddingHorizontal: 10,
+    paddingVertical: 7,
+    paddingHorizontal: 7,
     borderBottom: "1px solid #f0f0f0",
   },
-  movimientoCol: {
-    flex: 1,
-  },
   movimientoConcepto: {
-    fontSize: 10,
+    fontSize: 8,
     fontWeight: "bold",
   },
   movimientoDetalle: {
-    fontSize: 8,
+    fontSize: 7,
     color: "#666",
   },
   movimientoFolio: {
     fontSize: 7,
     color: "#999",
   },
+  colFecha: { width: 60 },
+  colRef: { width: 92, paddingRight: 10 },
+  colConcepto: { flex: 1, paddingLeft: 8 },
+  colTipo: { width: 78 },
   movimientoImporte: {
-    fontSize: 10,
+    fontSize: 9,
     fontWeight: "bold",
-    width: 80,
+    width: 72,
     textAlign: "right",
   },
   importeCargo: { color: "#c62828" },
   importeAbono: { color: "#2e7d32" },
-  totalDiaRow: {
-    flexDirection: "row",
-    justifyContent: "space-between",
-    backgroundColor: "#f8fafc",
-    padding: 6,
-    paddingHorizontal: 10,
-    borderTop: "2px solid #d0dce8",
-  },
-  totalDiaLabel: {
-    fontSize: 10,
-    fontWeight: "bold",
-  },
-  totalDiaValue: {
-    fontSize: 10,
-    fontWeight: "bold",
-  },
+  importeCambio: { color: "#b45309" },
   footer: {
     marginTop: 24,
-    borderTop: "2px solid #1a3a5c",
+    borderTop: "2px solid #14324d",
     paddingTop: 12,
     fontSize: 8,
     color: "#4a6a8c",
@@ -185,17 +214,19 @@ const styles = StyleSheet.create({
   },
   footerNegrita: {
     fontWeight: "bold",
-    color: "#1a3a5c",
+    color: "#14324d",
   },
 });
 
 const money = new Intl.NumberFormat("es-MX", { currency: "MXN", style: "currency" });
 
 export function StatementPDF({ cliente, grupos, saldo, config, fechaGenerado }: StatementData) {
+  const movimientos = grupos.flatMap((grupo) => grupo.movimientos.map((mov) => ({ ...mov, fecha: grupo.fecha })));
+  const tipoTexto = (detalle: string) => detalle.replace("Cargo - ", "Credito - ").replace("Abono - ", "Pago - ");
+
   return (
     <Document>
       <Page size="A4" style={styles.page}>
-        {/* Header */}
         <View style={styles.header}>
           {config.logoDataUrl && (
             // eslint-disable-next-line jsx-a11y/alt-text
@@ -203,76 +234,97 @@ export function StatementPDF({ cliente, grupos, saldo, config, fechaGenerado }: 
           )}
           <View style={styles.headerText}>
             <Text style={styles.negocioNombre}>{config.negocioNombre}</Text>
-            <Text style={styles.negocioSubtitulo}>Estado de cuenta</Text>
-            <Text style={styles.clienteNombre}>{cliente.nombre}</Text>
-            <Text style={styles.clienteDetalle}>
-              Teléfono: {cliente.telefono || "—"}
-            </Text>
-            <Text style={styles.fechaGen}>Generado el {fechaGenerado}</Text>
+            <Text style={styles.documentTitle}>ESTADO DE CUENTA</Text>
+            <Text style={styles.negocioSubtitulo}>Documento de cobro y consulta de movimientos</Text>
+          </View>
+          <View style={styles.codeBox}>
+            <Text style={styles.codeText}>EC</Text>
+            <Text style={styles.codeLabel}>Cliente</Text>
           </View>
         </View>
 
-        {/* Resumen */}
-        <View style={styles.resumenBox}>
-          <View style={styles.resumenRow}>
-            <Text style={styles.resumenLabel}>Saldo actual</Text>
-            <Text style={styles.saldoValue}>{money.format(saldo)}</Text>
-          </View>
-          <View style={styles.resumenRow}>
-            <Text style={styles.resumenLabel}>Número de movimientos</Text>
-            <Text style={styles.resumenValue}>
-              {grupos.reduce((acc, g) => acc + g.movimientos.length, 0)}
-            </Text>
-          </View>
-        </View>
-
-        {/* Movimientos */}
-        <Text style={styles.sectionTitle}>Detalle de movimientos</Text>
-
-        {grupos.map((grupo) => (
-          <View key={grupo.key} style={styles.grupo}>
-            <Text style={styles.grupoFecha}>{grupo.fecha}</Text>
-            {grupo.movimientos.map((mov) => (
-              <View key={mov.id} style={styles.movimientoRow}>
-                <View style={styles.movimientoCol}>
-                  <Text style={styles.movimientoConcepto}>{mov.concepto}</Text>
-                  <Text style={styles.movimientoDetalle}>{mov.detalle}</Text>
-                  <Text style={styles.movimientoFolio}>{mov.folio}</Text>
-                </View>
-                <Text
-                  style={[
-                    styles.movimientoImporte,
-                    mov.tipo === "cargo" ? styles.importeCargo : styles.importeAbono,
-                  ]}
-                >
-                  {mov.importe}
-                </Text>
-              </View>
-            ))}
-            <View style={styles.totalDiaRow}>
-              <Text style={styles.totalDiaLabel}>Total del día</Text>
-              <Text style={styles.totalDiaValue}>{grupo.saldo}</Text>
+        <View style={styles.detailGrid}>
+          <View style={styles.detailCol}>
+            <Text style={styles.detailTitle}>Cliente</Text>
+            <View style={styles.detailRow}>
+              <Text style={styles.detailLabel}>Nombre</Text>
+              <Text style={styles.detailValue}>{cliente.nombre}</Text>
+            </View>
+            <View style={styles.detailRow}>
+              <Text style={styles.detailLabel}>Telefono</Text>
+              <Text style={styles.detailValue}>{cliente.telefono || "-"}</Text>
+            </View>
+            <View style={styles.detailRow}>
+              <Text style={styles.detailLabel}>Generado</Text>
+              <Text style={styles.detailValue}>{fechaGenerado}</Text>
             </View>
           </View>
-        ))}
+          <View style={styles.detailCol}>
+            <Text style={styles.detailTitle}>Resumen</Text>
+            <View style={styles.resumenRow}>
+              <Text style={styles.resumenLabel}>Saldo actual</Text>
+              <Text style={styles.saldoValue}>{money.format(saldo)}</Text>
+            </View>
+            <View style={styles.resumenRow}>
+              <Text style={styles.resumenLabel}>Movimientos</Text>
+              <Text style={styles.resumenValue}>{movimientos.length}</Text>
+            </View>
+            <View style={styles.detailRow}>
+              <Text style={styles.detailLabel}>Banco</Text>
+              <Text style={styles.detailValue}>{config.banco}</Text>
+            </View>
+          </View>
+        </View>
 
-        {/* Footer */}
+        <View style={styles.noteBox}>
+          <Text style={styles.noteText}>
+            Este estado de cuenta muestra creditos, pagos y cambios pendientes. Para liquidar el saldo, utiliza los datos de deposito al final del documento.
+          </Text>
+        </View>
+
+        <Text style={styles.sectionTitle}>Detalle de movimientos</Text>
+
+        <View style={styles.table}>
+          <View style={styles.tableHeader}>
+            <Text style={[styles.tableHeadText, styles.colFecha]}>Fecha</Text>
+            <Text style={[styles.tableHeadText, styles.colRef]}>Referencia</Text>
+            <Text style={[styles.tableHeadText, styles.colConcepto]}>Concepto</Text>
+            <Text style={[styles.tableHeadText, styles.colTipo]}>Tipo</Text>
+            <Text style={[styles.tableHeadText, styles.movimientoImporte]}>Importe</Text>
+          </View>
+          {movimientos.map((mov) => (
+            <View key={mov.id} style={styles.movimientoRow}>
+              <Text style={[styles.movimientoDetalle, styles.colFecha]}>{mov.fecha}</Text>
+              <View style={styles.colRef}>
+                <Text style={styles.movimientoFolio}>{mov.folio}</Text>
+              </View>
+              <View style={styles.colConcepto}>
+                <Text style={styles.movimientoConcepto}>{mov.concepto}</Text>
+              </View>
+              <Text style={[styles.movimientoDetalle, styles.colTipo]}>{tipoTexto(mov.detalle)}</Text>
+              <Text
+                style={[
+                  styles.movimientoImporte,
+                  mov.tipo === "abono" ? styles.importeAbono : mov.tipo === "cambio" ? styles.importeCambio : styles.importeCargo,
+                ]}
+              >
+                {mov.importe}
+              </Text>
+            </View>
+          ))}
+        </View>
+
         <View style={styles.footer}>
           <Text style={styles.footerLine}>
-            <Text style={styles.footerNegrita}>Datos para depósito:</Text>{" "}
-            {config.banco} - {config.titular}
+            <Text style={styles.footerNegrita}>Datos para deposito:</Text> {config.banco} - {config.titular}
           </Text>
           <Text style={styles.footerLine}>
             <Text style={styles.footerNegrita}>CLABE:</Text> {config.clabe}{"  "}
             <Text style={styles.footerNegrita}>Cuenta:</Text> {config.cuenta}
           </Text>
-          <Text style={styles.footerLine}>
-            Este documento es generado automáticamente y no requiere firma.
-          </Text>
+          <Text style={styles.footerLine}>Este documento es generado automaticamente y no requiere firma.</Text>
         </View>
       </Page>
     </Document>
   );
 }
-
-

@@ -80,31 +80,44 @@ export default async function EstadoPublicoPage({ params, searchParams }: { para
       detalle: `Abono - ${pago.metodo.toLowerCase()}`,
       monto: -Number(pago.monto),
       tipo: "abono" as const
+    })),
+    ...cliente.ventas
+      .filter((venta) => venta.cambioPendiente && Number(venta.cambioMonto) > 0)
+      .map((venta) => ({
+        id: `cambio-${venta.id}`,
+        fecha: venta.fecha,
+        folio: `Ticket ID ${ticketId(venta.id)}`,
+        concepto: "Cambio pendiente",
+        detalle: "Cambio por entregar al cliente",
+        monto: -Number(venta.cambioMonto),
+        tipo: "cambio" as const
     }))
   ].sort((a, b) => a.fecha.getTime() - b.fecha.getTime() || a.id.localeCompare(b.id));
   const gruposMap = new Map<
     string,
     {
       cargos: number;
+      cambios: number;
       fecha: string;
       key: string;
-      movimientos: { concepto: string; detalle: string; folio: string; hora: string; id: string; importe: string; tipo: "abono" | "cargo" }[];
+      movimientos: { concepto: string; detalle: string; folio: string; hora: string; id: string; importe: string; tipo: "abono" | "cargo" | "cambio" }[];
       pagos: number;
     }
   >();
 
   for (const movimiento of movimientos) {
     const key = dateInputValue(movimiento.fecha);
-    const grupo = gruposMap.get(key) || { cargos: 0, fecha: date.format(movimiento.fecha), key, movimientos: [], pagos: 0 };
+    const grupo = gruposMap.get(key) || { cargos: 0, cambios: 0, fecha: date.format(movimiento.fecha), key, movimientos: [], pagos: 0 };
     grupo.cargos += movimiento.tipo === "cargo" ? movimiento.monto : 0;
     grupo.pagos += movimiento.tipo === "abono" ? Math.abs(movimiento.monto) : 0;
+    grupo.cambios += movimiento.tipo === "cambio" ? Math.abs(movimiento.monto) : 0;
     grupo.movimientos.push({
       concepto: movimiento.concepto,
       detalle: movimiento.detalle,
       folio: movimiento.folio,
       hora: time.format(movimiento.fecha),
       id: movimiento.id,
-      importe: money.format(Math.abs(movimiento.monto)),
+      importe: movimiento.tipo === "cambio" ? `-${money.format(Math.abs(movimiento.monto))}` : money.format(Math.abs(movimiento.monto)),
       tipo: movimiento.tipo
     });
     gruposMap.set(key, grupo);
@@ -115,8 +128,9 @@ export default async function EstadoPublicoPage({ params, searchParams }: { para
     .map((grupo) => ({
       ...grupo,
       cargos: money.format(grupo.cargos),
+      cambios: grupo.cambios > 0 ? `-${money.format(grupo.cambios)}` : money.format(0),
       pagos: money.format(grupo.pagos),
-      saldo: money.format(grupo.cargos - grupo.pagos)
+      saldo: money.format(grupo.cargos - grupo.pagos - grupo.cambios)
     }));
   const totalPages = Math.max(1, Math.ceil(gruposMovimientos.length / pageSize));
   const currentPage = Math.min(page, totalPages);
@@ -214,6 +228,7 @@ export default async function EstadoPublicoPage({ params, searchParams }: { para
             <div className="flex gap-3 text-xs font-bold">
               <span className="text-green-700">Verde: pagos</span>
               <span className="text-red-700">Rojo: crédito</span>
+              <span className="text-amber-700">Ámbar: cambio</span>
             </div>
           </div>
         </div>

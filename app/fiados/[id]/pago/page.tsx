@@ -1,7 +1,8 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
+import { PagoFiadoCambioFields } from "./PagoFiadoCambioFields";
 import { registrarPagoFiado } from "../../actions";
-import { ArrowLeft, Banknote, CreditCard, HandCoins, ReceiptText, Save } from "@/components/AppIcon";
+import { ArrowLeft, Banknote, ReceiptText, Save } from "@/components/AppIcon";
 import { db } from "@/lib/db";
 
 export const dynamic = "force-dynamic";
@@ -61,33 +62,7 @@ export default async function PagoFiadoPage({ params }: { params: Promise<{ id: 
         </div>
         <input name="ventaId" type="hidden" value={venta.id} />
 
-        <div>
-          <label className="ui-label inline-flex items-center gap-1" htmlFor="monto">
-            Cantidad <HandCoins aria-hidden="true" className="size-4" />
-          </label>
-          <input
-            className="ui-input mt-2"
-            id="monto"
-            inputMode="decimal"
-            max={Math.max(0, pendiente)}
-            min="0.01"
-            name="monto"
-            placeholder="Cantidad"
-            required
-            step="0.01"
-            type="number"
-          />
-        </div>
-
-        <div>
-          <label className="ui-label inline-flex items-center gap-1" htmlFor="metodo">
-            Tipo de pago <CreditCard aria-hidden="true" className="size-4" />
-          </label>
-          <select className="ui-input mt-2" id="metodo" name="metodo" required>
-            <option value="EFECTIVO">Efectivo</option>
-            <option value="TRANSFERENCIA">Transferencia</option>
-          </select>
-        </div>
+        <PagoFiadoCambioFields pendiente={Math.max(0, pendiente)} />
 
         <button className="ui-button-primary gap-2" type="submit">
           <Save aria-hidden="true" className="size-5" />

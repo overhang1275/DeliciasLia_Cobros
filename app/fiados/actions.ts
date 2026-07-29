@@ -39,7 +39,9 @@ export async function registrarPagoFiado(formData: FormData) {
   const pago = pagoFiadoSchema.parse({
     ventaId: formData.get("ventaId"),
     monto: formData.get("monto"),
-    metodo: formData.get("metodo")
+    metodo: formData.get("metodo"),
+    cambioPendiente: formData.get("cambioPendiente"),
+    montoRecibido: formData.get("montoRecibido")
   });
 
   const venta = await db.venta.findUniqueOrThrow({
@@ -49,19 +51,20 @@ export async function registrarPagoFiado(formData: FormData) {
   const pagado = venta.pagos.reduce((total, item) => total + Number(item.monto), 0);
   const pendiente = Number(venta.total) - pagado;
   const monto = Math.min(pago.monto, pendiente);
+  const cambioMonto = pago.metodo === "EFECTIVO" && pago.cambioPendiente ? Math.max(0, pago.montoRecibido - monto) : 0;
 
   const [pagoCreado] = await db.$transaction([
     db.pago.create({ data: { ventaId: venta.id, monto, metodo: pago.metodo, fecha: new Date() } }),
     db.venta.update({
       where: { id: venta.id },
-      data: { estado: pendiente - monto <= 0 ? "PAGADA" : "PARCIAL" }
+      data: { estado: pendiente - monto <= 0 ? "PAGADA" : "PARCIAL", cambioPendiente: cambioMonto > 0 || venta.cambioPendiente, cambioMonto: { increment: cambioMonto } }
     })
   ]);
   await registrarLog({
     accion: "crear",
     entidad: "Pago",
     entidadId: pagoCreado.id,
-    detalle: `Cliente: ${venta.cliente.nombre} | Ref. pago ID ${auditTicketId(pagoCreado.id)} | Ticket ID ${auditTicketId(venta.id)} | Producto: ${venta.detalles[0]?.producto.nombre || "Venta"} | Pago: ${auditMoney.format(monto)} | Método: ${pago.metodo} | Pendiente antes: ${auditMoney.format(pendiente)} | Pendiente después: ${auditMoney.format(Math.max(0, pendiente - monto))}`
+    detalle: `Cliente: ${venta.cliente.nombre} | Ref. pago ID ${auditTicketId(pagoCreado.id)} | Ticket ID ${auditTicketId(venta.id)} | Producto: ${venta.detalles[0]?.producto.nombre || "Venta"} | Pago: ${auditMoney.format(monto)} | Método: ${pago.metodo} | Pendiente antes: ${auditMoney.format(pendiente)} | Pendiente después: ${auditMoney.format(Math.max(0, pendiente - monto))}${cambioMonto > 0 ? ` | Cambio pendiente: ${auditMoney.format(cambioMonto)}` : ""}`
   });
 
   revalidatePath("/");

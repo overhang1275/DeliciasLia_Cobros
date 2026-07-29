@@ -11,5 +11,11 @@ export const fiadoSchema = z.object({
 export const pagoFiadoSchema = z.object({
   ventaId: z.coerce.number().int().positive("Selecciona una venta."),
   monto: z.coerce.number().positive("El pago debe ser mayor a 0."),
-  metodo: z.enum(["EFECTIVO", "TRANSFERENCIA"])
-});
+  metodo: z.enum(["EFECTIVO", "TRANSFERENCIA"]),
+  cambioPendiente: z.preprocess((value) => value === "on", z.boolean()),
+  montoRecibido: z.preprocess((value) => (value === "" || value == null ? 0 : value), z.coerce.number().min(0))
+}).superRefine((pago, ctx) => {
+  if (pago.cambioPendiente && pago.montoRecibido <= 0) {
+    ctx.addIssue({ code: "custom", message: "Escribe con cuanto te pagaron.", path: ["montoRecibido"] });
+  }
+}).transform((pago) => ({ ...pago, montoRecibido: pago.cambioPendiente ? pago.montoRecibido : 0 }));
