@@ -12,6 +12,8 @@ import { getConfiguracion } from "@/lib/configuracion";
 import { db } from "@/lib/db";
 import { isValidSessionToken, SESSION_COOKIE } from "@/lib/session";
 import { appDateFormatter, dateInputValue } from "@/lib/timezone";
+import { AdminNotifyButton } from "@/components/AdminNotifyButton";
+import { PushSubscriptionButton } from "@/components/PushSubscriptionButton";
 
 export const dynamic = "force-dynamic";
 
@@ -21,12 +23,13 @@ const time = appDateFormatter({ hour: "2-digit", minute: "2-digit" });
 const generatedAt = appDateFormatter({ dateStyle: "medium", timeStyle: "short" });
 const pageSize = 5;
 const ticketId = (id: number) => String(id).padStart(6, "0");
+const serialize = <T,>(x: T): T => JSON.parse(JSON.stringify(x));
 
 export default async function EstadoPublicoPage({ params, searchParams }: { params: Promise<{ token: string }>; searchParams: Promise<{ page?: string }> }) {
   const { token } = await params;
   const { page: pageParam } = await searchParams;
   const page = Math.max(1, Number(pageParam) || 1);
-  const [cliente, config] = await Promise.all([
+  const [cliente, config, pushSubs] = await Promise.all([
     db.cliente.findUnique({
       where: { estadoToken: token },
       include: {
@@ -37,10 +40,14 @@ export default async function EstadoPublicoPage({ params, searchParams }: { para
         }
       }
     }),
-    getConfiguracion()
+    getConfiguracion(),
+    db.pushSubscription.findMany({ where: { cliente: { estadoToken: token } } })
   ]);
 
   if (!cliente) notFound();
+
+  const clienteSerialized = serialize(cliente);
+  const configSerialized = serialize(config);
 
   const pagos = await db.pago.findMany({
     where: { venta: { clienteId: cliente.id } },
@@ -146,21 +153,25 @@ export default async function EstadoPublicoPage({ params, searchParams }: { para
             <Wallet className="size-6" />
           </span>
         </div>
-        {isAdmin ? (
-          <div className="mt-4 flex flex-wrap gap-2 no-print">
-            <ShareStatementButton cliente={cliente.nombre} telefono={cliente.telefono} />
-            <DownloadStatementButton
-              cliente={cliente}
-              grupos={gruposMovimientos}
-              saldo={saldo}
-              config={config}
-              fechaGenerado={fechaGenerado}
-            />
-            <Link className="ui-button-compact" href="/clientes">
-              Volver
-            </Link>
-          </div>
-        ) : null}
+        <div className="mt-4 flex flex-wrap gap-2 no-print">
+          {!isAdmin ? <PushSubscriptionButton clienteId={cliente.id} /> : null}
+          {isAdmin ? (
+            <>
+              <ShareStatementButton cliente={cliente.nombre} telefono={cliente.telefono} />
+              <DownloadStatementButton
+                cliente={clienteSerialized}
+                grupos={gruposMovimientos}
+                saldo={saldo}
+                config={configSerialized}
+                fechaGenerado={fechaGenerado}
+              />
+              {saldo > 0 ? <AdminNotifyButton clienteId={cliente.id} disabled={pushSubs.length === 0} /> : null}
+              <Link className="ui-button-compact" href="/clientes">
+                Volver
+              </Link>
+            </>
+          ) : null}
+        </div>
       </header>
 
       <section className="rounded-[2rem] bg-white p-5 shadow-sm">

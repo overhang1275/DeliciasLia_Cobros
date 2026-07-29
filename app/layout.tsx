@@ -3,6 +3,7 @@ import { Suspense, type ReactNode } from "react";
 import { cookies } from "next/headers";
 import { AppToast } from "@/components/AppToast";
 import { BottomNavigation } from "@/components/BottomNavigation";
+import { RegisterPushSW } from "@/components/RegisterPushSW";
 import { RouteMotion } from "@/components/RouteMotion";
 import { getConfiguracion } from "@/lib/configuracion";
 import { isValidSessionToken, SESSION_COOKIE } from "@/lib/session";
@@ -50,6 +51,7 @@ export default async function RootLayout({ children }: Readonly<{ children: Reac
         <Suspense fallback={null}>
           <AppToast />
         </Suspense>
+        <RegisterPushSW />
         {hasSession ? <BottomNavigation /> : null}
       </body>
     </html>

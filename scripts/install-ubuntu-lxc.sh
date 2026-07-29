@@ -36,6 +36,8 @@ fi
 mkdir -p "$APP_DIR/database"
 chown -R "$APP_USER:$APP_USER" "$APP_DIR"
 
+runuser -u "$APP_USER" -- bash -lc "cd '$APP_DIR' && npm ci"
+
 if [ -z "${ADMIN_PASSWORD:-}" ]; then
   read -rsp "Password inicial para admin: " ADMIN_PASSWORD
   echo
@@ -49,17 +51,27 @@ fi
 AUTH_SECRET="${AUTH_SECRET:-$(openssl rand -hex 32)}"
 AUTH_SECURE_COOKIE="${AUTH_SECURE_COOKIE:-false}"
 APP_TZ="${APP_TZ:-America/Mexico_City}"
+VAPID_SUBJECT="${VAPID_SUBJECT:-mailto:admin@delicias-lia.local}"
+if [ -z "${VAPID_PUBLIC_KEY:-}" ] || [ -z "${VAPID_PRIVATE_KEY:-}" ]; then
+  VAPID_KEYS="$(runuser -u "$APP_USER" -- bash -lc "cd '$APP_DIR' && node -e \"const webpush=require('web-push'); const k=webpush.generateVAPIDKeys(); console.log(k.publicKey + ' ' + k.privateKey)\"")"
+  VAPID_PUBLIC_KEY="${VAPID_PUBLIC_KEY:-${VAPID_KEYS%% *}}"
+  VAPID_PRIVATE_KEY="${VAPID_PRIVATE_KEY:-${VAPID_KEYS#* }}"
+fi
 cat > "$APP_DIR/.env" <<ENV
 DATABASE_URL="file:../database/database.sqlite"
 AUTH_SECRET="${AUTH_SECRET}"
 AUTH_SECURE_COOKIE="${AUTH_SECURE_COOKIE}"
 ADMIN_PASSWORD="${ADMIN_PASSWORD}"
 TZ="${APP_TZ}"
+NEXT_PUBLIC_BASE_URL="${NEXT_PUBLIC_BASE_URL:-http://localhost:${PORT}}"
+NEXT_PUBLIC_VAPID_PUBLIC_KEY="${VAPID_PUBLIC_KEY}"
+VAPID_PUBLIC_KEY="${VAPID_PUBLIC_KEY}"
+VAPID_PRIVATE_KEY="${VAPID_PRIVATE_KEY}"
+VAPID_SUBJECT="${VAPID_SUBJECT}"
 ENV
 chown "$APP_USER:$APP_USER" "$APP_DIR/.env"
 chmod 600 "$APP_DIR/.env"
 
-runuser -u "$APP_USER" -- bash -lc "cd '$APP_DIR' && npm ci"
 runuser -u "$APP_USER" -- bash -lc "cd '$APP_DIR' && npx prisma generate"
 runuser -u "$APP_USER" -- bash -lc "cd '$APP_DIR' && npx prisma migrate deploy"
 runuser -u "$APP_USER" -- bash -lc "cd '$APP_DIR' && npm run prisma:seed"

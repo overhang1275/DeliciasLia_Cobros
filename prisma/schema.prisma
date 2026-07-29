@@ -18,6 +18,7 @@ model Cliente {
 
   ventas Venta[]
   pedidos Pedido[]
+  pushSubscriptions PushSubscription[]
 
   @@index([nombre])
 }
@@ -158,6 +159,19 @@ model AuditLog {
 
   @@index([creadoEn])
   @@index([entidad, entidadId])
+}
+
+model PushSubscription {
+  id        Int      @id @default(autoincrement())
+  endpoint  String   @unique
+  p256dh    String
+  auth      String
+  clienteId Int?
+  cliente   Cliente? @relation(fields: [clienteId], references: [id])
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([clienteId])
 }
 
 enum EstadoVenta {

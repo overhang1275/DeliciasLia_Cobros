@@ -39,6 +39,24 @@ git -C "$APP_DIR" pull --ff-only
 chown -R "$APP_USER:$APP_USER" "$APP_DIR"
 
 runuser -u "$APP_USER" -- bash -lc "cd '$APP_DIR' && npm ci"
+if ! grep -q '^VAPID_PUBLIC_KEY=' "$APP_DIR/.env" || ! grep -q '^VAPID_PRIVATE_KEY=' "$APP_DIR/.env"; then
+  VAPID_KEYS="$(runuser -u "$APP_USER" -- bash -lc "cd '$APP_DIR' && node -e \"const webpush=require('web-push'); const k=webpush.generateVAPIDKeys(); console.log(k.publicKey + ' ' + k.privateKey)\"")"
+  {
+    echo "NEXT_PUBLIC_VAPID_PUBLIC_KEY=\"${VAPID_KEYS%% *}\""
+    echo "VAPID_PUBLIC_KEY=\"${VAPID_KEYS%% *}\""
+    echo "VAPID_PRIVATE_KEY=\"${VAPID_KEYS#* }\""
+    echo "VAPID_SUBJECT=\"${VAPID_SUBJECT:-mailto:admin@delicias-lia.local}\""
+  } >> "$APP_DIR/.env"
+  chown "$APP_USER:$APP_USER" "$APP_DIR/.env"
+  chmod 600 "$APP_DIR/.env"
+fi
+if ! grep -q '^NEXT_PUBLIC_VAPID_PUBLIC_KEY=' "$APP_DIR/.env"; then
+  VAPID_PUBLIC_KEY="$(grep '^VAPID_PUBLIC_KEY=' "$APP_DIR/.env" | tail -n1 | cut -d= -f2- | tr -d '"')"
+  echo "NEXT_PUBLIC_VAPID_PUBLIC_KEY=\"${VAPID_PUBLIC_KEY}\"" >> "$APP_DIR/.env"
+fi
+if ! grep -q '^VAPID_SUBJECT=' "$APP_DIR/.env"; then
+  echo "VAPID_SUBJECT=\"${VAPID_SUBJECT:-mailto:admin@delicias-lia.local}\"" >> "$APP_DIR/.env"
+fi
 runuser -u "$APP_USER" -- bash -lc "cd '$APP_DIR' && npx prisma generate"
 runuser -u "$APP_USER" -- bash -lc "cd '$APP_DIR' && npx prisma migrate deploy"
 runuser -u "$APP_USER" -- bash -lc "cd '$APP_DIR' && npm run build"
