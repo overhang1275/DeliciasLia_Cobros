@@ -1,10 +1,11 @@
 import Link from "next/link";
 import type { LucideIcon } from "lucide-react";
-import { ArrowRight, ChartNoAxesColumnIncreasing, Home, LogOut, Package, ReceiptText, Settings, Wrench } from "@/components/AppIcon";
+import { ArrowRight, ChartNoAxesColumnIncreasing, Home, LogOut, Package, ReceiptText, Settings, Wallet, Wrench } from "@/components/AppIcon";
 import { logout } from "@/app/login/actions";
 
 const items: [LucideIcon, string, string, string][] = [
   [ReceiptText, "Pedidos", "Encargos para entregar después", "/pedidos"],
+  [Wallet, "Cambios", "Cambio pendiente por entregar", "/cambios"],
   [Package, "Productos", "Catálogo y precios de venta", "/productos"],
   [ChartNoAxesColumnIncreasing, "Reportes", "Ventas, cobros y deudores", "/reportes"],
   [Settings, "Configuración", "Logo, negocio y datos bancarios", "/configuracion"]

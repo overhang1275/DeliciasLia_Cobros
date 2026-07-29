@@ -25,7 +25,7 @@ export function BottomNavigation() {
           <Plus aria-hidden="true" className="size-7" strokeWidth={2.5} />
         </Link>
         {navItems.slice(2).map((item) => (
-          <NavItem active={pathname === item.href || (item.href === "/mas" && ["/productos", "/reportes", "/configuracion"].includes(pathname))} key={item.href} {...item} />
+          <NavItem active={pathname === item.href || (item.href === "/mas" && ["/cambios", "/productos", "/reportes", "/configuracion"].includes(pathname))} key={item.href} {...item} />
         ))}
       </div>
     </nav>
