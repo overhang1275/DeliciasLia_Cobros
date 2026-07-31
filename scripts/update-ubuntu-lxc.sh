@@ -80,6 +80,9 @@ fi
 if ! grep -q '^VAPID_SUBJECT=' "$APP_DIR/.env"; then
   echo "VAPID_SUBJECT=\"${VAPID_SUBJECT:-mailto:admin@delicias-lia.local}\"" >> "$APP_DIR/.env"
 fi
+if ! grep -q '^N8N_API_KEY=' "$APP_DIR/.env"; then
+  echo "N8N_API_KEY=\"${N8N_API_KEY:-$(openssl rand -hex 32)}\"" >> "$APP_DIR/.env"
+fi
 
 if [ "$HAS_UPDATE" = "0" ]; then
   echo "No hay actualizaciones disponibles. Variables faltantes revisadas."
