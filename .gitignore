@@ -7,3 +7,4 @@ node_modules
 public/sw.js
 public/workbox-*.js
 opencode.json
+docs/

@@ -47,12 +47,17 @@ app/
     logo/
       route.ts
     push/
+      public-key/
+        route.ts
       send/
         route.ts
       subscribe/
         route.ts
       unsubscribe/
         route.ts
+  cambios/
+    actions.ts
+    page.tsx
   clientes/
     [id]/
       editar/
@@ -76,6 +81,7 @@ app/
     [id]/
       pago/
         page.tsx
+        PagoFiadoCambioFields.tsx
     actions.ts
     page.tsx
   login/
@@ -125,6 +131,7 @@ components/
   StatementPDF.tsx
 docs/
   phase-1-arquitectura.md
+  roadmap-evolution-api-whatsapp.md
   roadmap-notificaciones-estado-cuenta.md
   ROADMAP.md
   sprint01.md
@@ -146,6 +153,8 @@ lib/
   auth.ts
   configuracion.ts
   db.ts
+  public-url.ts
+  push.ts
   session.ts
   timezone.ts
   ventas.ts
@@ -167,6 +176,8 @@ prisma/
       migration.sql
     20260721150000_audit_log/
       migration.sql
+    20260729120000_push_subscriptions/
+      migration.sql
   demo-seed.ts
   schema.prisma
   seed.ts
@@ -178,6 +189,7 @@ scripts/
   install-ubuntu-lxc.sh
   reset-admin-password.sh
   reset-admin-password.ts
+  send-weekly-reminders.ts
   update-ubuntu-lxc.sh
 .env.example
 .gitignore
@@ -195,43 +207,323 @@ tsconfig.json
 <files>
 This section contains the contents of the repository's files.
 
+<file path="docs/roadmap-evolution-api-whatsapp.md">
+# Roadmap: WhatsApp con Evolution API
+
+## Objetivo
+
+Agregar envio de mensajes por WhatsApp usando Evolution API para compartir estados de cuenta, enviar recordatorios de pago y avisos utiles, sin depender de abrir `wa.me` manualmente.
+
+La app debe poder activar o desactivar esta integracion desde configuracion. Si esta apagada o mal configurada, el sistema debe seguir funcionando como hoy.
+
+## Principio base
+
+No reemplazar todo el flujo actual de golpe.
+
+Primero mantener `wa.me` como respaldo y agregar Evolution API como opcion automatizada. Si Evolution falla, el admin debe poder seguir compartiendo el link manualmente.
+
+## Configuracion necesaria
+
+Agregar un bloque nuevo en `/configuracion` llamado `WhatsApp / Evolution API`.
+
+Campos sugeridos:
+
+- `Activar WhatsApp automatico`: switch `true/false`.
+- `Evolution API URL`: ejemplo `https://evolution.midominio.com`.
+- `API Key`: valor secreto para autenticar.
+- `Instancia`: nombre de la instancia configurada en Evolution.
+- `Numero remitente`: telefono del negocio o instancia.
+- `Mensaje base de estado de cuenta`: plantilla editable.
+- `Mensaje base de recordatorio`: plantilla editable.
+- `Modo prueba`: envia solo al numero del negocio/admin.
+
+Campos que NO conviene pedir todavia:
+
+- Multiples instancias.
+- Plantillas avanzadas por cliente.
+- Campanas masivas.
+- Adjuntos automaticos complejos.
+
+Eso puede esperar.
+
+## Variables y base de datos
+
+Guardar la configuracion en la tabla actual de `Configuracion`, si el modelo sigue siendo unico por sistema.
+
+Campos posibles:
+
+- `whatsappActivo Boolean @default(false)`
+- `evolutionApiUrl String?`
+- `evolutionApiKey String?`
+- `evolutionInstance String?`
+- `whatsappRemitente String?`
+- `whatsappModoPrueba Boolean @default(true)`
+- `whatsappNumeroPrueba String?`
+- `plantillaEstadoCuenta String?`
+- `plantillaRecordatorio String?`
+
+La API key no debe mostrarse completa despues de guardarse. En UI: mostrar algo como `••••••abcd`.
+
+## Seguridad
+
+- No exponer la API key al cliente.
+- No usar `NEXT_PUBLIC_` para la key.
+- Todos los envios deben salir desde server actions o API routes protegidas.
+- Solo admin puede enviar mensajes manuales.
+- El estado de cuenta publico nunca debe poder disparar mensajes a otros clientes.
+- Registrar cada envio en log/auditoria.
+
+## Servicio interno recomendado
+
+Crear un helper unico:
+
+`lib/whatsapp.ts`
+
+Funciones sugeridas:
+
+- `whatsappDisponible()`
+- `normalizarTelefono(telefono)`
+- `enviarWhatsApp({ telefono, mensaje })`
+- `mensajeEstadoCuenta({ cliente, saldo, url })`
+- `mensajeRecordatorio({ cliente, saldo, url })`
+
+Esto evita duplicar llamadas a Evolution API en varias paginas.
+
+## Flujo 1: compartir estado de cuenta
+
+Estado actual:
+
+- El admin abre estado de cuenta.
+- Toca WhatsApp.
+- Se abre `wa.me` con mensaje.
+
+Nuevo flujo:
+
+1. Admin abre estado de cuenta.
+2. Si Evolution API esta activa:
+   - Boton: `Enviar por WhatsApp`.
+   - La app envia el mensaje directamente por Evolution API.
+   - Mostrar toast: `Estado de cuenta enviado`.
+3. Si Evolution API esta desactivada o falla:
+   - Mantener fallback con `wa.me`.
+
+Mensaje sugerido:
+
+```text
+Hola {cliente}.
+
+Te comparto tu estado de cuenta:
+{url}
+
+Saldo pendiente: {saldo}
+
+Cualquier duda, favor de mandar mensaje.
+```
+
+## Flujo 2: recordatorio manual desde admin
+
+En el estado de cuenta admin:
+
+- Boton actual: enviar recordatorio.
+- Agregar opcion para WhatsApp si Evolution esta activo.
+
+Reglas:
+
+- Solo mostrar si el cliente tiene telefono.
+- Solo mostrar si saldo pendiente > 0.
+- Confirmar antes de enviar.
+- Registrar en auditoria.
+
+Mensaje sugerido:
+
+```text
+Hola {cliente}.
+
+Te recordamos que tienes un saldo pendiente de {saldo}.
+Puedes revisar tu estado de cuenta aqui:
+{url}
+
+Gracias.
+```
+
+## Flujo 3: recordatorios automaticos
+
+No implementarlo primero.
+
+Dejarlo como fase posterior porque puede generar mensajes no deseados si no se controla bien.
+
+Cuando se implemente:
+
+- Frecuencia configurable: semanal, quincenal o manual solamente.
+- Hora configurable.
+- No enviar si saldo es 0.
+- No enviar si el cliente no tiene telefono.
+- No enviar mas de 1 recordatorio por cliente por dia.
+- Guardar historial de envio.
+
+## Auditoria
+
+Cada envio debe registrar:
+
+- Fecha/hora.
+- Cliente.
+- Telefono destino.
+- Tipo: estado de cuenta, recordatorio, prueba.
+- Resultado: enviado, fallido.
+- Error si fallo.
+- Usuario: admin.
+
+Ejemplos de log:
+
+```text
+WhatsApp enviado | Cliente: Ana Lopez | Telefono: 8112345678 | Tipo: recordatorio | Saldo: $120.00
+WhatsApp fallido | Cliente: Ana Lopez | Error: instancia desconectada
+```
+
+## UI/UX
+
+En `/configuracion`:
+
+- Agregar acordeon `WhatsApp`.
+- Switch principal arriba.
+- Si esta apagado, ocultar o deshabilitar campos tecnicos.
+- Boton `Probar envio`.
+- Estado visual:
+  - `Conectado`
+  - `Sin configurar`
+  - `Error de conexion`
+
+En estado de cuenta admin:
+
+- Boton compacto: `WhatsApp`.
+- Si falla Evolution, ofrecer `Abrir wa.me`.
+
+En `/clientes`:
+
+- No agregar botones por ahora. Puede saturar la UI.
+
+## Fases
+
+### Fase 1 - Configuracion
+
+- [ ] Agregar campos de Evolution API a `Configuracion`.
+- [ ] Crear migracion Prisma.
+- [ ] Agregar acordeon `WhatsApp` en `/configuracion`.
+- [ ] Guardar URL, instancia, key y switch activo.
+- [ ] Ocultar API key despues de guardar.
+
+### Fase 2 - Helper de envio
+
+- [ ] Crear `lib/whatsapp.ts`.
+- [ ] Normalizar telefonos de Mexico.
+- [ ] Validar configuracion activa.
+- [ ] Implementar llamada a Evolution API.
+- [ ] Manejar errores sin romper la app.
+
+### Fase 3 - Prueba desde configuracion
+
+- [ ] Agregar campo `numero de prueba`.
+- [ ] Boton `Enviar prueba`.
+- [ ] Mostrar toast de exito/error.
+- [ ] Registrar auditoria.
+
+### Fase 4 - Estado de cuenta admin
+
+- [ ] Cambiar boton WhatsApp para usar Evolution API si esta activo.
+- [ ] Mantener fallback `wa.me`.
+- [ ] Incluir saldo y link publico por token.
+- [ ] Registrar auditoria.
+
+### Fase 5 - Recordatorio manual
+
+- [ ] Agregar boton `Enviar recordatorio por WhatsApp`.
+- [ ] Solo visible para admin.
+- [ ] Solo si hay saldo pendiente y telefono.
+- [ ] Confirmacion antes de enviar.
+
+### Fase 6 - Recordatorios automaticos
+
+- [ ] Definir frecuencia.
+- [ ] Agregar campos de configuracion.
+- [ ] Crear script/cron.
+- [ ] Evitar duplicados diarios.
+- [ ] Registrar historial.
+
+## Endpoint esperado de Evolution API
+
+Depende de tu instalacion, pero normalmente la llamada sera parecida a:
+
+```http
+POST {EVOLUTION_API_URL}/message/sendText/{INSTANCE}
+apikey: {API_KEY}
+Content-Type: application/json
+```
+
+Body aproximado:
+
+```json
+{
+  "number": "528112345678",
+  "text": "Mensaje"
+}
+```
+
+Antes de implementar, confirmar el endpoint exacto con tu version de Evolution API.
+
+## Casos a cuidar
+
+- Cliente sin telefono.
+- Telefono con espacios, guiones o lada incompleta.
+- Instancia desconectada.
+- API key incorrecta.
+- URL mal escrita.
+- Tunnel/base URL incorrecta.
+- Cliente con saldo 0.
+- Mensajes duplicados por doble click.
+
+## Criterio de terminado
+
+- Se puede guardar configuracion de Evolution API.
+- Se puede activar/desactivar.
+- Se puede enviar mensaje de prueba.
+- Se puede enviar estado de cuenta por WhatsApp desde admin.
+- Si Evolution falla, `wa.me` sigue disponible.
+- Todo envio queda en log.
+
+## Decision recomendada
+
+Implementar primero hasta Fase 4.
+
+Con eso ya se resuelve el mayor valor: enviar estados de cuenta por WhatsApp directo desde la app. Los recordatorios automaticos conviene dejarlos para despues de probar que la instancia es estable.
+</file>
+
+<file path="app/api/health/route.ts">
+export function GET() {
+  return Response.json({ ok: true });
+}
+</file>
+
+<file path="app/api/push/public-key/route.ts">
+import { NextResponse } from "next/server";
+
+export function GET() {
+  const publicKey = process.env.NEXT_PUBLIC_VAPID_PUBLIC_KEY || process.env.VAPID_PUBLIC_KEY;
+  if (!publicKey) return NextResponse.json({ error: "Falta VAPID key" }, { status: 500 });
+  return NextResponse.json({ publicKey });
+}
+</file>
+
 <file path="app/api/push/send/route.ts">
 import { NextRequest, NextResponse } from "next/server";
-import { db } from "@/lib/db";
+import { enviarRecordatorioPago } from "@/lib/push";
 
 export async function POST(request: NextRequest) {
   try {
     const { clienteId } = await request.json();
     if (!clienteId) return NextResponse.json({ error: "Falta clienteId" }, { status: 400 });
 
-    const subs = await db.pushSubscription.findMany({ where: { clienteId } });
-    if (subs.length === 0) return NextResponse.json({ error: "Sin suscripciones" }, { status: 404 });
-
-    let sent = 0;
-    for (const sub of subs) {
-      try {
-        const webpush = await import("web-push");
-        webpush.setVapidDetails(
-          process.env.VAPID_SUBJECT!,
-          process.env.VAPID_PUBLIC_KEY!,
-          process.env.VAPID_PRIVATE_KEY!
-        );
-        await webpush.sendNotification(
-          { endpoint: sub.endpoint, keys: { p256dh: sub.p256dh, auth: sub.auth } },
-          JSON.stringify({
-            title: "Recordatorio de pago",
-            body: "Tienes un saldo pendiente. Revisa tu estado de cuenta.",
-            url: process.env.NEXT_PUBLIC_BASE_URL || "/estado",
-          })
-        );
-        sent++;
-      } catch (err: unknown) {
-        const wErr = err as { statusCode?: number };
-        if (wErr.statusCode === 410) await db.pushSubscription.delete({ where: { id: sub.id } });
-      }
-    }
-
-    return NextResponse.json({ sent });
+    const result = await enviarRecordatorioPago({ clienteId });
+    return NextResponse.json(result, { status: result.status });
   } catch (error) {
     console.error("Error enviando notificación:", error);
     return NextResponse.json({ error: "Error interno" }, { status: 500 });
@@ -287,254 +579,217 @@ export async function POST(request: NextRequest) {
 }
 </file>
 
-<file path="components/AdminNotifyButton.tsx">
-"use client";
+<file path="app/cambios/actions.ts">
+"use server";
 
-import { useState } from "react";
+import { revalidatePath } from "next/cache";
+import { redirect } from "next/navigation";
+import { auditMoney, auditTicketId, registrarLog } from "@/lib/audit";
+import { db } from "@/lib/db";
 
-export function AdminNotifyButton({ clienteId }: { clienteId: number }) {
-  const [sending, setSending] = useState(false);
-  const [sent, setSent] = useState(false);
+export async function entregarCambio(formData: FormData) {
+  const ventaId = Number(formData.get("ventaId"));
+  if (!Number.isInteger(ventaId) || ventaId <= 0) redirect("/cambios");
 
-  const handleSend = async () => {
-    setSending(true);
-    try {
-      const res = await fetch("/api/push/send", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ clienteId }),
-      });
-      if (res.ok) setSent(true);
-    } catch {
-      // silent
-    } finally {
-      setSending(false);
-    }
-  };
+  const venta = await db.venta.findFirst({
+    where: { id: ventaId, cambioPendiente: true },
+    include: { cliente: true }
+  });
 
-  return (
-    <button className="ui-button-compact" disabled={sending || sent} onClick={handleSend}>
-      {sent ? "Enviado" : sending ? "Enviando..." : "Enviar recordatorio"}
-    </button>
-  );
-}
-</file>
-
-<file path="components/PushSubscriptionButton.tsx">
-"use client";
-
-import { usePushNotifications } from "@/hooks/usePushNotifications";
-
-export function PushSubscriptionButton({ clienteId }: { clienteId: number }) {
-  const { subscribed, loading, supported, subscribe, unsubscribe } = usePushNotifications(clienteId);
-
-  if (!supported) return null;
-
-  return (
-    <button
-      className="ui-button-compact"
-      disabled={loading}
-      onClick={subscribed ? unsubscribe : subscribe}
-    >
-      {loading ? "..." : subscribed ? "Desactivar notificaciones" : "Activar notificaciones"}
-    </button>
-  );
-}
-</file>
-
-<file path="components/RegisterPushSW.tsx">
-"use client";
-
-import { useEffect } from "react";
-
-export function RegisterPushSW() {
-  useEffect(() => {
-    if (!("serviceWorker" in navigator) || !("PushManager" in window)) return;
-
-    navigator.serviceWorker
-      .register("/push-sw.js", { scope: "/" })
-      .catch(() => {
-        // SW no disponible, ignorar
-      });
-  }, []);
-
-  return null;
-}
-</file>
-
-<file path="docs/roadmap-notificaciones-estado-cuenta.md">
-# Roadmap: Notificaciones Push en Estado de Cuenta
-
-## Idea central
-Cada cliente accede a su estado de cuenta vía `/estado/[token]` y puede **activar notificaciones push** para recibir un recordatorio cuando tenga saldo pendiente por pagar. No hay suscripción global; cada cliente gestiona su propia suscripción desde su página.
-
----
-
-## Fase 1 — Base técnica
-
-- [ ] Instalar `web-push` y generar VAPID keys
-- [ ] Agregar modelo `PushSubscription` en Prisma (vinculado a `clienteId` nullable)
-- [ ] Migrar base de datos
-- [ ] Configurar variables de entorno (claves VAPID, subject)
-
-## Fase 2 — API & Service Worker
-
-- [ ] Crear API route `POST /api/push/subscribe` (guarda endpoint + keys + clienteId)
-- [ ] Crear API route `POST /api/push/unsubscribe` (elimina por endpoint)
-- [ ] Agregar `/public/sw.js` con listeners de `push` y `notificationclick`
-- [ ] Registrar el service worker desde el layout o componente cliente
-
-## Fase 3 — UI de suscripción en Estado de Cuenta
-
-- [ ] Crear componente `PushSubscriptionButton` ("Activar notificaciones" / "Desactivar")
-- [ ] Integrarlo en `/estado/[token]/page.tsx` (visible solo para el cliente, no admin)
-- [ ] Hook `usePushNotifications` para manejar el ciclo de vida del SW y suscripción
-
-## Fase 4 — Lógica de recordatorios
-
-- [ ] En la página `/estado/[token]`, después de cargar los datos:
-  - Si el cliente tiene saldo pendiente > $0, mostrar un banner o botón "Enviar recordatorio" que dispare una notificación push
-  - El cliente decide cuándo notificarse (no es automático sin consentimiento)
-- [ ] Cron semanal **cada viernes a las 10:00 AM** que recorra clientes con suscripción activa **y saldo > 0** y envíe un recordatorio tipo: "Tiene un saldo pendiente en {negocio}. Puede ver su estado de cuenta aquí."
-
-## Fase 5 — Refinamiento
-
-- [ ] Programación del cron (Vercel Cron, cron-job.org, o script local)
-- [ ] Manejo de errores y limpieza de suscripciones expiradas
-- [ ] Pruebas: verificar que al expirar una suscripción se elimine automáticamente
-- [ ] Métricas: cuántas notificaciones se enviaron, cuántas fallaron
-
----
-
-## Respeto al diseño actual
-
-- No se modifica el flujo de ventas, fiados ni pagos
-- No se agregan pantallas nuevas
-- Solo se añade un botón en el estado de cuenta público
-- La suscripción está atada al `clienteId`, no al usuario admin
-
-## Dependencias externas
-
-- `web-push` (única nueva dependencia)
-- Servicio de cron (Vercel Cron, cron-job.org, o tarea programada en el servidor)
-</file>
-
-<file path="hooks/usePushNotifications.ts">
-"use client";
-
-import { useState, useEffect, useCallback } from "react";
-
-function urlBase64ToUint8Array(base64String: string): Uint8Array {
-  const padding = "=".repeat((4 - (base64String.length % 4)) % 4);
-  const base64 = (base64String + padding).replace(/-/g, "+").replace(/_/g, "/");
-  const rawData = atob(base64);
-  return Uint8Array.from(rawData, (c) => c.charCodeAt(0));
-}
-
-interface PushSubscriptionJSON {
-  endpoint: string;
-  keys: { p256dh: string; auth: string };
-}
-
-export function usePushNotifications(clienteId?: number) {
-  const [sub, setSub] = useState<PushSubscriptionJSON | null>(null);
-  const [loading, setLoading] = useState(true);
-
-  useEffect(() => {
-    if (!("serviceWorker" in navigator) || !("PushManager" in window)) {
-      setLoading(false);
-      return;
-    }
-
-    navigator.serviceWorker.ready
-      .then((reg) => reg.pushManager.getSubscription())
-      .then((s) => setSub(s ? s.toJSON() as unknown as PushSubscriptionJSON : null))
-      .catch(() => {})
-      .finally(() => setLoading(false));
-  }, []);
-
-  const subscribe = useCallback(async () => {
-    const vapidKey = process.env.NEXT_PUBLIC_VAPID_PUBLIC_KEY;
-    if (!vapidKey) throw new Error("Falta VAPID key");
-
-    const reg = await navigator.serviceWorker.ready;
-    const s = await reg.pushManager.subscribe({
-      userVisibleOnly: true,
-      applicationServerKey: urlBase64ToUint8Array(vapidKey) as any,
+  if (venta) {
+    await db.venta.update({
+      where: { id: venta.id },
+      data: { cambioPendiente: false, cambioMonto: 0 }
     });
-
-    const json = s.toJSON() as unknown as PushSubscriptionJSON;
-    await fetch("/api/push/subscribe", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ ...json, clienteId }),
+    await registrarLog({
+      accion: "actualizar",
+      entidad: "Venta",
+      entidadId: venta.id,
+      detalle: `Cliente: ${venta.cliente.nombre} | Ticket ID ${auditTicketId(venta.id)} | Cambio entregado: ${auditMoney.format(Number(venta.cambioMonto))}`
     });
-
-    setSub(json);
-  }, [clienteId]);
-
-  const unsubscribe = useCallback(async () => {
-    const reg = await navigator.serviceWorker.ready;
-    const s = await reg.pushManager.getSubscription();
-    if (!s) return;
-
-    await s.unsubscribe();
-    await fetch("/api/push/unsubscribe", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ endpoint: s.endpoint }),
-    });
-
-    setSub(null);
-  }, []);
-
-  const supported = typeof window !== "undefined" && "serviceWorker" in navigator && "PushManager" in window;
-
-  return { subscribed: !!sub, sub, loading, supported, subscribe, unsubscribe };
-}
-</file>
-
-<file path="public/push-sw.js">
-self.addEventListener("push", (event) => {
-  if (!event.data) return;
-
-  try {
-    const data = event.data.json();
-    const options = {
-      body: data.body,
-      icon: data.icon || "/api/logo",
-      badge: data.badge || "/api/logo",
-      vibrate: [100, 50, 100],
-      data: { url: data.url || "/" },
-      requireInteraction: true,
-    };
-
-    event.waitUntil(self.registration.showNotification(data.title, options));
-  } catch {
-    // ignore malformed payloads
   }
-});
 
-self.addEventListener("notificationclick", (event) => {
-  event.notification.close();
-
-  const url = event.notification.data?.url || "/";
-
-  event.waitUntil(
-    clients
-      .matchAll({ type: "window", includeUncontrolled: true })
-      .then((windowClients) => {
-        const existing = windowClients.find((c) => c.url.includes(url) && "focus" in c);
-        if (existing) return existing.focus();
-        if (clients.openWindow) return clients.openWindow(url);
-      })
-  );
-});
+  revalidatePath("/");
+  revalidatePath("/cambios");
+  revalidatePath("/clientes");
+  revalidatePath("/ventas");
+  redirect("/cambios?guardado=cambio");
+}
 </file>
 
-<file path="app/api/health/route.ts">
-export function GET() {
-  return Response.json({ ok: true });
+<file path="app/cambios/page.tsx">
+import Link from "next/link";
+import { entregarCambio } from "./actions";
+import { CalendarDays, Home, ReceiptText, Wallet } from "@/components/AppIcon";
+import { ConfirmSubmitButton } from "@/components/ConfirmSubmitButton";
+import { db } from "@/lib/db";
+import { appDateFormatter } from "@/lib/timezone";
+
+export const dynamic = "force-dynamic";
+
+const money = new Intl.NumberFormat("es-MX", { currency: "MXN", style: "currency" });
+const date = appDateFormatter({ dateStyle: "medium" });
+const ticketId = (id: number) => String(id).padStart(6, "0");
+
+export default async function CambiosPage() {
+  const cambios = await db.venta.findMany({
+    where: { cambioPendiente: true, cambioMonto: { gt: 0 } },
+    include: { cliente: true, detalles: { include: { producto: true } } },
+    orderBy: { fecha: "asc" }
+  });
+  const total = cambios.reduce((sum, venta) => sum + Number(venta.cambioMonto), 0);
+
+  return (
+    <main className="app-page">
+      <header className="flex items-center gap-4 rounded-[2rem] bg-white p-4 shadow-sm">
+        <span className="grid size-14 shrink-0 place-items-center rounded-2xl bg-amber-50 text-amber-700" aria-hidden="true">
+          <Wallet className="size-7" />
+        </span>
+        <div className="min-w-0 flex-1">
+          <p className="ui-label">Pendientes por entregar</p>
+          <h1 className="truncate text-3xl font-bold text-[var(--brand)]">Cambios</h1>
+        </div>
+        <Link className="ui-icon-button" href="/" aria-label="Inicio" title="Inicio">
+          <Home aria-hidden="true" className="size-5" />
+        </Link>
+      </header>
+
+      <section className="rounded-[2rem] bg-white p-5 shadow-sm">
+        <p className="ui-label">Total que debo entregar</p>
+        <p className="mt-1 text-4xl font-bold text-amber-700">{money.format(total)}</p>
+      </section>
+
+      <section className="grid gap-3" aria-label="Cambios pendientes">
+        {cambios.length === 0 ? (
+          <p className="rounded-[1.75rem] bg-white p-4 text-[var(--text-muted)] shadow-sm">No hay cambios pendientes por entregar.</p>
+        ) : (
+          cambios.map((venta) => {
+            const detalle = venta.detalles[0];
+            const producto = detalle ? `${detalle.producto.nombre} x ${detalle.cantidad}` : venta.observaciones || "Venta";
+
+            return (
+              <article className="rounded-[1.75rem] bg-white p-4 shadow-sm" key={venta.id}>
+                <div className="flex items-start justify-between gap-4">
+                  <div className="flex min-w-0 flex-1 gap-3">
+                    <span className="grid size-11 shrink-0 place-items-center rounded-2xl bg-amber-50 text-amber-700" aria-hidden="true">
+                      <Wallet className="size-5" />
+                    </span>
+                    <div className="min-w-0">
+                      <h2 className="truncate font-bold text-[var(--text-main)]">{venta.cliente.nombre}</h2>
+                      <p className="ui-label">{producto}</p>
+                      <p className="mt-2 inline-flex items-center gap-1 text-xs font-bold text-[var(--text-muted)]">
+                        <ReceiptText aria-hidden="true" className="size-3" />
+                        Ticket ID {ticketId(venta.id)}
+                      </p>
+                      <p className="mt-1 inline-flex items-center gap-1 text-xs text-[var(--text-muted)]">
+                        <CalendarDays aria-hidden="true" className="size-3" />
+                        {date.format(venta.fecha)}
+                      </p>
+                    </div>
+                  </div>
+                  <p className="shrink-0 rounded-full bg-amber-50 px-3 py-1 text-sm font-bold text-amber-700">{money.format(Number(venta.cambioMonto))}</p>
+                </div>
+                <form action={entregarCambio} className="mt-4 flex justify-end">
+                  <input name="ventaId" type="hidden" value={venta.id} />
+                  <ConfirmSubmitButton
+                    className="ui-button-primary min-h-10 px-4 text-sm"
+                    title="Marcar cambio entregado"
+                    description={`Confirma que ya entregaste ${money.format(Number(venta.cambioMonto))} a ${venta.cliente.nombre}.`}
+                    confirmLabel="Entregado"
+                  >
+                    Marcar entregado
+                  </ConfirmSubmitButton>
+                </form>
+              </article>
+            );
+          })
+        )}
+      </section>
+    </main>
+  );
+}
+</file>
+
+<file path="app/fiados/[id]/pago/PagoFiadoCambioFields.tsx">
+"use client";
+
+import { useMemo, useState } from "react";
+import { Banknote, CreditCard, HandCoins, Landmark, Wallet } from "@/components/AppIcon";
+
+const money = new Intl.NumberFormat("es-MX", { currency: "MXN", style: "currency" });
+
+export function PagoFiadoCambioFields({ pendiente }: { pendiente: number }) {
+  const [monto, setMonto] = useState(0);
+  const [metodo, setMetodo] = useState("EFECTIVO");
+  const [deboCambio, setDeboCambio] = useState(false);
+  const [montoRecibido, setMontoRecibido] = useState(0);
+  const cambio = useMemo(() => Math.max(0, montoRecibido - monto), [monto, montoRecibido]);
+  const puedeDeberCambio = metodo === "EFECTIVO";
+
+  return (
+    <>
+      <div>
+        <label className="ui-label inline-flex items-center gap-1" htmlFor="monto">
+          Cantidad <HandCoins aria-hidden="true" className="size-4" />
+        </label>
+        <input
+          className="ui-input mt-2"
+          id="monto"
+          inputMode="decimal"
+          max={pendiente}
+          min="0.01"
+          name="monto"
+          placeholder="Cantidad"
+          required
+          step="0.01"
+          type="number"
+          value={monto || ""}
+          onChange={(event) => setMonto(Number(event.target.value) || 0)}
+        />
+      </div>
+
+      <fieldset className="grid grid-cols-2 gap-3">
+        <legend className="ui-label col-span-2">Tipo de pago</legend>
+        <label className="ui-button-secondary">
+          <input className="mr-2" checked={metodo === "EFECTIVO"} name="metodo" type="radio" value="EFECTIVO" onChange={(event) => setMetodo(event.target.value)} />
+          <Banknote aria-hidden="true" className="mr-2 size-4" />
+          Efectivo
+        </label>
+        <label className="ui-button-secondary">
+          <input
+            className="mr-2"
+            checked={metodo === "TRANSFERENCIA"}
+            name="metodo"
+            type="radio"
+            value="TRANSFERENCIA"
+            onChange={(event) => {
+              setMetodo(event.target.value);
+              setDeboCambio(false);
+            }}
+          />
+          <Landmark aria-hidden="true" className="mr-2 size-4" />
+          Transferencia
+        </label>
+      </fieldset>
+
+      {puedeDeberCambio ? (
+        <fieldset className="grid gap-3 sm:grid-cols-[auto_1fr] sm:items-end">
+          <label className="ui-button-secondary sm:mb-0">
+            <input className="mr-2" checked={deboCambio} name="cambioPendiente" type="checkbox" onChange={(event) => setDeboCambio(event.target.checked)} />
+            <Wallet aria-hidden="true" className="mr-2 size-4" />
+            Debo cambio
+          </label>
+          <div>
+            <label className="ui-label inline-flex items-center gap-1" htmlFor="montoRecibido">
+              Billete / pago recibido <CreditCard aria-hidden="true" className="size-4" />
+            </label>
+            <input className="ui-input mt-2" disabled={!deboCambio} id="montoRecibido" min="0" name="montoRecibido" placeholder="0.00" step="0.01" type="number" value={montoRecibido || ""} onChange={(event) => setMontoRecibido(Number(event.target.value) || 0)} />
+          </div>
+          {deboCambio ? <p className="rounded-full bg-red-50 px-3 py-2 text-sm font-bold text-red-700 sm:col-span-2">Cambio pendiente: {money.format(cambio)}</p> : null}
+        </fieldset>
+      ) : null}
+    </>
+  );
 }
 </file>
 
@@ -618,6 +873,45 @@ export default function robots(): MetadataRoute.Robots {
       disallow: "/"
     }
   };
+}
+</file>
+
+<file path="components/AdminNotifyButton.tsx">
+"use client";
+
+import { useState } from "react";
+
+export function AdminNotifyButton({ clienteId, disabled = false }: { clienteId: number; disabled?: boolean }) {
+  const [sending, setSending] = useState(false);
+  const [sent, setSent] = useState(false);
+
+  const handleSend = async () => {
+    setSending(true);
+    try {
+      const res = await fetch("/api/push/send", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ clienteId }),
+      });
+      if (res.ok) setSent(true);
+    } catch {
+      // silent
+    } finally {
+      setSending(false);
+    }
+  };
+
+  return (
+    <button
+      className="ui-button-compact disabled:cursor-not-allowed disabled:opacity-60"
+      disabled={disabled || sending || sent}
+      onClick={handleSend}
+      title={disabled ? "El cliente debe activar notificaciones primero" : "Enviar recordatorio"}
+      type="button"
+    >
+      {disabled ? "Sin notificaciones activas" : sent ? "Enviado" : sending ? "Enviando..." : "Enviar recordatorio"}
+    </button>
+  );
 }
 </file>
 
@@ -802,6 +1096,60 @@ export function Pagination({ basePath, page, q, totalPages }: PaginationProps) {
       </Link>
     </nav>
   );
+}
+</file>
+
+<file path="components/PushSubscriptionButton.tsx">
+"use client";
+
+import { motion } from "motion/react";
+import { usePushNotifications } from "@/hooks/usePushNotifications";
+
+export function PushSubscriptionButton({ clienteId }: { clienteId: number }) {
+  const { error, subscribed, loading, supported, subscribe, unsubscribe } = usePushNotifications(clienteId);
+
+  if (!supported) return null;
+
+  return (
+    <div className="flex min-h-14 items-center justify-between gap-4 rounded-2xl bg-[var(--app-bg)] px-4 py-3">
+      <div className="min-w-0">
+        <p className="text-sm font-bold text-[var(--text-main)]">Notificaciones</p>
+        <p className="ui-label">{error || (subscribed ? "Recordatorios activos" : "Activar recordatorios")}</p>
+      </div>
+      <motion.button
+        aria-checked={subscribed}
+        aria-label={subscribed ? "Desactivar notificaciones" : "Activar notificaciones"}
+        className={`h-8 w-14 shrink-0 rounded-full p-1 transition-colors ${subscribed ? "bg-[var(--primary)]" : "bg-[var(--primary-soft)]"}`}
+        disabled={loading}
+        onClick={subscribed ? unsubscribe : subscribe}
+        role="switch"
+        type="button"
+        whileTap={{ scale: 0.96 }}
+      >
+        <motion.span animate={{ x: subscribed ? 24 : 0 }} className="block size-6 rounded-full bg-white shadow-sm" transition={{ duration: 0.18, type: "spring" }} />
+      </motion.button>
+    </div>
+  );
+}
+</file>
+
+<file path="components/RegisterPushSW.tsx">
+"use client";
+
+import { useEffect } from "react";
+
+export function RegisterPushSW() {
+  useEffect(() => {
+    if (!("serviceWorker" in navigator) || !("PushManager" in window)) return;
+
+    navigator.serviceWorker
+      .register("/push-sw.js", { scope: "/" })
+      .catch(() => {
+        // SW no disponible, ignorar
+      });
+  }, []);
+
+  return null;
 }
 </file>
 
@@ -1144,6 +1492,63 @@ Productos
 - Facturacion o impuestos.
 - Roles y permisos.
 - APIs externas.
+</file>
+
+<file path="docs/roadmap-notificaciones-estado-cuenta.md">
+# Roadmap: Notificaciones Push en Estado de Cuenta
+
+## Idea central
+Cada cliente accede a su estado de cuenta vía `/estado/[token]` y puede **activar notificaciones push** para recibir un recordatorio cuando tenga saldo pendiente por pagar. No hay suscripción global; cada cliente gestiona su propia suscripción desde su página.
+
+---
+
+## Fase 1 — Base técnica
+
+- [ ] Instalar `web-push` y generar VAPID keys
+- [ ] Agregar modelo `PushSubscription` en Prisma (vinculado a `clienteId` nullable)
+- [ ] Migrar base de datos
+- [ ] Configurar variables de entorno (claves VAPID, subject)
+
+## Fase 2 — API & Service Worker
+
+- [ ] Crear API route `POST /api/push/subscribe` (guarda endpoint + keys + clienteId)
+- [ ] Crear API route `POST /api/push/unsubscribe` (elimina por endpoint)
+- [ ] Agregar `/public/sw.js` con listeners de `push` y `notificationclick`
+- [ ] Registrar el service worker desde el layout o componente cliente
+
+## Fase 3 — UI de suscripción en Estado de Cuenta
+
+- [ ] Crear componente `PushSubscriptionButton` ("Activar notificaciones" / "Desactivar")
+- [ ] Integrarlo en `/estado/[token]/page.tsx` (visible solo para el cliente, no admin)
+- [ ] Hook `usePushNotifications` para manejar el ciclo de vida del SW y suscripción
+
+## Fase 4 — Lógica de recordatorios
+
+- [ ] En la página `/estado/[token]`, después de cargar los datos:
+  - Si el cliente tiene saldo pendiente > $0, mostrar un banner o botón "Enviar recordatorio" que dispare una notificación push
+  - El cliente decide cuándo notificarse (no es automático sin consentimiento)
+- [ ] Cron semanal **cada viernes a las 10:00 AM** que recorra clientes con suscripción activa **y saldo > 0** y envíe un recordatorio tipo: "Tiene un saldo pendiente en {negocio}. Puede ver su estado de cuenta aquí."
+
+## Fase 5 — Refinamiento
+
+- [ ] Programación del cron (Vercel Cron, cron-job.org, o script local)
+- [ ] Manejo de errores y limpieza de suscripciones expiradas
+- [ ] Pruebas: verificar que al expirar una suscripción se elimine automáticamente
+- [ ] Métricas: cuántas notificaciones se enviaron, cuántas fallaron
+
+---
+
+## Respeto al diseño actual
+
+- No se modifica el flujo de ventas, fiados ni pagos
+- No se agregan pantallas nuevas
+- Solo se añade un botón en el estado de cuenta público
+- La suscripción está atada al `clienteId`, no al usuario admin
+
+## Dependencias externas
+
+- `web-push` (única nueva dependencia)
+- Servicio de cron (Vercel Cron, cron-job.org, o tarea programada en el servidor)
 </file>
 
 <file path="docs/ROADMAP.md">
@@ -2426,6 +2831,17 @@ if (process.env.NODE_ENV !== "production") {
 }
 </file>
 
+<file path="lib/public-url.ts">
+export function publicBaseUrl() {
+  return (process.env.TUNNEL_URL || process.env.NEXT_PUBLIC_TUNNEL_URL || process.env.NEXT_PUBLIC_BASE_URL || "").replace(/\/$/, "");
+}
+
+export function publicEstadoUrl(token: string) {
+  const base = publicBaseUrl();
+  return base ? `${base}/estado/${token}` : `/estado/${token}`;
+}
+</file>
+
 <file path="lib/session.ts">
 export const SESSION_COOKIE = "delicias_lia_session";
 export const SESSION_TTL_SECONDS = 60 * 60 * 24 * 7;
@@ -2673,6 +3089,60 @@ CREATE INDEX "AuditLog_creadoEn_idx" ON "AuditLog"("creadoEn");
 CREATE INDEX "AuditLog_entidad_entidadId_idx" ON "AuditLog"("entidad", "entidadId");
 </file>
 
+<file path="prisma/migrations/20260729120000_push_subscriptions/migration.sql">
+CREATE TABLE "PushSubscription" (
+  "id" INTEGER NOT NULL PRIMARY KEY AUTOINCREMENT,
+  "endpoint" TEXT NOT NULL,
+  "p256dh" TEXT NOT NULL,
+  "auth" TEXT NOT NULL,
+  "clienteId" INTEGER,
+  "createdAt" DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  "updatedAt" DATETIME NOT NULL,
+  CONSTRAINT "PushSubscription_clienteId_fkey" FOREIGN KEY ("clienteId") REFERENCES "Cliente" ("id") ON DELETE SET NULL ON UPDATE CASCADE
+);
+
+CREATE UNIQUE INDEX "PushSubscription_endpoint_key" ON "PushSubscription"("endpoint");
+CREATE INDEX "PushSubscription_clienteId_idx" ON "PushSubscription"("clienteId");
+</file>
+
+<file path="public/push-sw.js">
+self.addEventListener("push", (event) => {
+  if (!event.data) return;
+
+  try {
+    const data = event.data.json();
+    const options = {
+      body: data.body,
+      icon: data.icon || "/api/logo",
+      badge: data.badge || "/api/logo",
+      vibrate: [100, 50, 100],
+      data: { url: data.url || "/" },
+      requireInteraction: true,
+    };
+
+    event.waitUntil(self.registration.showNotification(data.title, options));
+  } catch {
+    // ignore malformed payloads
+  }
+});
+
+self.addEventListener("notificationclick", (event) => {
+  event.notification.close();
+
+  const url = event.notification.data?.url || "/";
+
+  event.waitUntil(
+    clients
+      .matchAll({ type: "window", includeUncontrolled: true })
+      .then((windowClients) => {
+        const existing = windowClients.find((c) => c.url.includes(url) && "focus" in c);
+        if (existing) return existing.focus();
+        if (clients.openWindow) return clients.openWindow(url);
+      })
+  );
+});
+</file>
+
 <file path="scripts/reset-admin-password.sh">
 #!/usr/bin/env bash
 set -euo pipefail
@@ -2739,6 +3209,18 @@ main()
     console.error(error);
     process.exit(1);
   });
+</file>
+
+<file path="scripts/send-weekly-reminders.ts">
+import { enviarRecordatoriosPendientes } from "@/lib/push";
+import { db } from "@/lib/db";
+
+enviarRecordatoriosPendientes()
+  .then(({ clientes, sent }) => {
+    console.log(`Clientes revisados: ${clientes}`);
+    console.log(`Notificaciones enviadas: ${sent}`);
+  })
+  .finally(() => db.$disconnect());
 </file>
 
 <file path="eslint.config.mjs">
@@ -3183,6 +3665,83 @@ export async function clearSession() {
 }
 </file>
 
+<file path="lib/push.ts">
+import { db } from "@/lib/db";
+import { publicEstadoUrl } from "@/lib/public-url";
+
+type ReminderTarget = { clienteId: number } | { token: string };
+
+const money = new Intl.NumberFormat("es-MX", { currency: "MXN", style: "currency" });
+
+function saldoPendiente(ventas: { total: unknown; pagos: { monto: unknown }[] }[]) {
+  return ventas.reduce((sum, venta) => {
+    const pagado = venta.pagos.reduce((subtotal, pago) => subtotal + Number(pago.monto), 0);
+    return sum + Math.max(0, Number(venta.total) - pagado);
+  }, 0);
+}
+
+export async function enviarRecordatorioPago(target: ReminderTarget) {
+  const cliente = await db.cliente.findFirst({
+    where: "token" in target ? { estadoToken: target.token } : { id: target.clienteId },
+    include: {
+      pushSubscriptions: true,
+      ventas: { where: { estado: { not: "CANCELADA" } }, include: { pagos: true } }
+    }
+  });
+
+  if (!cliente?.estadoToken) return { error: "Cliente no encontrado", sent: 0, status: 404 };
+
+  const saldo = saldoPendiente(cliente.ventas);
+  if (saldo <= 0) return { error: "Sin saldo pendiente", sent: 0, status: 400 };
+  if (cliente.pushSubscriptions.length === 0) return { error: "Sin suscripciones", sent: 0, status: 404 };
+  if (!process.env.VAPID_SUBJECT || !process.env.VAPID_PUBLIC_KEY || !process.env.VAPID_PRIVATE_KEY) {
+    return { error: "Faltan variables VAPID", sent: 0, status: 500 };
+  }
+
+  const webpush = await import("web-push");
+  webpush.setVapidDetails(process.env.VAPID_SUBJECT, process.env.VAPID_PUBLIC_KEY, process.env.VAPID_PRIVATE_KEY);
+
+  let sent = 0;
+  for (const sub of cliente.pushSubscriptions) {
+    try {
+      await webpush.sendNotification(
+        { endpoint: sub.endpoint, keys: { auth: sub.auth, p256dh: sub.p256dh } },
+        JSON.stringify({
+          body: `Tienes un saldo pendiente de ${money.format(saldo)}. Puedes ver tu estado de cuenta aquí.`,
+          title: "Recordatorio de pago",
+          url: publicEstadoUrl(cliente.estadoToken)
+        })
+      );
+      sent++;
+    } catch (err: unknown) {
+      const pushError = err as { statusCode?: number };
+      if (pushError.statusCode === 404 || pushError.statusCode === 410) {
+        await db.pushSubscription.delete({ where: { id: sub.id } });
+      }
+    }
+  }
+
+  return { sent, status: 200 };
+}
+
+export async function enviarRecordatoriosPendientes() {
+  const clientes = await db.cliente.findMany({
+    where: {
+      activo: true,
+      pushSubscriptions: { some: {} },
+      ventas: { some: { estado: { in: ["FIADA", "PARCIAL"] } } }
+    },
+    select: { id: true }
+  });
+
+  let sent = 0;
+  for (const cliente of clientes) {
+    sent += (await enviarRecordatorioPago({ clienteId: cliente.id })).sent;
+  }
+  return { clientes: clientes.length, sent };
+}
+</file>
+
 <file path="prisma/seed.ts">
 import { PrismaClient } from "@prisma/client";
 import { hashPassword } from "../lib/session";
@@ -3233,105 +3792,6 @@ main()
 </svg>
 </file>
 
-<file path="scripts/demo-ubuntu-lxc.sh">
-#!/usr/bin/env bash
-set -euo pipefail
-
-REPO_URL="${REPO_URL:-https://github.com/overhang1275/DeliciasLia_Cobros.git}"
-APP_DIR="${APP_DIR:-/opt/delicias-lia-demo}"
-APP_USER="${APP_USER:-deliciaslia-demo}"
-PORT="${PORT:-3001}"
-SERVICE_NAME="${SERVICE_NAME:-delicias-lia-demo}"
-NODE_MAJOR="${NODE_MAJOR:-22}"
-ADMIN_PASSWORD="${ADMIN_PASSWORD:-demo12345}"
-
-if [ "$(id -u)" -ne 0 ]; then
-  echo "Ejecuta como root: sudo bash $0"
-  exit 1
-fi
-
-apt-get update
-apt-get install -y ca-certificates curl git build-essential openssl
-
-if ! command -v node >/dev/null || ! node -e "process.exit(Number(process.versions.node.split('.')[0]) >= 20 ? 0 : 1)"; then
-  curl -fsSL "https://deb.nodesource.com/setup_${NODE_MAJOR}.x" | bash -
-  apt-get install -y nodejs
-fi
-
-if ! id "$APP_USER" >/dev/null 2>&1; then
-  useradd --system --create-home --shell /usr/sbin/nologin "$APP_USER"
-fi
-
-mkdir -p "$APP_DIR"
-if [ -d "$APP_DIR/.git" ]; then
-  git config --global --add safe.directory "$APP_DIR"
-  git -C "$APP_DIR" pull --ff-only
-else
-  git clone "$REPO_URL" "$APP_DIR"
-fi
-
-mkdir -p "$APP_DIR/database"
-rm -f "$APP_DIR/database/database.sqlite" "$APP_DIR/database/database.sqlite-journal" "$APP_DIR/database/database.sqlite-wal" "$APP_DIR/database/database.sqlite-shm"
-chown -R "$APP_USER:$APP_USER" "$APP_DIR"
-
-AUTH_SECRET="${AUTH_SECRET:-$(openssl rand -hex 32)}"
-APP_TZ="${APP_TZ:-America/Mexico_City}"
-cat > "$APP_DIR/.env" <<ENV
-DATABASE_URL="file:../database/database.sqlite"
-AUTH_SECRET="${AUTH_SECRET}"
-AUTH_SECURE_COOKIE="${AUTH_SECURE_COOKIE:-false}"
-ADMIN_PASSWORD="${ADMIN_PASSWORD}"
-ALLOW_DEMO_RESET="1"
-TZ="${APP_TZ}"
-ENV
-chown "$APP_USER:$APP_USER" "$APP_DIR/.env"
-chmod 600 "$APP_DIR/.env"
-
-runuser -u "$APP_USER" -- bash -lc "cd '$APP_DIR' && npm ci"
-runuser -u "$APP_USER" -- bash -lc "cd '$APP_DIR' && npx prisma generate"
-runuser -u "$APP_USER" -- bash -lc "cd '$APP_DIR' && npx prisma migrate deploy"
-runuser -u "$APP_USER" -- bash -lc "cd '$APP_DIR' && npx tsx prisma/demo-seed.ts"
-runuser -u "$APP_USER" -- bash -lc "cd '$APP_DIR' && npm run build"
-
-cat > "/etc/systemd/system/${SERVICE_NAME}.service" <<SERVICE
-[Unit]
-Description=Delicias Lia Cobros Demo
-After=network.target
-
-[Service]
-Type=simple
-User=${APP_USER}
-WorkingDirectory=${APP_DIR}
-Environment=NODE_ENV=production
-Environment=PORT=${PORT}
-Environment=TZ=${APP_TZ}
-ExecStart=/usr/bin/npm run start -- -H 0.0.0.0 -p ${PORT}
-Restart=always
-RestartSec=5
-
-[Install]
-WantedBy=multi-user.target
-SERVICE
-
-systemctl daemon-reload
-systemctl enable --now "$SERVICE_NAME"
-
-echo
-echo "Demo levantado."
-echo "URL local: http://$(hostname -I | awk '{print $1}'):${PORT}"
-echo "Usuario: admin"
-echo "Password: ${ADMIN_PASSWORD}"
-echo "Servicio: systemctl status ${SERVICE_NAME}"
-</file>
-
-<file path=".env.example">
-DATABASE_URL="file:../database/database.sqlite"
-ADMIN_PASSWORD="cambiar-esta-contrasena"
-AUTH_SECRET="cambiar-por-un-secreto-largo"
-AUTH_SECURE_COOKIE="false"
-PORT="3000"
-</file>
-
 <file path=".gitignore">
 .next
 node_modules
@@ -3342,42 +3802,6 @@ node_modules
 public/sw.js
 public/workbox-*.js
 opencode.json
-</file>
-
-<file path="middleware.ts">
-import { NextRequest, NextResponse } from "next/server";
-import { isValidSessionToken, SESSION_COOKIE } from "@/lib/session";
-
-const publicPath = /^\/estado\/[a-f0-9]{32}$/;
-
-export async function middleware(request: NextRequest) {
-  const { pathname } = request.nextUrl;
-
-  if (
-    pathname === "/login" ||
-    publicPath.test(pathname) ||
-    pathname === "/api/logo" ||
-    pathname === "/robots.txt" ||
-    pathname.startsWith("/_next/") ||
-    pathname === "/manifest.webmanifest" ||
-    pathname === "/sw.js" ||
-    pathname.startsWith("/icons/")
-  ) {
-    return NextResponse.next();
-  }
-
-  if (await isValidSessionToken(request.cookies.get(SESSION_COOKIE)?.value)) {
-    return NextResponse.next();
-  }
-
-  const loginUrl = new URL("/login", request.url);
-  loginUrl.searchParams.set("next", pathname);
-  return NextResponse.redirect(loginUrl);
-}
-
-export const config = {
-  matcher: ["/((?!api/health).*)"]
-};
 </file>
 
 <file path="next.config.mjs">
@@ -3450,78 +3874,6 @@ export function CopyButton({ value }: { value: string }) {
 }
 </file>
 
-<file path="components/EstadoMovimientosAccordion.tsx">
-"use client";
-
-import { useState } from "react";
-import { ConfigAccordionItem } from "@/app/configuracion/ConfigAccordionItem";
-import { Check, ReceiptText } from "@/components/AppIcon";
-
-type Movimiento = {
-  concepto: string;
-  detalle: string;
-  folio: string;
-  hora: string;
-  id: string;
-  importe: string;
-  tipo: "abono" | "cargo";
-};
-
-type Grupo = {
-  cargos: string;
-  fecha: string;
-  key: string;
-  movimientos: Movimiento[];
-  pagos: string;
-  saldo: string;
-};
-
-export function EstadoMovimientosAccordion({ grupos }: { grupos: Grupo[] }) {
-  const [openKey, setOpenKey] = useState(grupos[0]?.key ?? "");
-
-  return (
-    <div className="grid gap-3">
-      {grupos.map((grupo) => (
-        <ConfigAccordionItem
-          description={
-            <span className="mt-2 grid grid-cols-2 gap-x-4 gap-y-1 text-sm">
-              <span>{grupo.movimientos.length} movimientos</span>
-              <span>Saldo: {grupo.saldo}</span>
-              <span className="text-red-700">Cargos: {grupo.cargos}</span>
-              <span className="text-green-700">Pagos: {grupo.pagos}</span>
-            </span>
-          }
-          isOpen={openKey === grupo.key}
-          key={grupo.key}
-          onOpenChange={(isOpen) => setOpenKey(isOpen ? grupo.key : "")}
-          title={grupo.fecha}
-        >
-          {grupo.movimientos.map((movimiento) => (
-            <article className="border-b border-[var(--border-soft)] pb-4 last:border-b-0 last:pb-0" key={movimiento.id}>
-              <div className="flex items-start justify-between gap-4">
-                <div className="flex min-w-0 gap-3">
-                  <span className={`grid size-10 shrink-0 place-items-center rounded-2xl ${movimiento.tipo === "abono" ? "bg-green-50 text-green-700" : "bg-red-50 text-red-700"}`} aria-hidden="true">
-                    {movimiento.tipo === "abono" ? <Check className="size-5" /> : <ReceiptText className="size-5" />}
-                  </span>
-                  <div className="min-w-0">
-                    <p className="font-bold text-[var(--text-main)]">{movimiento.folio}</p>
-                    <p className="text-sm text-[var(--text-main)]">{movimiento.concepto}</p>
-                    <p className="ui-label">
-                      {movimiento.hora} - {movimiento.detalle}
-                    </p>
-                  </div>
-                </div>
-                <p className={`shrink-0 text-sm font-bold ${movimiento.tipo === "abono" ? "text-green-700" : "text-red-700"}`}>{movimiento.importe}</p>
-              </div>
-            </article>
-          ))}
-        </ConfigAccordionItem>
-      ))}
-    </div>
-  );
-}
-</file>
-
 <file path="components/LiquidarDeudaForm.tsx">
 "use client";
 
@@ -3560,285 +3912,6 @@ export function PrintButton() {
       <Printer aria-hidden="true" className="size-4" />
       PDF
     </button>
-  );
-}
-</file>
-
-<file path="components/StatementPDF.tsx">
-"use client";
-
-import { Document, Page, Text, View, StyleSheet, Image } from "@react-pdf/renderer";
-
-export interface StatementData {
-  cliente: {
-    nombre: string;
-    telefono?: string | null;
-  };
-  grupos: Array<{
-    key: string;
-    fecha: string;
-    movimientos: Array<{
-      id: string;
-      concepto: string;
-      detalle: string;
-      folio: string;
-      importe: string;
-      tipo: "cargo" | "abono";
-    }>;
-    saldo: string;
-  }>;
-  saldo: number;
-  config: {
-    negocioNombre: string;
-    logoDataUrl?: string | null;
-    banco: string;
-    titular: string;
-    clabe: string;
-    cuenta: string;
-  };
-  fechaGenerado: string;
-}
-
-const styles = StyleSheet.create({
-  page: {
-    padding: 40,
-    fontSize: 10,
-    fontFamily: "Helvetica",
-    backgroundColor: "#ffffff",
-  },
-  header: {
-    flexDirection: "row",
-    marginBottom: 24,
-    paddingBottom: 12,
-    borderBottom: "2px solid #1a3a5c",
-  },
-  logo: {
-    width: 50,
-    height: 50,
-    marginRight: 12,
-    borderRadius: 6,
-  },
-  headerText: {
-    flex: 1,
-  },
-  negocioNombre: {
-    fontSize: 18,
-    fontWeight: "bold",
-    color: "#1a3a5c",
-  },
-  negocioSubtitulo: {
-    fontSize: 10,
-    color: "#4a6a8c",
-    marginBottom: 4,
-  },
-  clienteNombre: {
-    fontSize: 14,
-    fontWeight: "bold",
-    color: "#1a3a5c",
-  },
-  clienteDetalle: {
-    fontSize: 9,
-    color: "#666",
-  },
-  fechaGen: {
-    fontSize: 8,
-    color: "#999",
-    marginTop: 2,
-  },
-  resumenBox: {
-    backgroundColor: "#f2f6fa",
-    padding: 12,
-    borderRadius: 6,
-    marginBottom: 20,
-    border: "1px solid #d0dce8",
-  },
-  resumenRow: {
-    flexDirection: "row",
-    justifyContent: "space-between",
-    paddingVertical: 3,
-  },
-  resumenLabel: {
-    fontSize: 10,
-    color: "#4a6a8c",
-    fontWeight: "bold",
-  },
-  resumenValue: {
-    fontSize: 12,
-    fontWeight: "bold",
-    color: "#1a3a5c",
-  },
-  saldoValue: {
-    fontSize: 16,
-    fontWeight: "bold",
-    color: "#c62828",
-  },
-  sectionTitle: {
-    fontSize: 14,
-    fontWeight: "bold",
-    color: "#1a3a5c",
-    marginBottom: 10,
-    paddingBottom: 4,
-    borderBottom: "1px solid #d0dce8",
-  },
-  grupo: {
-    marginBottom: 12,
-    border: "1px solid #e8edf2",
-    borderRadius: 4,
-    overflow: "hidden",
-  },
-  grupoFecha: {
-    backgroundColor: "#e8edf2",
-    padding: 6,
-    paddingHorizontal: 10,
-    fontSize: 11,
-    fontWeight: "bold",
-    color: "#1a3a5c",
-  },
-  movimientoRow: {
-    flexDirection: "row",
-    paddingVertical: 4,
-    paddingHorizontal: 10,
-    borderBottom: "1px solid #f0f0f0",
-  },
-  movimientoCol: {
-    flex: 1,
-  },
-  movimientoConcepto: {
-    fontSize: 10,
-    fontWeight: "bold",
-  },
-  movimientoDetalle: {
-    fontSize: 8,
-    color: "#666",
-  },
-  movimientoFolio: {
-    fontSize: 7,
-    color: "#999",
-  },
-  movimientoImporte: {
-    fontSize: 10,
-    fontWeight: "bold",
-    width: 80,
-    textAlign: "right",
-  },
-  importeCargo: { color: "#c62828" },
-  importeAbono: { color: "#2e7d32" },
-  totalDiaRow: {
-    flexDirection: "row",
-    justifyContent: "space-between",
-    backgroundColor: "#f8fafc",
-    padding: 6,
-    paddingHorizontal: 10,
-    borderTop: "2px solid #d0dce8",
-  },
-  totalDiaLabel: {
-    fontSize: 10,
-    fontWeight: "bold",
-  },
-  totalDiaValue: {
-    fontSize: 10,
-    fontWeight: "bold",
-  },
-  footer: {
-    marginTop: 24,
-    borderTop: "2px solid #1a3a5c",
-    paddingTop: 12,
-    fontSize: 8,
-    color: "#4a6a8c",
-    textAlign: "center",
-  },
-  footerLine: {
-    marginBottom: 2,
-  },
-  footerNegrita: {
-    fontWeight: "bold",
-    color: "#1a3a5c",
-  },
-});
-
-const money = new Intl.NumberFormat("es-MX", { currency: "MXN", style: "currency" });
-
-export function StatementPDF({ cliente, grupos, saldo, config, fechaGenerado }: StatementData) {
-  return (
-    <Document>
-      <Page size="A4" style={styles.page}>
-        {/* Header */}
-        <View style={styles.header}>
-          {config.logoDataUrl && (
-            // eslint-disable-next-line jsx-a11y/alt-text
-            <Image src={config.logoDataUrl} style={styles.logo} />
-          )}
-          <View style={styles.headerText}>
-            <Text style={styles.negocioNombre}>{config.negocioNombre}</Text>
-            <Text style={styles.negocioSubtitulo}>Estado de cuenta</Text>
-            <Text style={styles.clienteNombre}>{cliente.nombre}</Text>
-            <Text style={styles.clienteDetalle}>
-              Teléfono: {cliente.telefono || "—"}
-            </Text>
-            <Text style={styles.fechaGen}>Generado el {fechaGenerado}</Text>
-          </View>
-        </View>
-
-        {/* Resumen */}
-        <View style={styles.resumenBox}>
-          <View style={styles.resumenRow}>
-            <Text style={styles.resumenLabel}>Saldo actual</Text>
-            <Text style={styles.saldoValue}>{money.format(saldo)}</Text>
-          </View>
-          <View style={styles.resumenRow}>
-            <Text style={styles.resumenLabel}>Número de movimientos</Text>
-            <Text style={styles.resumenValue}>
-              {grupos.reduce((acc, g) => acc + g.movimientos.length, 0)}
-            </Text>
-          </View>
-        </View>
-
-        {/* Movimientos */}
-        <Text style={styles.sectionTitle}>Detalle de movimientos</Text>
-
-        {grupos.map((grupo) => (
-          <View key={grupo.key} style={styles.grupo}>
-            <Text style={styles.grupoFecha}>{grupo.fecha}</Text>
-            {grupo.movimientos.map((mov) => (
-              <View key={mov.id} style={styles.movimientoRow}>
-                <View style={styles.movimientoCol}>
-                  <Text style={styles.movimientoConcepto}>{mov.concepto}</Text>
-                  <Text style={styles.movimientoDetalle}>{mov.detalle}</Text>
-                  <Text style={styles.movimientoFolio}>{mov.folio}</Text>
-                </View>
-                <Text
-                  style={[
-                    styles.movimientoImporte,
-                    mov.tipo === "cargo" ? styles.importeCargo : styles.importeAbono,
-                  ]}
-                >
-                  {mov.importe}
-                </Text>
-              </View>
-            ))}
-            <View style={styles.totalDiaRow}>
-              <Text style={styles.totalDiaLabel}>Total del día</Text>
-              <Text style={styles.totalDiaValue}>{grupo.saldo}</Text>
-            </View>
-          </View>
-        ))}
-
-        {/* Footer */}
-        <View style={styles.footer}>
-          <Text style={styles.footerLine}>
-            <Text style={styles.footerNegrita}>Datos para depósito:</Text>{" "}
-            {config.banco} - {config.titular}
-          </Text>
-          <Text style={styles.footerLine}>
-            <Text style={styles.footerNegrita}>CLABE:</Text> {config.clabe}{"  "}
-            <Text style={styles.footerNegrita}>Cuenta:</Text> {config.cuenta}
-          </Text>
-          <Text style={styles.footerLine}>
-            Este documento es generado automáticamente y no requiere firma.
-          </Text>
-        </View>
-      </Page>
-    </Document>
   );
 }
 </file>
@@ -3945,59 +4018,6 @@ main()
     console.error(error);
     process.exit(1);
   });
-</file>
-
-<file path="scripts/update-ubuntu-lxc.sh">
-#!/usr/bin/env bash
-set -euo pipefail
-
-APP_DIR="${APP_DIR:-/opt/delicias-lia}"
-APP_USER="${APP_USER:-deliciaslia}"
-SERVICE_NAME="${SERVICE_NAME:-delicias-lia}"
-APP_TZ="${APP_TZ:-America/Mexico_City}"
-
-if [ "$(id -u)" -ne 0 ]; then
-  echo "Ejecuta como root: sudo bash $0"
-  exit 1
-fi
-
-if [ ! -d "$APP_DIR/.git" ]; then
-  echo "No existe repo en $APP_DIR. Ejecuta primero install-ubuntu-lxc.sh"
-  exit 1
-fi
-
-git config --global --add safe.directory "$APP_DIR"
-git -C "$APP_DIR" fetch --quiet
-if [ "$(git -C "$APP_DIR" rev-parse HEAD)" = "$(git -C "$APP_DIR" rev-parse @{u})" ]; then
-  echo "No hay actualizaciones disponibles."
-  exit 0
-fi
-
-if [ -f "$APP_DIR/database/database.sqlite" ]; then
-  cp -a "$APP_DIR/database/database.sqlite" "$APP_DIR/database/database.backup-before-update-$(date +%Y%m%d-%H%M%S).sqlite"
-fi
-
-systemctl stop "$SERVICE_NAME" || true
-
-SERVICE_FILE="/etc/systemd/system/${SERVICE_NAME}.service"
-if [ -f "$SERVICE_FILE" ] && ! grep -q '^Environment=TZ=' "$SERVICE_FILE"; then
-  sed -i "/^Environment=PORT=/a Environment=TZ=${APP_TZ}" "$SERVICE_FILE"
-  systemctl daemon-reload
-fi
-
-git -C "$APP_DIR" pull --ff-only
-chown -R "$APP_USER:$APP_USER" "$APP_DIR"
-
-runuser -u "$APP_USER" -- bash -lc "cd '$APP_DIR' && npm ci"
-runuser -u "$APP_USER" -- bash -lc "cd '$APP_DIR' && npx prisma generate"
-runuser -u "$APP_USER" -- bash -lc "cd '$APP_DIR' && npx prisma migrate deploy"
-runuser -u "$APP_USER" -- bash -lc "cd '$APP_DIR' && npm run build"
-
-systemctl start "$SERVICE_NAME"
-
-echo
-echo "Actualizado sin borrar la base."
-echo "Servicio: systemctl status ${SERVICE_NAME}"
 </file>
 
 <file path="app/configuracion/ConfigAccordionItem.tsx">
@@ -4145,139 +4165,575 @@ export async function crearProducto(formData: FormData) {
 }
 </file>
 
-<file path="components/ShareStatementButton.tsx">
+<file path="components/EstadoMovimientosAccordion.tsx">
 "use client";
 
 import { useState } from "react";
-import { Share2 } from "@/components/AppIcon";
+import { ConfigAccordionItem } from "@/app/configuracion/ConfigAccordionItem";
+import { Check, ReceiptText, Wallet } from "@/components/AppIcon";
 
-function whatsappPhone(phone?: string | null) {
-  const digits = (phone || "").replace(/\D/g, "");
-  return digits.length === 10 ? `52${digits}` : digits;
-}
+type Movimiento = {
+  concepto: string;
+  detalle: string;
+  folio: string;
+  hora: string;
+  id: string;
+  importe: string;
+  tipo: "abono" | "cargo" | "cambio";
+};
 
-export function ShareStatementButton({ cliente, telefono }: { cliente: string; telefono?: string | null }) {
-  const [done, setDone] = useState(false);
+type Grupo = {
+  cargos: string;
+  cambios: string;
+  fecha: string;
+  key: string;
+  movimientos: Movimiento[];
+  pagos: string;
+  saldo: string;
+};
 
-  async function share() {
-    const url = window.location.href;
-    const text = `Hola ${cliente}.\n\nTe dejo tu estado de cuenta:\n${url}\n\nCualquier duda, favor de mandar mensaje.`;
-    const phone = whatsappPhone(telefono);
-
-    if (phone) {
-      window.open(`https://wa.me/${phone}?text=${encodeURIComponent(text)}`, "_blank", "noopener,noreferrer");
-    } else {
-      await navigator.clipboard.writeText(url);
-      setDone(true);
-      setTimeout(() => setDone(false), 1400);
-    }
-  }
+export function EstadoMovimientosAccordion({ grupos }: { grupos: Grupo[] }) {
+  const [openKey, setOpenKey] = useState(grupos[0]?.key ?? "");
 
   return (
-    <button className="ui-button-compact gap-2" onClick={share} type="button">
-      <Share2 aria-hidden="true" className="size-4" />
-      {done ? "Copiado" : "WhatsApp"}
-    </button>
+    <div className="grid gap-3">
+      {grupos.map((grupo) => (
+        <ConfigAccordionItem
+          description={
+            <span className="mt-2 grid grid-cols-2 gap-x-4 gap-y-1 text-sm">
+              <span>{grupo.movimientos.length} movimientos</span>
+              <span>Saldo: {grupo.saldo}</span>
+              <span className="text-red-700">Cargos: {grupo.cargos}</span>
+              <span className="text-green-700">Pagos: {grupo.pagos}</span>
+              <span className="text-amber-700">Cambios: {grupo.cambios}</span>
+            </span>
+          }
+          isOpen={openKey === grupo.key}
+          key={grupo.key}
+          onOpenChange={(isOpen) => setOpenKey(isOpen ? grupo.key : "")}
+          title={grupo.fecha}
+        >
+          {grupo.movimientos.map((movimiento) => (
+            <article className="border-b border-[var(--border-soft)] pb-4 last:border-b-0 last:pb-0" key={movimiento.id}>
+              <div className="flex items-start justify-between gap-4">
+                <div className="flex min-w-0 gap-3">
+                  <span className={`grid size-10 shrink-0 place-items-center rounded-2xl ${movimiento.tipo === "abono" ? "bg-green-50 text-green-700" : movimiento.tipo === "cambio" ? "bg-amber-50 text-amber-700" : "bg-red-50 text-red-700"}`} aria-hidden="true">
+                    {movimiento.tipo === "abono" ? <Check className="size-5" /> : movimiento.tipo === "cambio" ? <Wallet className="size-5" /> : <ReceiptText className="size-5" />}
+                  </span>
+                  <div className="min-w-0">
+                    <p className="font-bold text-[var(--text-main)]">{movimiento.folio}</p>
+                    <p className="text-sm text-[var(--text-main)]">{movimiento.concepto}</p>
+                    <p className="ui-label">
+                      {movimiento.hora} - {movimiento.detalle}
+                    </p>
+                  </div>
+                </div>
+                <p className={`shrink-0 text-sm font-bold ${movimiento.tipo === "abono" ? "text-green-700" : movimiento.tipo === "cambio" ? "text-amber-700" : "text-red-700"}`}>{movimiento.importe}</p>
+              </div>
+            </article>
+          ))}
+        </ConfigAccordionItem>
+      ))}
+    </div>
   );
 }
 </file>
 
-<file path="scripts/install-ubuntu-lxc.sh">
-#!/usr/bin/env bash
-set -euo pipefail
+<file path="components/StatementPDF.tsx">
+"use client";
 
-REPO_URL="${REPO_URL:-https://github.com/overhang1275/DeliciasLia_Cobros.git}"
-APP_DIR="${APP_DIR:-/opt/delicias-lia}"
-APP_USER="${APP_USER:-deliciaslia}"
-PORT="${PORT:-3000}"
-SERVICE_NAME="${SERVICE_NAME:-delicias-lia}"
-NODE_MAJOR="${NODE_MAJOR:-22}"
+import { Document, Image, Page, StyleSheet, Text, View } from "@react-pdf/renderer";
 
-if [ "$(id -u)" -ne 0 ]; then
-  echo "Ejecuta como root: sudo bash $0"
-  exit 1
-fi
+export interface StatementData {
+  cliente: {
+    nombre: string;
+    telefono?: string | null;
+  };
+  grupos: Array<{
+    key: string;
+    fecha: string;
+    movimientos: Array<{
+      id: string;
+      concepto: string;
+      detalle: string;
+      folio: string;
+      importe: string;
+      tipo: "cargo" | "abono" | "cambio";
+    }>;
+    saldo: string;
+  }>;
+  saldo: number;
+  config: {
+    negocioNombre: string;
+    logoDataUrl?: string | null;
+    banco: string;
+    titular: string;
+    clabe: string;
+    cuenta: string;
+  };
+  fechaGenerado: string;
+}
 
-apt-get update
-apt-get install -y ca-certificates curl git build-essential openssl
+const styles = StyleSheet.create({
+  page: {
+    padding: 36,
+    fontSize: 10,
+    fontFamily: "Helvetica",
+    backgroundColor: "#ffffff",
+  },
+  header: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    marginBottom: 18,
+    paddingBottom: 14,
+    borderBottom: "3px solid #14324d",
+  },
+  logo: {
+    width: 50,
+    height: 50,
+    marginRight: 12,
+    borderRadius: 6,
+  },
+  headerText: {
+    flex: 1,
+  },
+  negocioNombre: {
+    fontSize: 10,
+    color: "#5f6f7f",
+    marginBottom: 4,
+  },
+  documentTitle: {
+    fontSize: 22,
+    fontWeight: "bold",
+    color: "#14324d",
+  },
+  negocioSubtitulo: {
+    fontSize: 9,
+    color: "#5f6f7f",
+    marginTop: 3,
+    textTransform: "uppercase",
+  },
+  codeBox: {
+    width: 82,
+    padding: 8,
+    border: "1px solid #d9e1e8",
+    borderRadius: 4,
+    alignItems: "center",
+  },
+  codeText: {
+    fontSize: 20,
+    fontWeight: "bold",
+    color: "#14324d",
+  },
+  codeLabel: {
+    fontSize: 9,
+    color: "#5f6f7f",
+  },
+  detailGrid: {
+    flexDirection: "row",
+    marginBottom: 16,
+  },
+  detailCol: {
+    flex: 1,
+    paddingRight: 18,
+  },
+  detailTitle: {
+    fontSize: 12,
+    fontWeight: "bold",
+    color: "#14324d",
+    marginBottom: 8,
+  },
+  detailRow: {
+    marginBottom: 7,
+  },
+  detailLabel: {
+    fontSize: 8,
+    color: "#6b7280",
+    textTransform: "uppercase",
+  },
+  detailValue: {
+    fontSize: 10,
+    color: "#111827",
+    marginTop: 2,
+  },
+  resumenRow: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    paddingVertical: 3,
+  },
+  resumenLabel: {
+    fontSize: 10,
+    color: "#4a6a8c",
+    fontWeight: "bold",
+  },
+  resumenValue: {
+    fontSize: 12,
+    fontWeight: "bold",
+    color: "#14324d",
+  },
+  saldoValue: {
+    fontSize: 16,
+    fontWeight: "bold",
+    color: "#c62828",
+  },
+  noteBox: {
+    backgroundColor: "#f6f8fa",
+    padding: 10,
+    borderRadius: 4,
+    marginBottom: 16,
+    border: "1px solid #e5ebf0",
+  },
+  noteText: {
+    color: "#4b5563",
+    lineHeight: 1.4,
+  },
+  sectionTitle: {
+    fontSize: 14,
+    fontWeight: "bold",
+    color: "#14324d",
+    marginBottom: 10,
+    paddingBottom: 4,
+    borderBottom: "1px solid #d9e1e8",
+  },
+  table: {
+    border: "1px solid #d9e1e8",
+    borderRadius: 4,
+    overflow: "hidden",
+  },
+  tableHeader: {
+    flexDirection: "row",
+    backgroundColor: "#e9eef3",
+    paddingVertical: 6,
+    paddingHorizontal: 7,
+  },
+  tableHeadText: {
+    fontWeight: "bold",
+    color: "#14324d",
+    fontSize: 8,
+    textTransform: "uppercase",
+  },
+  movimientoRow: {
+    flexDirection: "row",
+    paddingVertical: 7,
+    paddingHorizontal: 7,
+    borderBottom: "1px solid #f0f0f0",
+  },
+  movimientoConcepto: {
+    fontSize: 8,
+    fontWeight: "bold",
+  },
+  movimientoDetalle: {
+    fontSize: 7,
+    color: "#666",
+  },
+  movimientoFolio: {
+    fontSize: 7,
+    color: "#999",
+  },
+  colFecha: { width: 60 },
+  colRef: { width: 92, paddingRight: 10 },
+  colConcepto: { flex: 1, paddingLeft: 8 },
+  colTipo: { width: 78 },
+  movimientoImporte: {
+    fontSize: 9,
+    fontWeight: "bold",
+    width: 72,
+    textAlign: "right",
+  },
+  importeCargo: { color: "#c62828" },
+  importeAbono: { color: "#2e7d32" },
+  importeCambio: { color: "#b45309" },
+  footer: {
+    marginTop: 24,
+    borderTop: "2px solid #14324d",
+    paddingTop: 12,
+    fontSize: 8,
+    color: "#4a6a8c",
+    textAlign: "center",
+  },
+  footerLine: {
+    marginBottom: 2,
+  },
+  footerNegrita: {
+    fontWeight: "bold",
+    color: "#14324d",
+  },
+});
 
-if ! command -v node >/dev/null || ! node -e "process.exit(Number(process.versions.node.split('.')[0]) >= 20 ? 0 : 1)"; then
-  curl -fsSL "https://deb.nodesource.com/setup_${NODE_MAJOR}.x" | bash -
-  apt-get install -y nodejs
-fi
+const money = new Intl.NumberFormat("es-MX", { currency: "MXN", style: "currency" });
 
-if ! id "$APP_USER" >/dev/null 2>&1; then
-  useradd --system --create-home --shell /usr/sbin/nologin "$APP_USER"
-fi
+export function StatementPDF({ cliente, grupos, saldo, config, fechaGenerado }: StatementData) {
+  const movimientos = grupos.flatMap((grupo) => grupo.movimientos.map((mov) => ({ ...mov, fecha: grupo.fecha })));
+  const tipoTexto = (detalle: string) => detalle.replace("Cargo - ", "Credito - ").replace("Abono - ", "Pago - ");
 
-mkdir -p "$APP_DIR"
-if [ -d "$APP_DIR/.git" ]; then
-  git config --global --add safe.directory "$APP_DIR"
-  git -C "$APP_DIR" pull --ff-only
-else
-  git clone "$REPO_URL" "$APP_DIR"
-fi
+  return (
+    <Document>
+      <Page size="A4" style={styles.page}>
+        <View style={styles.header}>
+          {config.logoDataUrl && (
+            // eslint-disable-next-line jsx-a11y/alt-text
+            <Image src={config.logoDataUrl} style={styles.logo} />
+          )}
+          <View style={styles.headerText}>
+            <Text style={styles.negocioNombre}>{config.negocioNombre}</Text>
+            <Text style={styles.documentTitle}>ESTADO DE CUENTA</Text>
+            <Text style={styles.negocioSubtitulo}>Documento de cobro y consulta de movimientos</Text>
+          </View>
+          <View style={styles.codeBox}>
+            <Text style={styles.codeText}>EC</Text>
+            <Text style={styles.codeLabel}>Cliente</Text>
+          </View>
+        </View>
 
-mkdir -p "$APP_DIR/database"
-chown -R "$APP_USER:$APP_USER" "$APP_DIR"
+        <View style={styles.detailGrid}>
+          <View style={styles.detailCol}>
+            <Text style={styles.detailTitle}>Cliente</Text>
+            <View style={styles.detailRow}>
+              <Text style={styles.detailLabel}>Nombre</Text>
+              <Text style={styles.detailValue}>{cliente.nombre}</Text>
+            </View>
+            <View style={styles.detailRow}>
+              <Text style={styles.detailLabel}>Telefono</Text>
+              <Text style={styles.detailValue}>{cliente.telefono || "-"}</Text>
+            </View>
+            <View style={styles.detailRow}>
+              <Text style={styles.detailLabel}>Generado</Text>
+              <Text style={styles.detailValue}>{fechaGenerado}</Text>
+            </View>
+          </View>
+          <View style={styles.detailCol}>
+            <Text style={styles.detailTitle}>Resumen</Text>
+            <View style={styles.resumenRow}>
+              <Text style={styles.resumenLabel}>Saldo actual</Text>
+              <Text style={styles.saldoValue}>{money.format(saldo)}</Text>
+            </View>
+            <View style={styles.resumenRow}>
+              <Text style={styles.resumenLabel}>Movimientos</Text>
+              <Text style={styles.resumenValue}>{movimientos.length}</Text>
+            </View>
+            <View style={styles.detailRow}>
+              <Text style={styles.detailLabel}>Banco</Text>
+              <Text style={styles.detailValue}>{config.banco}</Text>
+            </View>
+          </View>
+        </View>
 
-if [ -z "${ADMIN_PASSWORD:-}" ]; then
-  read -rsp "Password inicial para admin: " ADMIN_PASSWORD
-  echo
-fi
+        <View style={styles.noteBox}>
+          <Text style={styles.noteText}>
+            Este estado de cuenta muestra creditos, pagos y cambios pendientes. Para liquidar el saldo, utiliza los datos de deposito al final del documento.
+          </Text>
+        </View>
 
-if [ -z "$ADMIN_PASSWORD" ]; then
-  echo "ADMIN_PASSWORD no puede estar vacio."
-  exit 1
-fi
+        <Text style={styles.sectionTitle}>Detalle de movimientos</Text>
 
-AUTH_SECRET="${AUTH_SECRET:-$(openssl rand -hex 32)}"
-AUTH_SECURE_COOKIE="${AUTH_SECURE_COOKIE:-false}"
-APP_TZ="${APP_TZ:-America/Mexico_City}"
-cat > "$APP_DIR/.env" <<ENV
+        <View style={styles.table}>
+          <View style={styles.tableHeader}>
+            <Text style={[styles.tableHeadText, styles.colFecha]}>Fecha</Text>
+            <Text style={[styles.tableHeadText, styles.colRef]}>Referencia</Text>
+            <Text style={[styles.tableHeadText, styles.colConcepto]}>Concepto</Text>
+            <Text style={[styles.tableHeadText, styles.colTipo]}>Tipo</Text>
+            <Text style={[styles.tableHeadText, styles.movimientoImporte]}>Importe</Text>
+          </View>
+          {movimientos.map((mov) => (
+            <View key={mov.id} style={styles.movimientoRow}>
+              <Text style={[styles.movimientoDetalle, styles.colFecha]}>{mov.fecha}</Text>
+              <View style={styles.colRef}>
+                <Text style={styles.movimientoFolio}>{mov.folio}</Text>
+              </View>
+              <View style={styles.colConcepto}>
+                <Text style={styles.movimientoConcepto}>{mov.concepto}</Text>
+              </View>
+              <Text style={[styles.movimientoDetalle, styles.colTipo]}>{tipoTexto(mov.detalle)}</Text>
+              <Text
+                style={[
+                  styles.movimientoImporte,
+                  mov.tipo === "abono" ? styles.importeAbono : mov.tipo === "cambio" ? styles.importeCambio : styles.importeCargo,
+                ]}
+              >
+                {mov.importe}
+              </Text>
+            </View>
+          ))}
+        </View>
+
+        <View style={styles.footer}>
+          <Text style={styles.footerLine}>
+            <Text style={styles.footerNegrita}>Datos para deposito:</Text> {config.banco} - {config.titular}
+          </Text>
+          <Text style={styles.footerLine}>
+            <Text style={styles.footerNegrita}>CLABE:</Text> {config.clabe}{"  "}
+            <Text style={styles.footerNegrita}>Cuenta:</Text> {config.cuenta}
+          </Text>
+          <Text style={styles.footerLine}>Este documento es generado automaticamente y no requiere firma.</Text>
+        </View>
+      </Page>
+    </Document>
+  );
+}
+</file>
+
+<file path="hooks/usePushNotifications.ts">
+"use client";
+
+import { useState, useEffect, useCallback } from "react";
+
+function urlBase64ToArrayBuffer(base64String: string): ArrayBuffer {
+  const padding = "=".repeat((4 - (base64String.length % 4)) % 4);
+  const base64 = (base64String + padding).replace(/-/g, "+").replace(/_/g, "/");
+  const rawData = atob(base64);
+  return Uint8Array.from(rawData, (c) => c.charCodeAt(0)).buffer;
+}
+
+async function getVapidKey() {
+  if (process.env.NEXT_PUBLIC_VAPID_PUBLIC_KEY) return process.env.NEXT_PUBLIC_VAPID_PUBLIC_KEY;
+  const res = await fetch("/api/push/public-key");
+  if (!res.ok) return "";
+  return ((await res.json()) as { publicKey?: string }).publicKey || "";
+}
+
+interface PushSubscriptionJSON {
+  endpoint: string;
+  keys: { p256dh: string; auth: string };
+}
+
+export function usePushNotifications(clienteId?: number) {
+  const [sub, setSub] = useState<PushSubscriptionJSON | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState("");
+  const [supported, setSupported] = useState(false);
+
+  useEffect(() => {
+    if (!("serviceWorker" in navigator) || !("PushManager" in window)) {
+      setLoading(false);
+      return;
+    }
+
+    setSupported(true);
+    navigator.serviceWorker.ready
+      .then((reg) => reg.pushManager.getSubscription())
+      .then((s) => setSub(s ? s.toJSON() as unknown as PushSubscriptionJSON : null))
+      .catch(() => {})
+      .finally(() => setLoading(false));
+  }, []);
+
+  const subscribe = useCallback(async () => {
+    setError("");
+    setLoading(true);
+    try {
+      if (Notification.permission === "denied") {
+        throw new Error(`Permiso bloqueado para ${window.location.origin}`);
+      }
+
+      if (Notification.permission !== "granted" && (await Notification.requestPermission()) !== "granted") {
+        throw new Error(`Permiso no activado para ${window.location.origin}`);
+      }
+
+      const vapidKey = await getVapidKey();
+      if (!vapidKey) throw new Error("Falta VAPID key");
+
+      const reg = await navigator.serviceWorker.ready;
+      const s = await reg.pushManager.subscribe({
+        applicationServerKey: urlBase64ToArrayBuffer(vapidKey),
+        userVisibleOnly: true,
+      });
+
+      const json = s.toJSON() as unknown as PushSubscriptionJSON;
+      const res = await fetch("/api/push/subscribe", {
+        body: JSON.stringify({ ...json, clienteId }),
+        headers: { "Content-Type": "application/json" },
+        method: "POST",
+      });
+      if (!res.ok) throw new Error("No se pudo guardar");
+
+      setSub(json);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "No se pudo activar");
+    } finally {
+      setLoading(false);
+    }
+  }, [clienteId]);
+
+  const unsubscribe = useCallback(async () => {
+    setError("");
+    setLoading(true);
+    try {
+      const reg = await navigator.serviceWorker.ready;
+      const s = await reg.pushManager.getSubscription();
+      if (!s) return;
+
+      await s.unsubscribe();
+      await fetch("/api/push/unsubscribe", {
+        body: JSON.stringify({ endpoint: s.endpoint }),
+        headers: { "Content-Type": "application/json" },
+        method: "POST",
+      });
+
+      setSub(null);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "No se pudo desactivar");
+    } finally {
+      setLoading(false);
+    }
+  }, []);
+
+  return { error, subscribed: !!sub, sub, loading, supported, subscribe, unsubscribe };
+}
+</file>
+
+<file path=".env.example">
 DATABASE_URL="file:../database/database.sqlite"
-AUTH_SECRET="${AUTH_SECRET}"
-AUTH_SECURE_COOKIE="${AUTH_SECURE_COOKIE}"
-ADMIN_PASSWORD="${ADMIN_PASSWORD}"
-TZ="${APP_TZ}"
-ENV
-chown "$APP_USER:$APP_USER" "$APP_DIR/.env"
-chmod 600 "$APP_DIR/.env"
+ADMIN_PASSWORD="cambiar-esta-contrasena"
+AUTH_SECRET="cambiar-por-un-secreto-largo"
+AUTH_SECURE_COOKIE="false"
+PORT="3000"
+TZ="America/Mexico_City"
+NEXT_PUBLIC_BASE_URL="https://tu-dominio.com"
+TUNNEL_URL="https://tu-tunnel.trycloudflare.com"
+NEXT_PUBLIC_TUNNEL_URL="https://tu-tunnel.trycloudflare.com"
+NEXT_PUBLIC_VAPID_PUBLIC_KEY=""
+VAPID_PUBLIC_KEY=""
+VAPID_PRIVATE_KEY=""
+VAPID_SUBJECT="mailto:admin@tu-dominio.com"
+</file>
 
-runuser -u "$APP_USER" -- bash -lc "cd '$APP_DIR' && npm ci"
-runuser -u "$APP_USER" -- bash -lc "cd '$APP_DIR' && npx prisma generate"
-runuser -u "$APP_USER" -- bash -lc "cd '$APP_DIR' && npx prisma migrate deploy"
-runuser -u "$APP_USER" -- bash -lc "cd '$APP_DIR' && npm run prisma:seed"
-runuser -u "$APP_USER" -- bash -lc "cd '$APP_DIR' && npm run build"
+<file path="middleware.ts">
+import { NextRequest, NextResponse } from "next/server";
+import { isValidSessionToken, SESSION_COOKIE } from "@/lib/session";
 
-cat > "/etc/systemd/system/${SERVICE_NAME}.service" <<SERVICE
-[Unit]
-Description=Delicias Lia Cobros
-After=network.target
+const publicPath = /^\/estado\/[a-f0-9]{32}$/;
 
-[Service]
-Type=simple
-User=${APP_USER}
-WorkingDirectory=${APP_DIR}
-Environment=NODE_ENV=production
-Environment=PORT=${PORT}
-Environment=TZ=${APP_TZ}
-ExecStart=/usr/bin/npm run start -- -H 0.0.0.0 -p ${PORT}
-Restart=always
-RestartSec=5
+export async function middleware(request: NextRequest) {
+  const { pathname } = request.nextUrl;
 
-[Install]
-WantedBy=multi-user.target
-SERVICE
+  if (
+    pathname === "/login" ||
+    publicPath.test(pathname) ||
+    pathname === "/api/logo" ||
+    pathname === "/robots.txt" ||
+    pathname.startsWith("/_next/") ||
+    pathname === "/manifest.webmanifest" ||
+    pathname === "/sw.js" ||
+    pathname === "/push-sw.js" ||
+    pathname === "/api/push/public-key" ||
+    pathname === "/api/push/subscribe" ||
+    pathname === "/api/push/unsubscribe" ||
+    pathname.startsWith("/icons/")
+  ) {
+    return NextResponse.next();
+  }
 
-systemctl daemon-reload
-systemctl enable --now "$SERVICE_NAME"
+  if (await isValidSessionToken(request.cookies.get(SESSION_COOKIE)?.value)) {
+    return NextResponse.next();
+  }
 
-echo
-echo "Instalado."
-echo "URL local: http://$(hostname -I | awk '{print $1}'):${PORT}"
-echo "Usuario: admin"
-echo "Servicio: systemctl status ${SERVICE_NAME}"
+  const loginUrl = new URL("/login", request.url);
+  loginUrl.searchParams.set("next", pathname);
+  return NextResponse.redirect(loginUrl);
+}
+
+export const config = {
+  matcher: ["/((?!api/health).*)"]
+};
 </file>
 
 <file path="app/configuracion/actions.ts">
@@ -4410,67 +4866,145 @@ export async function darCambio(formData: FormData) {
 }
 </file>
 
-<file path="components/BottomNavigation.tsx">
+<file path="components/ShareStatementButton.tsx">
 "use client";
 
-import Link from "next/link";
-import { usePathname } from "next/navigation";
-import type { LucideIcon } from "lucide-react";
-import { Home, MoreHorizontal, Plus, ReceiptText, Users } from "@/components/AppIcon";
+import { useState } from "react";
+import { Share2 } from "@/components/AppIcon";
 
-const navItems = [
-  { href: "/", label: "Inicio", icon: Home },
-  { href: "/fiados", label: "Crédito", icon: ReceiptText },
-  { href: "/clientes", label: "Clientes", icon: Users },
-  { href: "/mas", label: "Mas", icon: MoreHorizontal }
-];
-
-export function BottomNavigation() {
-  const pathname = usePathname();
-
-  return (
-    <nav className="app-bottom-nav" aria-label="Navegacion principal">
-      <div className="grid grid-cols-[1fr_1fr_72px_1fr_1fr] items-end gap-1">
-        {navItems.slice(0, 2).map((item) => (
-          <NavItem active={pathname === item.href} key={item.href} {...item} />
-        ))}
-        <Link className="app-fab" href="/ventas" aria-label="Nueva venta" title="Nueva venta">
-          <Plus aria-hidden="true" className="size-7" strokeWidth={2.5} />
-        </Link>
-        {navItems.slice(2).map((item) => (
-          <NavItem active={pathname === item.href || (item.href === "/mas" && ["/productos", "/reportes", "/configuracion"].includes(pathname))} key={item.href} {...item} />
-        ))}
-      </div>
-    </nav>
-  );
+function whatsappPhone(phone?: string | null) {
+  const digits = (phone || "").replace(/\D/g, "");
+  return digits.length === 10 ? `52${digits}` : digits;
 }
 
-function NavItem({ active, href, icon: Icon, label }: { active: boolean; href: string; icon: LucideIcon; label: string }) {
+export function ShareStatementButton({ cliente, telefono, url }: { cliente: string; telefono?: string | null; url: string }) {
+  const [done, setDone] = useState(false);
+
+  async function share() {
+    const text = `Hola ${cliente}.\n\nTe dejo tu estado de cuenta:\n${url}\n\nCualquier duda, favor de mandar mensaje.`;
+    const phone = whatsappPhone(telefono);
+
+    if (phone) {
+      window.open(`https://wa.me/${phone}?text=${encodeURIComponent(text)}`, "_blank", "noopener,noreferrer");
+    } else {
+      await navigator.clipboard.writeText(url);
+      setDone(true);
+      setTimeout(() => setDone(false), 1400);
+    }
+  }
+
   return (
-    <Link className={`app-nav-item ${active ? "text-[var(--primary)]" : "text-[var(--text-muted)]"}`} href={href}>
-      <Icon aria-hidden="true" className="size-5" />
-      <span>{label}</span>
-    </Link>
+    <button className="ui-button-compact gap-2" onClick={share} type="button">
+      <Share2 aria-hidden="true" className="size-4" />
+      {done ? "Copiado" : "WhatsApp"}
+    </button>
   );
 }
 </file>
 
-<file path="lib/validators/fiados.ts">
-import { z } from "zod";
-import { parseDateInput } from "@/lib/timezone";
+<file path="scripts/demo-ubuntu-lxc.sh">
+#!/usr/bin/env bash
+set -euo pipefail
 
-export const fiadoSchema = z.object({
-  clienteId: z.coerce.number().int().positive("Selecciona un cliente."),
-  productoId: z.coerce.number().int().positive("Selecciona un producto."),
-  piezas: z.coerce.number().int().positive("Las piezas deben ser mayor a 0."),
-  fecha: z.preprocess((value) => parseDateInput(value), z.date())
-});
+REPO_URL="${REPO_URL:-https://github.com/overhang1275/DeliciasLia_Cobros.git}"
+APP_DIR="${APP_DIR:-/opt/delicias-lia-demo}"
+APP_USER="${APP_USER:-deliciaslia-demo}"
+PORT="${PORT:-3001}"
+SERVICE_NAME="${SERVICE_NAME:-delicias-lia-demo}"
+NODE_MAJOR="${NODE_MAJOR:-22}"
+ADMIN_PASSWORD="${ADMIN_PASSWORD:-demo12345}"
 
-export const pagoFiadoSchema = z.object({
-  ventaId: z.coerce.number().int().positive("Selecciona una venta."),
-  monto: z.coerce.number().positive("El pago debe ser mayor a 0."),
-  metodo: z.enum(["EFECTIVO", "TRANSFERENCIA"])
-});
+if [ "$(id -u)" -ne 0 ]; then
+  echo "Ejecuta como root: sudo bash $0"
+  exit 1
+fi
+
+apt-get update
+apt-get install -y ca-certificates curl git build-essential openssl
+
+if ! command -v node >/dev/null || ! node -e "process.exit(Number(process.versions.node.split('.')[0]) >= 20 ? 0 : 1)"; then
+  curl -fsSL "https://deb.nodesource.com/setup_${NODE_MAJOR}.x" | bash -
+  apt-get install -y nodejs
+fi
+
+if ! id "$APP_USER" >/dev/null 2>&1; then
+  useradd --system --create-home --shell /usr/sbin/nologin "$APP_USER"
+fi
+
+mkdir -p "$APP_DIR"
+if [ -d "$APP_DIR/.git" ]; then
+  git config --global --add safe.directory "$APP_DIR"
+  git -C "$APP_DIR" pull --ff-only
+else
+  git clone "$REPO_URL" "$APP_DIR"
+fi
+
+mkdir -p "$APP_DIR/database"
+rm -f "$APP_DIR/database/database.sqlite" "$APP_DIR/database/database.sqlite-journal" "$APP_DIR/database/database.sqlite-wal" "$APP_DIR/database/database.sqlite-shm"
+chown -R "$APP_USER:$APP_USER" "$APP_DIR"
+
+runuser -u "$APP_USER" -- bash -lc "cd '$APP_DIR' && npm ci"
+
+AUTH_SECRET="${AUTH_SECRET:-$(openssl rand -hex 32)}"
+APP_TZ="${APP_TZ:-America/Mexico_City}"
+VAPID_SUBJECT="${VAPID_SUBJECT:-mailto:admin@delicias-lia-demo.local}"
+if [ -z "${VAPID_PUBLIC_KEY:-}" ] || [ -z "${VAPID_PRIVATE_KEY:-}" ]; then
+  VAPID_KEYS="$(runuser -u "$APP_USER" -- bash -lc "cd '$APP_DIR' && npx web-push generate-vapid-keys --json")"
+  VAPID_PUBLIC_KEY="${VAPID_PUBLIC_KEY:-$(printf '%s' "$VAPID_KEYS" | sed -n 's/.*"publicKey"[[:space:]]*:[[:space:]]*"\([^"]*\)".*/\1/p')}"
+  VAPID_PRIVATE_KEY="${VAPID_PRIVATE_KEY:-$(printf '%s' "$VAPID_KEYS" | sed -n 's/.*"privateKey"[[:space:]]*:[[:space:]]*"\([^"]*\)".*/\1/p')}"
+fi
+cat > "$APP_DIR/.env" <<ENV
+DATABASE_URL="file:../database/database.sqlite"
+AUTH_SECRET="${AUTH_SECRET}"
+AUTH_SECURE_COOKIE="${AUTH_SECURE_COOKIE:-false}"
+ADMIN_PASSWORD="${ADMIN_PASSWORD}"
+ALLOW_DEMO_RESET="1"
+TZ="${APP_TZ}"
+TUNNEL_URL="${TUNNEL_URL:-}"
+NEXT_PUBLIC_TUNNEL_URL="${NEXT_PUBLIC_TUNNEL_URL:-${TUNNEL_URL:-}}"
+NEXT_PUBLIC_BASE_URL="${NEXT_PUBLIC_BASE_URL:-${TUNNEL_URL:-http://localhost:${PORT}}}"
+NEXT_PUBLIC_VAPID_PUBLIC_KEY="${VAPID_PUBLIC_KEY}"
+VAPID_PUBLIC_KEY="${VAPID_PUBLIC_KEY}"
+VAPID_PRIVATE_KEY="${VAPID_PRIVATE_KEY}"
+VAPID_SUBJECT="${VAPID_SUBJECT}"
+ENV
+chown "$APP_USER:$APP_USER" "$APP_DIR/.env"
+chmod 600 "$APP_DIR/.env"
+
+runuser -u "$APP_USER" -- bash -lc "cd '$APP_DIR' && npx prisma generate"
+runuser -u "$APP_USER" -- bash -lc "cd '$APP_DIR' && npx prisma migrate deploy"
+runuser -u "$APP_USER" -- bash -lc "cd '$APP_DIR' && npx tsx prisma/demo-seed.ts"
+runuser -u "$APP_USER" -- bash -lc "cd '$APP_DIR' && npm run build"
+
+cat > "/etc/systemd/system/${SERVICE_NAME}.service" <<SERVICE
+[Unit]
+Description=Delicias Lia Cobros Demo
+After=network.target
+
+[Service]
+Type=simple
+User=${APP_USER}
+WorkingDirectory=${APP_DIR}
+Environment=NODE_ENV=production
+Environment=PORT=${PORT}
+Environment=TZ=${APP_TZ}
+ExecStart=/usr/bin/npm run start -- -H 0.0.0.0 -p ${PORT}
+Restart=always
+RestartSec=5
+
+[Install]
+WantedBy=multi-user.target
+SERVICE
+
+systemctl daemon-reload
+systemctl enable --now "$SERVICE_NAME"
+
+echo
+echo "Demo levantado."
+echo "URL local: http://$(hostname -I | awk '{print $1}'):${PORT}"
+echo "Usuario: admin"
+echo "Password: ${ADMIN_PASSWORD}"
+echo "Servicio: systemctl status ${SERVICE_NAME}"
 </file>
 
 <file path="app/globals.css">
@@ -4855,6 +5389,51 @@ export default async function manifest(): Promise<MetadataRoute.Manifest> {
 }
 </file>
 
+<file path="components/BottomNavigation.tsx">
+"use client";
+
+import Link from "next/link";
+import { usePathname } from "next/navigation";
+import type { LucideIcon } from "lucide-react";
+import { Home, MoreHorizontal, Plus, ReceiptText, Users } from "@/components/AppIcon";
+
+const navItems = [
+  { href: "/", label: "Inicio", icon: Home },
+  { href: "/fiados", label: "Crédito", icon: ReceiptText },
+  { href: "/clientes", label: "Clientes", icon: Users },
+  { href: "/mas", label: "Mas", icon: MoreHorizontal }
+];
+
+export function BottomNavigation() {
+  const pathname = usePathname();
+
+  return (
+    <nav className="app-bottom-nav" aria-label="Navegacion principal">
+      <div className="grid grid-cols-[1fr_1fr_72px_1fr_1fr] items-end gap-1">
+        {navItems.slice(0, 2).map((item) => (
+          <NavItem active={pathname === item.href} key={item.href} {...item} />
+        ))}
+        <Link className="app-fab" href="/ventas" aria-label="Nueva venta" title="Nueva venta">
+          <Plus aria-hidden="true" className="size-7" strokeWidth={2.5} />
+        </Link>
+        {navItems.slice(2).map((item) => (
+          <NavItem active={pathname === item.href || (item.href === "/mas" && ["/cambios", "/productos", "/reportes", "/configuracion"].includes(pathname))} key={item.href} {...item} />
+        ))}
+      </div>
+    </nav>
+  );
+}
+
+function NavItem({ active, href, icon: Icon, label }: { active: boolean; href: string; icon: LucideIcon; label: string }) {
+  return (
+    <Link className={`app-nav-item ${active ? "text-[var(--primary)]" : "text-[var(--text-muted)]"}`} href={href}>
+      <Icon aria-hidden="true" className="size-5" />
+      <span>{label}</span>
+    </Link>
+  );
+}
+</file>
+
 <file path="components/EliminarFiadoForm.tsx">
 "use client";
 
@@ -4879,6 +5458,30 @@ export function EliminarFiadoForm({ ventaId }: { ventaId: number }) {
     </form>
   );
 }
+</file>
+
+<file path="lib/validators/fiados.ts">
+import { z } from "zod";
+import { parseDateInput } from "@/lib/timezone";
+
+export const fiadoSchema = z.object({
+  clienteId: z.coerce.number().int().positive("Selecciona un cliente."),
+  productoId: z.coerce.number().int().positive("Selecciona un producto."),
+  piezas: z.coerce.number().int().positive("Las piezas deben ser mayor a 0."),
+  fecha: z.preprocess((value) => parseDateInput(value), z.date())
+});
+
+export const pagoFiadoSchema = z.object({
+  ventaId: z.coerce.number().int().positive("Selecciona una venta."),
+  monto: z.coerce.number().positive("El pago debe ser mayor a 0."),
+  metodo: z.enum(["EFECTIVO", "TRANSFERENCIA"]),
+  cambioPendiente: z.preprocess((value) => value === "on", z.boolean()),
+  montoRecibido: z.preprocess((value) => (value === "" || value == null ? 0 : value), z.coerce.number().min(0))
+}).superRefine((pago, ctx) => {
+  if (pago.cambioPendiente && pago.montoRecibido <= 0) {
+    ctx.addIssue({ code: "custom", message: "Escribe con cuanto te pagaron.", path: ["montoRecibido"] });
+  }
+}).transform((pago) => ({ ...pago, montoRecibido: pago.cambioPendiente ? pago.montoRecibido : 0 }));
 </file>
 
 <file path="lib/ventas.ts">
@@ -4937,6 +5540,106 @@ export async function registrarVenta({ clienteId, productoId, piezas, estado, me
     }
   });
 }
+</file>
+
+<file path="scripts/update-ubuntu-lxc.sh">
+#!/usr/bin/env bash
+set -euo pipefail
+
+APP_DIR="${APP_DIR:-/opt/delicias-lia}"
+APP_USER="${APP_USER:-deliciaslia}"
+SERVICE_NAME="${SERVICE_NAME:-delicias-lia}"
+APP_TZ="${APP_TZ:-America/Mexico_City}"
+
+if [ "$(id -u)" -ne 0 ]; then
+  echo "Ejecuta como root: sudo bash $0"
+  exit 1
+fi
+
+if [ ! -d "$APP_DIR/.git" ]; then
+  echo "No existe repo en $APP_DIR. Ejecuta primero install-ubuntu-lxc.sh"
+  exit 1
+fi
+
+git config --global --add safe.directory "$APP_DIR"
+git -C "$APP_DIR" fetch --quiet
+HAS_UPDATE="1"
+if [ "$(git -C "$APP_DIR" rev-parse HEAD)" = "$(git -C "$APP_DIR" rev-parse @{u})" ]; then
+  HAS_UPDATE="0"
+fi
+
+if [ "$HAS_UPDATE" = "1" ] && [ -f "$APP_DIR/database/database.sqlite" ]; then
+  cp -a "$APP_DIR/database/database.sqlite" "$APP_DIR/database/database.backup-before-update-$(date +%Y%m%d-%H%M%S).sqlite"
+fi
+
+if [ "$HAS_UPDATE" = "1" ]; then
+  systemctl stop "$SERVICE_NAME" || true
+fi
+
+SERVICE_FILE="/etc/systemd/system/${SERVICE_NAME}.service"
+if [ -f "$SERVICE_FILE" ] && ! grep -q '^Environment=TZ=' "$SERVICE_FILE"; then
+  sed -i "/^Environment=PORT=/a Environment=TZ=${APP_TZ}" "$SERVICE_FILE"
+  systemctl daemon-reload
+fi
+
+if [ "$HAS_UPDATE" = "1" ]; then
+  git -C "$APP_DIR" pull --ff-only
+fi
+chown -R "$APP_USER:$APP_USER" "$APP_DIR"
+
+if [ "$HAS_UPDATE" = "1" ]; then
+  runuser -u "$APP_USER" -- bash -lc "cd '$APP_DIR' && npm ci"
+fi
+if ! grep -q '^TZ=' "$APP_DIR/.env"; then
+  echo "TZ=\"${APP_TZ}\"" >> "$APP_DIR/.env"
+fi
+if ! grep -q '^NEXT_PUBLIC_BASE_URL=' "$APP_DIR/.env"; then
+  echo "NEXT_PUBLIC_BASE_URL=\"${NEXT_PUBLIC_BASE_URL:-${TUNNEL_URL:-http://localhost:3000}}\"" >> "$APP_DIR/.env"
+fi
+if [ -n "${TUNNEL_URL:-}" ] && ! grep -q '^TUNNEL_URL=' "$APP_DIR/.env"; then
+  echo "TUNNEL_URL=\"${TUNNEL_URL}\"" >> "$APP_DIR/.env"
+fi
+if [ -n "${TUNNEL_URL:-}" ] && ! grep -q '^NEXT_PUBLIC_TUNNEL_URL=' "$APP_DIR/.env"; then
+  echo "NEXT_PUBLIC_TUNNEL_URL=\"${TUNNEL_URL}\"" >> "$APP_DIR/.env"
+fi
+if ! grep -q '^VAPID_PUBLIC_KEY=' "$APP_DIR/.env" || ! grep -q '^VAPID_PRIVATE_KEY=' "$APP_DIR/.env"; then
+  if [ ! -d "$APP_DIR/node_modules/web-push" ]; then
+    runuser -u "$APP_USER" -- bash -lc "cd '$APP_DIR' && npm ci"
+  fi
+  VAPID_KEYS="$(runuser -u "$APP_USER" -- bash -lc "cd '$APP_DIR' && npx web-push generate-vapid-keys --json")"
+  VAPID_PUBLIC_KEY="$(printf '%s' "$VAPID_KEYS" | sed -n 's/.*"publicKey"[[:space:]]*:[[:space:]]*"\([^"]*\)".*/\1/p')"
+  VAPID_PRIVATE_KEY="$(printf '%s' "$VAPID_KEYS" | sed -n 's/.*"privateKey"[[:space:]]*:[[:space:]]*"\([^"]*\)".*/\1/p')"
+  {
+    echo "NEXT_PUBLIC_VAPID_PUBLIC_KEY=\"${VAPID_PUBLIC_KEY}\""
+    echo "VAPID_PUBLIC_KEY=\"${VAPID_PUBLIC_KEY}\""
+    echo "VAPID_PRIVATE_KEY=\"${VAPID_PRIVATE_KEY}\""
+    echo "VAPID_SUBJECT=\"${VAPID_SUBJECT:-mailto:admin@delicias-lia.local}\""
+  } >> "$APP_DIR/.env"
+  chown "$APP_USER:$APP_USER" "$APP_DIR/.env"
+  chmod 600 "$APP_DIR/.env"
+fi
+if ! grep -q '^NEXT_PUBLIC_VAPID_PUBLIC_KEY=' "$APP_DIR/.env"; then
+  VAPID_PUBLIC_KEY="$(grep '^VAPID_PUBLIC_KEY=' "$APP_DIR/.env" | tail -n1 | cut -d= -f2- | tr -d '"')"
+  echo "NEXT_PUBLIC_VAPID_PUBLIC_KEY=\"${VAPID_PUBLIC_KEY}\"" >> "$APP_DIR/.env"
+fi
+if ! grep -q '^VAPID_SUBJECT=' "$APP_DIR/.env"; then
+  echo "VAPID_SUBJECT=\"${VAPID_SUBJECT:-mailto:admin@delicias-lia.local}\"" >> "$APP_DIR/.env"
+fi
+
+if [ "$HAS_UPDATE" = "0" ]; then
+  echo "No hay actualizaciones disponibles. Variables faltantes revisadas."
+  exit 0
+fi
+
+runuser -u "$APP_USER" -- bash -lc "cd '$APP_DIR' && npx prisma generate"
+runuser -u "$APP_USER" -- bash -lc "cd '$APP_DIR' && npx prisma migrate deploy"
+runuser -u "$APP_USER" -- bash -lc "cd '$APP_DIR' && npm run build"
+
+systemctl start "$SERVICE_NAME"
+
+echo
+echo "Actualizado sin borrar la base."
+echo "Servicio: systemctl status ${SERVICE_NAME}"
 </file>
 
 <file path="README.md">
@@ -5144,62 +5847,6 @@ export default async function LoginPage({ searchParams }: { searchParams: Promis
 }
 </file>
 
-<file path="app/mas/page.tsx">
-import Link from "next/link";
-import type { LucideIcon } from "lucide-react";
-import { ArrowRight, ChartNoAxesColumnIncreasing, Home, LogOut, Package, ReceiptText, Settings, Wrench } from "@/components/AppIcon";
-import { logout } from "@/app/login/actions";
-
-const items: [LucideIcon, string, string, string][] = [
-  [ReceiptText, "Pedidos", "Encargos para entregar después", "/pedidos"],
-  [Package, "Productos", "Catálogo y precios de venta", "/productos"],
-  [ChartNoAxesColumnIncreasing, "Reportes", "Ventas, cobros y deudores", "/reportes"],
-  [Settings, "Configuración", "Logo, negocio y datos bancarios", "/configuracion"]
-];
-
-export default function MasPage() {
-  return (
-    <main className="app-page">
-      <header className="flex items-center gap-4 rounded-[2rem] bg-white p-4 shadow-sm">
-        <span className="grid size-14 shrink-0 place-items-center rounded-2xl bg-[var(--primary-soft)] text-[var(--primary)]" aria-hidden="true">
-          <Wrench className="size-7" />
-        </span>
-        <div className="min-w-0 flex-1">
-          <p className="ui-label">Más opciones</p>
-          <h1 className="truncate text-3xl font-bold text-[var(--brand)]">Herramientas</h1>
-          <p className="mt-1 line-clamp-2 text-sm text-[var(--text-muted)]">Todo lo que no usas a cada minuto.</p>
-        </div>
-        <Link className="ui-icon-button" href="/" aria-label="Inicio" title="Inicio">
-          <Home aria-hidden="true" className="size-5" />
-        </Link>
-      </header>
-
-      <section className="grid gap-3">
-        {items.map(([Icon, title, description, href]) => (
-          <Link className="flex min-h-24 items-center gap-4 rounded-[1.75rem] bg-white p-4 shadow-sm transition duration-150 active:scale-[0.99]" href={href} key={href}>
-            <span className="grid size-14 shrink-0 place-items-center rounded-2xl bg-[var(--primary-soft)] text-[var(--primary)]" aria-hidden="true">
-              <Icon className="size-7" />
-            </span>
-            <span className="min-w-0 flex-1">
-              <span className="block text-lg font-bold text-[var(--text-main)]">{title}</span>
-              <span className="ui-label mt-1 block">{description}</span>
-            </span>
-            <ArrowRight className="size-6 text-[var(--primary)]" aria-hidden="true" />
-          </Link>
-        ))}
-      </section>
-
-      <form action={logout}>
-        <button className="ui-button-secondary w-full gap-2" type="submit">
-          <LogOut aria-hidden="true" className="size-5" />
-          Salir
-        </button>
-      </form>
-    </main>
-  );
-}
-</file>
-
 <file path="app/ventas/CambioPendienteFields.tsx">
 "use client";
 
@@ -5311,255 +5958,116 @@ export function CambioPendienteFields({ productos, defaultProductoId, defaultPie
 }
 </file>
 
-<file path="prisma/schema.prisma">
-generator client {
-  provider = "prisma-client-js"
-}
+<file path="scripts/install-ubuntu-lxc.sh">
+#!/usr/bin/env bash
+set -euo pipefail
 
-datasource db {
-  provider = "sqlite"
-  url      = env("DATABASE_URL")
-}
+REPO_URL="${REPO_URL:-https://github.com/overhang1275/DeliciasLia_Cobros.git}"
+APP_DIR="${APP_DIR:-/opt/delicias-lia}"
+APP_USER="${APP_USER:-deliciaslia}"
+PORT="${PORT:-3000}"
+SERVICE_NAME="${SERVICE_NAME:-delicias-lia}"
+NODE_MAJOR="${NODE_MAJOR:-22}"
 
-model Cliente {
-  id        Int      @id @default(autoincrement())
-  nombre    String
-  telefono  String?
-  notas     String?
-  activo    Boolean  @default(true)
-  estadoToken String? @unique
-  fechaAlta DateTime @default(now())
+if [ "$(id -u)" -ne 0 ]; then
+  echo "Ejecuta como root: sudo bash $0"
+  exit 1
+fi
 
-  ventas Venta[]
-  pedidos Pedido[]
-  pushSubscriptions PushSubscription[]
+apt-get update
+apt-get install -y ca-certificates curl git build-essential openssl
 
-  @@index([nombre])
-}
+if ! command -v node >/dev/null || ! node -e "process.exit(Number(process.versions.node.split('.')[0]) >= 20 ? 0 : 1)"; then
+  curl -fsSL "https://deb.nodesource.com/setup_${NODE_MAJOR}.x" | bash -
+  apt-get install -y nodejs
+fi
 
-model Producto {
-  id          Int      @id @default(autoincrement())
-  nombre      String
-  descripcion String?
-  categoria   String?
-  precioVenta Decimal
-  costo       Decimal
-  stock       Int      @default(0)
-  stockMinimo Int      @default(0)
-  activo      Boolean  @default(true)
+if ! id "$APP_USER" >/dev/null 2>&1; then
+  useradd --system --create-home --shell /usr/sbin/nologin "$APP_USER"
+fi
 
-  detalles    DetalleVenta[]
-  movimientos MovimientoInventario[]
-  pedidos     Pedido[]
+mkdir -p "$APP_DIR"
+if [ -d "$APP_DIR/.git" ]; then
+  git config --global --add safe.directory "$APP_DIR"
+  git -C "$APP_DIR" pull --ff-only
+else
+  git clone "$REPO_URL" "$APP_DIR"
+fi
 
-  @@index([nombre])
-  @@index([categoria])
-}
+mkdir -p "$APP_DIR/database"
+chown -R "$APP_USER:$APP_USER" "$APP_DIR"
 
-model Venta {
-  id            Int         @id @default(autoincrement())
-  fecha         DateTime    @default(now())
-  clienteId     Int
-  estado        EstadoVenta
-  subtotal      Decimal
-  descuento     Decimal     @default(0)
-  total         Decimal
-  costoTotal    Decimal
-  utilidadTotal Decimal
-  cambioPendiente Boolean @default(false)
-  cambioMonto     Decimal @default(0)
-  observaciones String?
+runuser -u "$APP_USER" -- bash -lc "cd '$APP_DIR' && npm ci"
 
-  cliente  Cliente        @relation(fields: [clienteId], references: [id])
-  detalles DetalleVenta[]
-  pagos    Pago[]
+if [ -z "${ADMIN_PASSWORD:-}" ]; then
+  read -rsp "Password inicial para admin: " ADMIN_PASSWORD
+  echo
+fi
 
-  @@index([fecha])
-  @@index([clienteId])
-  @@index([estado])
-}
+if [ -z "$ADMIN_PASSWORD" ]; then
+  echo "ADMIN_PASSWORD no puede estar vacio."
+  exit 1
+fi
 
-model DetalleVenta {
-  id             Int     @id @default(autoincrement())
-  ventaId        Int
-  productoId     Int
-  cantidad       Int
-  precioUnitario Decimal
-  costoUnitario  Decimal
-  subtotal       Decimal
+AUTH_SECRET="${AUTH_SECRET:-$(openssl rand -hex 32)}"
+AUTH_SECURE_COOKIE="${AUTH_SECURE_COOKIE:-false}"
+APP_TZ="${APP_TZ:-America/Mexico_City}"
+VAPID_SUBJECT="${VAPID_SUBJECT:-mailto:admin@delicias-lia.local}"
+if [ -z "${VAPID_PUBLIC_KEY:-}" ] || [ -z "${VAPID_PRIVATE_KEY:-}" ]; then
+  VAPID_KEYS="$(runuser -u "$APP_USER" -- bash -lc "cd '$APP_DIR' && npx web-push generate-vapid-keys --json")"
+  VAPID_PUBLIC_KEY="${VAPID_PUBLIC_KEY:-$(printf '%s' "$VAPID_KEYS" | sed -n 's/.*"publicKey"[[:space:]]*:[[:space:]]*"\([^"]*\)".*/\1/p')}"
+  VAPID_PRIVATE_KEY="${VAPID_PRIVATE_KEY:-$(printf '%s' "$VAPID_KEYS" | sed -n 's/.*"privateKey"[[:space:]]*:[[:space:]]*"\([^"]*\)".*/\1/p')}"
+fi
+cat > "$APP_DIR/.env" <<ENV
+DATABASE_URL="file:../database/database.sqlite"
+AUTH_SECRET="${AUTH_SECRET}"
+AUTH_SECURE_COOKIE="${AUTH_SECURE_COOKIE}"
+ADMIN_PASSWORD="${ADMIN_PASSWORD}"
+TZ="${APP_TZ}"
+TUNNEL_URL="${TUNNEL_URL:-}"
+NEXT_PUBLIC_TUNNEL_URL="${NEXT_PUBLIC_TUNNEL_URL:-${TUNNEL_URL:-}}"
+NEXT_PUBLIC_BASE_URL="${NEXT_PUBLIC_BASE_URL:-${TUNNEL_URL:-http://localhost:${PORT}}}"
+NEXT_PUBLIC_VAPID_PUBLIC_KEY="${VAPID_PUBLIC_KEY}"
+VAPID_PUBLIC_KEY="${VAPID_PUBLIC_KEY}"
+VAPID_PRIVATE_KEY="${VAPID_PRIVATE_KEY}"
+VAPID_SUBJECT="${VAPID_SUBJECT}"
+ENV
+chown "$APP_USER:$APP_USER" "$APP_DIR/.env"
+chmod 600 "$APP_DIR/.env"
 
-  venta    Venta    @relation(fields: [ventaId], references: [id])
-  producto Producto @relation(fields: [productoId], references: [id])
+runuser -u "$APP_USER" -- bash -lc "cd '$APP_DIR' && npx prisma generate"
+runuser -u "$APP_USER" -- bash -lc "cd '$APP_DIR' && npx prisma migrate deploy"
+runuser -u "$APP_USER" -- bash -lc "cd '$APP_DIR' && npm run prisma:seed"
+runuser -u "$APP_USER" -- bash -lc "cd '$APP_DIR' && npm run build"
 
-  @@index([ventaId])
-  @@index([productoId])
-}
+cat > "/etc/systemd/system/${SERVICE_NAME}.service" <<SERVICE
+[Unit]
+Description=Delicias Lia Cobros
+After=network.target
 
-model Pago {
-  id      Int        @id @default(autoincrement())
-  ventaId Int
-  fecha   DateTime   @default(now())
-  monto   Decimal
-  metodo  MetodoPago
+[Service]
+Type=simple
+User=${APP_USER}
+WorkingDirectory=${APP_DIR}
+Environment=NODE_ENV=production
+Environment=PORT=${PORT}
+Environment=TZ=${APP_TZ}
+ExecStart=/usr/bin/npm run start -- -H 0.0.0.0 -p ${PORT}
+Restart=always
+RestartSec=5
 
-  venta Venta @relation(fields: [ventaId], references: [id])
+[Install]
+WantedBy=multi-user.target
+SERVICE
 
-  @@index([ventaId])
-  @@index([fecha])
-}
+systemctl daemon-reload
+systemctl enable --now "$SERVICE_NAME"
 
-model Pedido {
-  id           Int          @id @default(autoincrement())
-  fechaPedido  DateTime     @default(now())
-  fechaEntrega DateTime
-  clienteId    Int
-  productoId   Int
-  piezas       Int
-  estado       EstadoPedido @default(PENDIENTE)
-  notas        String?
-
-  cliente  Cliente  @relation(fields: [clienteId], references: [id])
-  producto Producto @relation(fields: [productoId], references: [id])
-
-  @@index([fechaEntrega])
-  @@index([clienteId])
-  @@index([productoId])
-  @@index([estado])
-}
-
-model MovimientoInventario {
-  id            Int                @id @default(autoincrement())
-  productoId    Int
-  tipo          TipoMovimiento
-  cantidad      Int
-  fecha         DateTime           @default(now())
-  observaciones String?
-
-  producto Producto @relation(fields: [productoId], references: [id])
-
-  @@index([productoId])
-  @@index([fecha])
-  @@index([tipo])
-}
-
-model Configuracion {
-  id            Int      @id @default(1)
-  negocioNombre String   @default("Delicias Lia")
-  logoDataUrl    String?
-  tema           String   @default("system")
-  banco          String   @default("Santander")
-  titular        String   @default("ALONDRA MONTSERRAT VAZQUEZ LOPEZ")
-  clabe          String   @default("014320140430961714")
-  cuenta         String   @default("14043096171")
-  actualizadoEn  DateTime @updatedAt
-}
-
-model Usuario {
-  id           Int      @id @default(autoincrement())
-  usuario      String   @unique
-  passwordHash String
-  activo       Boolean  @default(true)
-  creadoEn     DateTime @default(now())
-}
-
-model AuditLog {
-  id        Int      @id @default(autoincrement())
-  accion    String
-  entidad   String
-  entidadId Int?
-  detalle   String?
-  usuario   String?
-  creadoEn  DateTime @default(now())
-
-  @@index([creadoEn])
-  @@index([entidad, entidadId])
-}
-
-model PushSubscription {
-  id        Int      @id @default(autoincrement())
-  endpoint  String   @unique
-  p256dh    String
-  auth      String
-  clienteId Int?
-  cliente   Cliente? @relation(fields: [clienteId], references: [id])
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
-
-  @@index([clienteId])
-}
-
-enum EstadoVenta {
-  PAGADA
-  FIADA
-  PARCIAL
-  CANCELADA
-}
-
-enum MetodoPago {
-  EFECTIVO
-  TRANSFERENCIA
-  TARJETA
-  OTRO
-}
-
-enum EstadoPedido {
-  PENDIENTE
-  CANCELADO
-}
-
-enum TipoMovimiento {
-  ENTRADA
-  VENTA
-  AJUSTE
-}
-</file>
-
-<file path="package.json">
-{
-  "name": "delicias-lia",
-  "version": "0.1.0",
-  "private": true,
-  "scripts": {
-    "dev": "next dev",
-    "build": "next build",
-    "start": "next start",
-    "lint": "eslint .",
-    "prisma:generate": "prisma generate",
-    "prisma:migrate": "prisma migrate dev",
-    "prisma:deploy": "prisma migrate deploy",
-    "prisma:seed": "tsx prisma/seed.ts",
-    "admin:reset-password": "tsx scripts/reset-admin-password.ts"
-  },
-  "dependencies": {
-    "@hookform/resolvers": "^3.9.0",
-    "@prisma/client": "^6.0.0",
-    "@react-pdf/renderer": "^4.5.1",
-    "chart.js": "^4.4.0",
-    "lucide-react": "^1.25.0",
-    "motion": "^12.42.2",
-    "next": "^15.0.0",
-    "next-pwa": "^5.6.0",
-    "prisma": "^6.0.0",
-    "react": "^19.0.0",
-    "react-dom": "^19.0.0",
-    "react-hook-form": "^7.53.0",
-    "web-push": "^3.6.7",
-    "zod": "^3.23.0"
-  },
-  "devDependencies": {
-    "@types/node": "^22.0.0",
-    "@types/react": "^19.0.0",
-    "@types/react-dom": "^19.0.0",
-    "@types/web-push": "^3.6.4",
-    "autoprefixer": "^10.4.0",
-    "eslint": "^9.0.0",
-    "eslint-config-next": "^15.0.0",
-    "postcss": "^8.4.0",
-    "tailwindcss": "^3.4.0",
-    "tsx": "^4.19.0",
-    "typescript": "^5.6.0"
-  }
-}
+echo
+echo "Instalado."
+echo "URL local: http://$(hostname -I | awk '{print $1}'):${PORT}"
+echo "Usuario: admin"
+echo "Servicio: systemctl status ${SERVICE_NAME}"
 </file>
 
 <file path="app/clientes/[id]/editar/page.tsx">
@@ -5874,6 +6382,63 @@ export async function eliminarCliente(formData: FormData) {
 }
 </file>
 
+<file path="app/mas/page.tsx">
+import Link from "next/link";
+import type { LucideIcon } from "lucide-react";
+import { ArrowRight, ChartNoAxesColumnIncreasing, Home, LogOut, Package, ReceiptText, Settings, Wallet, Wrench } from "@/components/AppIcon";
+import { logout } from "@/app/login/actions";
+
+const items: [LucideIcon, string, string, string][] = [
+  [ReceiptText, "Pedidos", "Encargos para entregar después", "/pedidos"],
+  [Wallet, "Cambios", "Cambio pendiente por entregar", "/cambios"],
+  [Package, "Productos", "Catálogo y precios de venta", "/productos"],
+  [ChartNoAxesColumnIncreasing, "Reportes", "Ventas, cobros y deudores", "/reportes"],
+  [Settings, "Configuración", "Logo, negocio y datos bancarios", "/configuracion"]
+];
+
+export default function MasPage() {
+  return (
+    <main className="app-page">
+      <header className="flex items-center gap-4 rounded-[2rem] bg-white p-4 shadow-sm">
+        <span className="grid size-14 shrink-0 place-items-center rounded-2xl bg-[var(--primary-soft)] text-[var(--primary)]" aria-hidden="true">
+          <Wrench className="size-7" />
+        </span>
+        <div className="min-w-0 flex-1">
+          <p className="ui-label">Más opciones</p>
+          <h1 className="truncate text-3xl font-bold text-[var(--brand)]">Herramientas</h1>
+          <p className="mt-1 line-clamp-2 text-sm text-[var(--text-muted)]">Todo lo que no usas a cada minuto.</p>
+        </div>
+        <Link className="ui-icon-button" href="/" aria-label="Inicio" title="Inicio">
+          <Home aria-hidden="true" className="size-5" />
+        </Link>
+      </header>
+
+      <section className="grid gap-3">
+        {items.map(([Icon, title, description, href]) => (
+          <Link className="flex min-h-24 items-center gap-4 rounded-[1.75rem] bg-white p-4 shadow-sm transition duration-150 active:scale-[0.99]" href={href} key={href}>
+            <span className="grid size-14 shrink-0 place-items-center rounded-2xl bg-[var(--primary-soft)] text-[var(--primary)]" aria-hidden="true">
+              <Icon className="size-7" />
+            </span>
+            <span className="min-w-0 flex-1">
+              <span className="block text-lg font-bold text-[var(--text-main)]">{title}</span>
+              <span className="ui-label mt-1 block">{description}</span>
+            </span>
+            <ArrowRight className="size-6 text-[var(--primary)]" aria-hidden="true" />
+          </Link>
+        ))}
+      </section>
+
+      <form action={logout}>
+        <button className="ui-button-secondary w-full gap-2" type="submit">
+          <LogOut aria-hidden="true" className="size-5" />
+          Salir
+        </button>
+      </form>
+    </main>
+  );
+}
+</file>
+
 <file path="app/pedidos/page.tsx">
 import Link from "next/link";
 import { EstadoPedido } from "@prisma/client";
@@ -6061,253 +6626,255 @@ export default async function PedidosPage({ searchParams }: { searchParams: Prom
 }
 </file>
 
-<file path="app/fiados/[id]/pago/page.tsx">
-import Link from "next/link";
-import { notFound } from "next/navigation";
-import { registrarPagoFiado } from "../../actions";
-import { ArrowLeft, Banknote, CreditCard, HandCoins, ReceiptText, Save } from "@/components/AppIcon";
-import { db } from "@/lib/db";
+<file path="prisma/schema.prisma">
+generator client {
+  provider = "prisma-client-js"
+}
 
-export const dynamic = "force-dynamic";
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
 
-const money = new Intl.NumberFormat("es-MX", { currency: "MXN", style: "currency" });
+model Cliente {
+  id        Int      @id @default(autoincrement())
+  nombre    String
+  telefono  String?
+  notas     String?
+  activo    Boolean  @default(true)
+  estadoToken String? @unique
+  fechaAlta DateTime @default(now())
 
-export default async function PagoFiadoPage({ params }: { params: Promise<{ id: string }> }) {
-  const { id } = await params;
-  const ventaId = Number(id);
-  const venta = Number.isInteger(ventaId)
-    ? await db.venta.findUnique({
-        where: { id: ventaId },
-        include: { cliente: true, detalles: { include: { producto: true } }, pagos: true }
-      })
-    : null;
+  ventas Venta[]
+  pedidos Pedido[]
+  pushSubscriptions PushSubscription[]
 
-  if (!venta) notFound();
+  @@index([nombre])
+}
 
-  const pagado = venta.pagos.reduce((total, pago) => total + Number(pago.monto), 0);
-  const pendiente = Number(venta.total) - pagado;
-  const detalle = venta.detalles[0];
+model Producto {
+  id          Int      @id @default(autoincrement())
+  nombre      String
+  descripcion String?
+  categoria   String?
+  precioVenta Decimal
+  costo       Decimal
+  stock       Int      @default(0)
+  stockMinimo Int      @default(0)
+  activo      Boolean  @default(true)
 
-  return (
-    <main className="app-page">
-      <header className="flex items-center gap-4 rounded-[2rem] bg-white p-4 shadow-sm">
-        <span className="grid size-14 shrink-0 place-items-center rounded-2xl bg-[var(--primary-soft)] text-[var(--primary)]" aria-hidden="true">
-          <Banknote className="size-7" />
-        </span>
-        <div className="min-w-0 flex-1">
-          <p className="ui-label">Abono a crédito</p>
-          <h1 className="truncate text-3xl font-bold text-[var(--brand)]">Registrar pago</h1>
-        </div>
-        <Link className="ui-icon-button" href="/fiados" aria-label="Volver" title="Volver">
-          <ArrowLeft aria-hidden="true" className="size-5" />
-        </Link>
-      </header>
+  detalles    DetalleVenta[]
+  movimientos MovimientoInventario[]
+  pedidos     Pedido[]
 
-      <section className="rounded-[2rem] bg-white p-5 shadow-sm">
-        <div className="flex items-start gap-3">
-          <span className="grid size-12 shrink-0 place-items-center rounded-2xl bg-[var(--primary-soft)] text-[var(--primary)]" aria-hidden="true">
-            <ReceiptText className="size-6" />
-          </span>
-          <div className="min-w-0">
-            <p className="ui-label">{venta.cliente.nombre}</p>
-            <h2 className="mt-1 text-3xl font-bold text-[var(--brand)]">{money.format(Math.max(0, pendiente))}</h2>
-            <p className="ui-label mt-2">
-              {detalle ? `${detalle.producto.nombre} x ${detalle.cantidad}` : venta.observaciones || "Crédito"}
-            </p>
-          </div>
-        </div>
-      </section>
+  @@index([nombre])
+  @@index([categoria])
+}
 
-      <form action={registrarPagoFiado} className="grid gap-4 rounded-[2rem] bg-white p-5 shadow-sm">
-        <div>
-          <p className="ui-label">Pago recibido</p>
-          <h2 className="text-xl font-bold text-[var(--brand)]">Cuanto abono?</h2>
-        </div>
-        <input name="ventaId" type="hidden" value={venta.id} />
+model Venta {
+  id            Int         @id @default(autoincrement())
+  fecha         DateTime    @default(now())
+  clienteId     Int
+  estado        EstadoVenta
+  subtotal      Decimal
+  descuento     Decimal     @default(0)
+  total         Decimal
+  costoTotal    Decimal
+  utilidadTotal Decimal
+  cambioPendiente Boolean @default(false)
+  cambioMonto     Decimal @default(0)
+  observaciones String?
 
-        <div>
-          <label className="ui-label inline-flex items-center gap-1" htmlFor="monto">
-            Cantidad <HandCoins aria-hidden="true" className="size-4" />
-          </label>
-          <input
-            className="ui-input mt-2"
-            id="monto"
-            inputMode="decimal"
-            max={Math.max(0, pendiente)}
-            min="0.01"
-            name="monto"
-            placeholder="Cantidad"
-            required
-            step="0.01"
-            type="number"
-          />
-        </div>
+  cliente  Cliente        @relation(fields: [clienteId], references: [id])
+  detalles DetalleVenta[]
+  pagos    Pago[]
 
-        <div>
-          <label className="ui-label inline-flex items-center gap-1" htmlFor="metodo">
-            Tipo de pago <CreditCard aria-hidden="true" className="size-4" />
-          </label>
-          <select className="ui-input mt-2" id="metodo" name="metodo" required>
-            <option value="EFECTIVO">Efectivo</option>
-            <option value="TRANSFERENCIA">Transferencia</option>
-          </select>
-        </div>
+  @@index([fecha])
+  @@index([clienteId])
+  @@index([estado])
+}
 
-        <button className="ui-button-primary gap-2" type="submit">
-          <Save aria-hidden="true" className="size-5" />
-          Guardar pago
-        </button>
-      </form>
-    </main>
-  );
+model DetalleVenta {
+  id             Int     @id @default(autoincrement())
+  ventaId        Int
+  productoId     Int
+  cantidad       Int
+  precioUnitario Decimal
+  costoUnitario  Decimal
+  subtotal       Decimal
+
+  venta    Venta    @relation(fields: [ventaId], references: [id])
+  producto Producto @relation(fields: [productoId], references: [id])
+
+  @@index([ventaId])
+  @@index([productoId])
+}
+
+model Pago {
+  id      Int        @id @default(autoincrement())
+  ventaId Int
+  fecha   DateTime   @default(now())
+  monto   Decimal
+  metodo  MetodoPago
+
+  venta Venta @relation(fields: [ventaId], references: [id])
+
+  @@index([ventaId])
+  @@index([fecha])
+}
+
+model Pedido {
+  id           Int          @id @default(autoincrement())
+  fechaPedido  DateTime     @default(now())
+  fechaEntrega DateTime
+  clienteId    Int
+  productoId   Int
+  piezas       Int
+  estado       EstadoPedido @default(PENDIENTE)
+  notas        String?
+
+  cliente  Cliente  @relation(fields: [clienteId], references: [id])
+  producto Producto @relation(fields: [productoId], references: [id])
+
+  @@index([fechaEntrega])
+  @@index([clienteId])
+  @@index([productoId])
+  @@index([estado])
+}
+
+model MovimientoInventario {
+  id            Int                @id @default(autoincrement())
+  productoId    Int
+  tipo          TipoMovimiento
+  cantidad      Int
+  fecha         DateTime           @default(now())
+  observaciones String?
+
+  producto Producto @relation(fields: [productoId], references: [id])
+
+  @@index([productoId])
+  @@index([fecha])
+  @@index([tipo])
+}
+
+model Configuracion {
+  id            Int      @id @default(1)
+  negocioNombre String   @default("Delicias Lia")
+  logoDataUrl    String?
+  tema           String   @default("system")
+  banco          String   @default("Santander")
+  titular        String   @default("ALONDRA MONTSERRAT VAZQUEZ LOPEZ")
+  clabe          String   @default("014320140430961714")
+  cuenta         String   @default("14043096171")
+  actualizadoEn  DateTime @updatedAt
+}
+
+model Usuario {
+  id           Int      @id @default(autoincrement())
+  usuario      String   @unique
+  passwordHash String
+  activo       Boolean  @default(true)
+  creadoEn     DateTime @default(now())
+}
+
+model AuditLog {
+  id        Int      @id @default(autoincrement())
+  accion    String
+  entidad   String
+  entidadId Int?
+  detalle   String?
+  usuario   String?
+  creadoEn  DateTime @default(now())
+
+  @@index([creadoEn])
+  @@index([entidad, entidadId])
+}
+
+model PushSubscription {
+  id        Int      @id @default(autoincrement())
+  endpoint  String   @unique
+  p256dh    String
+  auth      String
+  clienteId Int?
+  cliente   Cliente? @relation(fields: [clienteId], references: [id])
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([clienteId])
+}
+
+enum EstadoVenta {
+  PAGADA
+  FIADA
+  PARCIAL
+  CANCELADA
+}
+
+enum MetodoPago {
+  EFECTIVO
+  TRANSFERENCIA
+  TARJETA
+  OTRO
+}
+
+enum EstadoPedido {
+  PENDIENTE
+  CANCELADO
+}
+
+enum TipoMovimiento {
+  ENTRADA
+  VENTA
+  AJUSTE
 }
 </file>
 
-<file path="app/fiados/actions.ts">
-"use server";
-
-import { revalidatePath } from "next/cache";
-import { redirect } from "next/navigation";
-import { auditMoney, auditTicketId, registrarLog } from "@/lib/audit";
-import { db } from "@/lib/db";
-import { registrarVenta } from "@/lib/ventas";
-import { fiadoSchema, pagoFiadoSchema } from "@/lib/validators/fiados";
-
-export async function registrarFiado(formData: FormData) {
-  const fiado = fiadoSchema.parse({
-    clienteId: formData.get("clienteId"),
-    productoId: formData.get("productoId"),
-    piezas: formData.get("piezas"),
-    fecha: formData.get("fecha")
-  });
-
-  const [cliente, producto] = await Promise.all([
-    db.cliente.findUnique({ where: { id: fiado.clienteId }, select: { nombre: true } }),
-    db.producto.findUnique({ where: { id: fiado.productoId }, select: { nombre: true } })
-  ]);
-  // combinamos la fecha del input (sin hora) con la hora actual para que no aparezca 12:00 a.m.
-  const fechaConHora = new Date(fiado.fecha);
-  fechaConHora.setHours(new Date().getHours(), new Date().getMinutes(), new Date().getSeconds(), new Date().getMilliseconds());
-  const creada = await registrarVenta({ ...fiado, fecha: fechaConHora, estado: "FIADA" });
-  await registrarLog({
-    accion: "crear",
-    entidad: "Crédito",
-    entidadId: creada.id,
-    detalle: `Cliente: ${cliente?.nombre || fiado.clienteId} | Ticket ID ${auditTicketId(creada.id)} | Producto: ${producto?.nombre || fiado.productoId} x ${fiado.piezas} | Total crédito: ${auditMoney.format(Number(creada.total))}`
-  });
-
-  revalidatePath("/");
-  revalidatePath("/fiados");
-  redirect("/fiados?guardado=credito");
-}
-
-export async function registrarPagoFiado(formData: FormData) {
-  const pago = pagoFiadoSchema.parse({
-    ventaId: formData.get("ventaId"),
-    monto: formData.get("monto"),
-    metodo: formData.get("metodo")
-  });
-
-  const venta = await db.venta.findUniqueOrThrow({
-    where: { id: pago.ventaId },
-    include: { cliente: true, detalles: { include: { producto: true } }, pagos: true }
-  });
-  const pagado = venta.pagos.reduce((total, item) => total + Number(item.monto), 0);
-  const pendiente = Number(venta.total) - pagado;
-  const monto = Math.min(pago.monto, pendiente);
-
-  const [pagoCreado] = await db.$transaction([
-    db.pago.create({ data: { ventaId: venta.id, monto, metodo: pago.metodo, fecha: new Date() } }),
-    db.venta.update({
-      where: { id: venta.id },
-      data: { estado: pendiente - monto <= 0 ? "PAGADA" : "PARCIAL" }
-    })
-  ]);
-  await registrarLog({
-    accion: "crear",
-    entidad: "Pago",
-    entidadId: pagoCreado.id,
-    detalle: `Cliente: ${venta.cliente.nombre} | Ref. pago ID ${auditTicketId(pagoCreado.id)} | Ticket ID ${auditTicketId(venta.id)} | Producto: ${venta.detalles[0]?.producto.nombre || "Venta"} | Pago: ${auditMoney.format(monto)} | Método: ${pago.metodo} | Pendiente antes: ${auditMoney.format(pendiente)} | Pendiente después: ${auditMoney.format(Math.max(0, pendiente - monto))}`
-  });
-
-  revalidatePath("/");
-  revalidatePath("/fiados");
-  revalidatePath(`/clientes/${venta.clienteId}/estado`);
-  redirect(`/clientes/${venta.clienteId}/estado?guardado=pago`);
-}
-
-export async function liquidarDeudaCliente(formData: FormData) {
-  const clienteId = Number(formData.get("clienteId"));
-  const metodo = formData.get("metodo");
-
-  if (!Number.isInteger(clienteId) || clienteId <= 0 || (metodo !== "EFECTIVO" && metodo !== "TRANSFERENCIA")) {
-    redirect("/fiados");
+<file path="package.json">
+{
+  "name": "delicias-lia",
+  "version": "0.1.0",
+  "private": true,
+  "scripts": {
+    "dev": "next dev",
+    "build": "next build",
+    "start": "next start",
+    "lint": "eslint .",
+    "prisma:generate": "prisma generate",
+    "prisma:migrate": "prisma migrate dev",
+    "prisma:deploy": "prisma migrate deploy",
+    "prisma:seed": "tsx prisma/seed.ts",
+    "push:weekly": "tsx scripts/send-weekly-reminders.ts",
+    "admin:reset-password": "tsx scripts/reset-admin-password.ts"
+  },
+  "dependencies": {
+    "@hookform/resolvers": "^3.9.0",
+    "@prisma/client": "^6.0.0",
+    "@react-pdf/renderer": "^4.5.1",
+    "chart.js": "^4.4.0",
+    "lucide-react": "^1.25.0",
+    "motion": "^12.42.2",
+    "next": "^15.0.0",
+    "next-pwa": "^5.6.0",
+    "prisma": "^6.0.0",
+    "react": "^19.0.0",
+    "react-dom": "^19.0.0",
+    "react-hook-form": "^7.53.0",
+    "web-push": "^3.6.7",
+    "zod": "^3.23.0"
+  },
+  "devDependencies": {
+    "@types/node": "^22.0.0",
+    "@types/react": "^19.0.0",
+    "@types/react-dom": "^19.0.0",
+    "@types/web-push": "^3.6.4",
+    "autoprefixer": "^10.4.0",
+    "eslint": "^9.0.0",
+    "eslint-config-next": "^15.0.0",
+    "postcss": "^8.4.0",
+    "tailwindcss": "^3.4.0",
+    "tsx": "^4.19.0",
+    "typescript": "^5.6.0"
   }
-
-  const ventas = await db.venta.findMany({
-    where: { clienteId, estado: { in: ["FIADA", "PARCIAL"] } },
-    include: { cliente: true, pagos: true }
-  });
-  let totalLiquidado = 0;
-  const operaciones = ventas.flatMap((venta) => {
-    const pagado = venta.pagos.reduce((total, pago) => total + Number(pago.monto), 0);
-    const pendiente = Number(venta.total) - pagado;
-    if (pendiente <= 0) return [];
-    totalLiquidado += pendiente;
-    return [
-      db.pago.create({ data: { ventaId: venta.id, monto: pendiente, metodo, fecha: new Date() } }),
-      db.venta.update({ where: { id: venta.id }, data: { estado: "PAGADA" } })
-    ];
-  });
-
-  if (operaciones.length > 0) {
-    await db.$transaction(operaciones);
-    await registrarLog({
-      accion: "liquidar",
-      entidad: "Cliente",
-      entidadId: clienteId,
-      detalle: `Cliente: ${ventas[0]?.cliente.nombre || clienteId} | Créditos liquidados: ${operaciones.length / 2} | Total pagado: ${auditMoney.format(totalLiquidado)} | Método: ${metodo}`
-    });
-  }
-
-  revalidatePath("/");
-  revalidatePath("/fiados");
-  revalidatePath("/clientes");
-  redirect("/fiados?guardado=liquidado");
-}
-
-export async function eliminarFiado(formData: FormData) {
-  const ventaId = Number(formData.get("ventaId"));
-  const confirmacion = formData.get("confirmacion");
-
-  if (!Number.isInteger(ventaId) || ventaId <= 0 || confirmacion !== "CONFIRMAR") {
-    redirect("/fiados");
-  }
-
-  const venta = await db.venta.findFirst({
-    where: { id: ventaId, estado: { in: ["FIADA", "PARCIAL"] } },
-    include: { cliente: true, detalles: { include: { producto: true } } }
-  });
-
-  if (venta) {
-    await db.$transaction([
-      db.pago.deleteMany({ where: { ventaId: venta.id } }),
-      db.detalleVenta.deleteMany({ where: { ventaId: venta.id } }),
-      db.venta.delete({ where: { id: venta.id } })
-    ]);
-    await registrarLog({
-      accion: "eliminar",
-      entidad: "Crédito",
-      entidadId: venta.id,
-      detalle: `Cliente: ${venta.cliente.nombre} | Ticket ID ${auditTicketId(venta.id)} | Producto: ${venta.detalles[0]?.producto.nombre || "Venta"} | Total eliminado: ${auditMoney.format(Number(venta.total))}`
-    });
-  }
-
-  revalidatePath("/");
-  revalidatePath("/fiados");
-  revalidatePath("/clientes");
-  revalidatePath("/reportes");
-  redirect("/fiados?guardado=eliminado");
 }
 </file>
 
@@ -6428,6 +6995,234 @@ export default async function ProductosPage({ searchParams }: { searchParams: Pr
       </section>
     </main>
   );
+}
+</file>
+
+<file path="app/fiados/[id]/pago/page.tsx">
+import Link from "next/link";
+import { notFound } from "next/navigation";
+import { PagoFiadoCambioFields } from "./PagoFiadoCambioFields";
+import { registrarPagoFiado } from "../../actions";
+import { ArrowLeft, Banknote, ReceiptText, Save } from "@/components/AppIcon";
+import { db } from "@/lib/db";
+
+export const dynamic = "force-dynamic";
+
+const money = new Intl.NumberFormat("es-MX", { currency: "MXN", style: "currency" });
+
+export default async function PagoFiadoPage({ params }: { params: Promise<{ id: string }> }) {
+  const { id } = await params;
+  const ventaId = Number(id);
+  const venta = Number.isInteger(ventaId)
+    ? await db.venta.findUnique({
+        where: { id: ventaId },
+        include: { cliente: true, detalles: { include: { producto: true } }, pagos: true }
+      })
+    : null;
+
+  if (!venta) notFound();
+
+  const pagado = venta.pagos.reduce((total, pago) => total + Number(pago.monto), 0);
+  const pendiente = Number(venta.total) - pagado;
+  const detalle = venta.detalles[0];
+
+  return (
+    <main className="app-page">
+      <header className="flex items-center gap-4 rounded-[2rem] bg-white p-4 shadow-sm">
+        <span className="grid size-14 shrink-0 place-items-center rounded-2xl bg-[var(--primary-soft)] text-[var(--primary)]" aria-hidden="true">
+          <Banknote className="size-7" />
+        </span>
+        <div className="min-w-0 flex-1">
+          <p className="ui-label">Abono a crédito</p>
+          <h1 className="truncate text-3xl font-bold text-[var(--brand)]">Registrar pago</h1>
+        </div>
+        <Link className="ui-icon-button" href="/fiados" aria-label="Volver" title="Volver">
+          <ArrowLeft aria-hidden="true" className="size-5" />
+        </Link>
+      </header>
+
+      <section className="rounded-[2rem] bg-white p-5 shadow-sm">
+        <div className="flex items-start gap-3">
+          <span className="grid size-12 shrink-0 place-items-center rounded-2xl bg-[var(--primary-soft)] text-[var(--primary)]" aria-hidden="true">
+            <ReceiptText className="size-6" />
+          </span>
+          <div className="min-w-0">
+            <p className="ui-label">{venta.cliente.nombre}</p>
+            <h2 className="mt-1 text-3xl font-bold text-[var(--brand)]">{money.format(Math.max(0, pendiente))}</h2>
+            <p className="ui-label mt-2">
+              {detalle ? `${detalle.producto.nombre} x ${detalle.cantidad}` : venta.observaciones || "Crédito"}
+            </p>
+          </div>
+        </div>
+      </section>
+
+      <form action={registrarPagoFiado} className="grid gap-4 rounded-[2rem] bg-white p-5 shadow-sm">
+        <div>
+          <p className="ui-label">Pago recibido</p>
+          <h2 className="text-xl font-bold text-[var(--brand)]">Cuanto abono?</h2>
+        </div>
+        <input name="ventaId" type="hidden" value={venta.id} />
+
+        <PagoFiadoCambioFields pendiente={Math.max(0, pendiente)} />
+
+        <button className="ui-button-primary gap-2" type="submit">
+          <Save aria-hidden="true" className="size-5" />
+          Guardar pago
+        </button>
+      </form>
+    </main>
+  );
+}
+</file>
+
+<file path="app/fiados/actions.ts">
+"use server";
+
+import { revalidatePath } from "next/cache";
+import { redirect } from "next/navigation";
+import { auditMoney, auditTicketId, registrarLog } from "@/lib/audit";
+import { db } from "@/lib/db";
+import { registrarVenta } from "@/lib/ventas";
+import { fiadoSchema, pagoFiadoSchema } from "@/lib/validators/fiados";
+
+export async function registrarFiado(formData: FormData) {
+  const fiado = fiadoSchema.parse({
+    clienteId: formData.get("clienteId"),
+    productoId: formData.get("productoId"),
+    piezas: formData.get("piezas"),
+    fecha: formData.get("fecha")
+  });
+
+  const [cliente, producto] = await Promise.all([
+    db.cliente.findUnique({ where: { id: fiado.clienteId }, select: { nombre: true } }),
+    db.producto.findUnique({ where: { id: fiado.productoId }, select: { nombre: true } })
+  ]);
+  // combinamos la fecha del input (sin hora) con la hora actual para que no aparezca 12:00 a.m.
+  const fechaConHora = new Date(fiado.fecha);
+  fechaConHora.setHours(new Date().getHours(), new Date().getMinutes(), new Date().getSeconds(), new Date().getMilliseconds());
+  const creada = await registrarVenta({ ...fiado, fecha: fechaConHora, estado: "FIADA" });
+  await registrarLog({
+    accion: "crear",
+    entidad: "Crédito",
+    entidadId: creada.id,
+    detalle: `Cliente: ${cliente?.nombre || fiado.clienteId} | Ticket ID ${auditTicketId(creada.id)} | Producto: ${producto?.nombre || fiado.productoId} x ${fiado.piezas} | Total crédito: ${auditMoney.format(Number(creada.total))}`
+  });
+
+  revalidatePath("/");
+  revalidatePath("/fiados");
+  redirect("/fiados?guardado=credito");
+}
+
+export async function registrarPagoFiado(formData: FormData) {
+  const pago = pagoFiadoSchema.parse({
+    ventaId: formData.get("ventaId"),
+    monto: formData.get("monto"),
+    metodo: formData.get("metodo"),
+    cambioPendiente: formData.get("cambioPendiente"),
+    montoRecibido: formData.get("montoRecibido")
+  });
+
+  const venta = await db.venta.findUniqueOrThrow({
+    where: { id: pago.ventaId },
+    include: { cliente: true, detalles: { include: { producto: true } }, pagos: true }
+  });
+  const pagado = venta.pagos.reduce((total, item) => total + Number(item.monto), 0);
+  const pendiente = Number(venta.total) - pagado;
+  const monto = Math.min(pago.monto, pendiente);
+  const cambioMonto = pago.metodo === "EFECTIVO" && pago.cambioPendiente ? Math.max(0, pago.montoRecibido - monto) : 0;
+
+  const [pagoCreado] = await db.$transaction([
+    db.pago.create({ data: { ventaId: venta.id, monto, metodo: pago.metodo, fecha: new Date() } }),
+    db.venta.update({
+      where: { id: venta.id },
+      data: { estado: pendiente - monto <= 0 ? "PAGADA" : "PARCIAL", cambioPendiente: cambioMonto > 0 || venta.cambioPendiente, cambioMonto: { increment: cambioMonto } }
+    })
+  ]);
+  await registrarLog({
+    accion: "crear",
+    entidad: "Pago",
+    entidadId: pagoCreado.id,
+    detalle: `Cliente: ${venta.cliente.nombre} | Ref. pago ID ${auditTicketId(pagoCreado.id)} | Ticket ID ${auditTicketId(venta.id)} | Producto: ${venta.detalles[0]?.producto.nombre || "Venta"} | Pago: ${auditMoney.format(monto)} | Método: ${pago.metodo} | Pendiente antes: ${auditMoney.format(pendiente)} | Pendiente después: ${auditMoney.format(Math.max(0, pendiente - monto))}${cambioMonto > 0 ? ` | Cambio pendiente: ${auditMoney.format(cambioMonto)}` : ""}`
+  });
+
+  revalidatePath("/");
+  revalidatePath("/fiados");
+  revalidatePath(`/clientes/${venta.clienteId}/estado`);
+  redirect(`/clientes/${venta.clienteId}/estado?guardado=pago`);
+}
+
+export async function liquidarDeudaCliente(formData: FormData) {
+  const clienteId = Number(formData.get("clienteId"));
+  const metodo = formData.get("metodo");
+
+  if (!Number.isInteger(clienteId) || clienteId <= 0 || (metodo !== "EFECTIVO" && metodo !== "TRANSFERENCIA")) {
+    redirect("/fiados");
+  }
+
+  const ventas = await db.venta.findMany({
+    where: { clienteId, estado: { in: ["FIADA", "PARCIAL"] } },
+    include: { cliente: true, pagos: true }
+  });
+  let totalLiquidado = 0;
+  const operaciones = ventas.flatMap((venta) => {
+    const pagado = venta.pagos.reduce((total, pago) => total + Number(pago.monto), 0);
+    const pendiente = Number(venta.total) - pagado;
+    if (pendiente <= 0) return [];
+    totalLiquidado += pendiente;
+    return [
+      db.pago.create({ data: { ventaId: venta.id, monto: pendiente, metodo, fecha: new Date() } }),
+      db.venta.update({ where: { id: venta.id }, data: { estado: "PAGADA" } })
+    ];
+  });
+
+  if (operaciones.length > 0) {
+    await db.$transaction(operaciones);
+    await registrarLog({
+      accion: "liquidar",
+      entidad: "Cliente",
+      entidadId: clienteId,
+      detalle: `Cliente: ${ventas[0]?.cliente.nombre || clienteId} | Créditos liquidados: ${operaciones.length / 2} | Total pagado: ${auditMoney.format(totalLiquidado)} | Método: ${metodo}`
+    });
+  }
+
+  revalidatePath("/");
+  revalidatePath("/fiados");
+  revalidatePath("/clientes");
+  redirect("/fiados?guardado=liquidado");
+}
+
+export async function eliminarFiado(formData: FormData) {
+  const ventaId = Number(formData.get("ventaId"));
+  const confirmacion = formData.get("confirmacion");
+
+  if (!Number.isInteger(ventaId) || ventaId <= 0 || confirmacion !== "CONFIRMAR") {
+    redirect("/fiados");
+  }
+
+  const venta = await db.venta.findFirst({
+    where: { id: ventaId, estado: { in: ["FIADA", "PARCIAL"] } },
+    include: { cliente: true, detalles: { include: { producto: true } } }
+  });
+
+  if (venta) {
+    await db.$transaction([
+      db.pago.deleteMany({ where: { ventaId: venta.id } }),
+      db.detalleVenta.deleteMany({ where: { ventaId: venta.id } }),
+      db.venta.delete({ where: { id: venta.id } })
+    ]);
+    await registrarLog({
+      accion: "eliminar",
+      entidad: "Crédito",
+      entidadId: venta.id,
+      detalle: `Cliente: ${venta.cliente.nombre} | Ticket ID ${auditTicketId(venta.id)} | Producto: ${venta.detalles[0]?.producto.nombre || "Venta"} | Total eliminado: ${auditMoney.format(Number(venta.total))}`
+    });
+  }
+
+  revalidatePath("/");
+  revalidatePath("/fiados");
+  revalidatePath("/clientes");
+  revalidatePath("/reportes");
+  redirect("/fiados?guardado=eliminado");
 }
 </file>
 
@@ -7184,237 +7979,6 @@ export default async function ConfiguracionPage({ searchParams }: { searchParams
 }
 </file>
 
-<file path="app/estado/[token]/page.tsx">
-import { cookies } from "next/headers";
-import Image from "next/image";
-import Link from "next/link";
-import { notFound } from "next/navigation";
-import { ClipboardList, Landmark, Store, Wallet } from "@/components/AppIcon";
-import { CopyButton } from "@/components/CopyButton";
-import { EstadoMovimientosAccordion } from "@/components/EstadoMovimientosAccordion";
-import { Pagination } from "@/components/Pagination";
-import { DownloadStatementButton } from "@/components/DownloadStatementButton";
-import { ShareStatementButton } from "@/components/ShareStatementButton";
-import { getConfiguracion } from "@/lib/configuracion";
-import { db } from "@/lib/db";
-import { isValidSessionToken, SESSION_COOKIE } from "@/lib/session";
-import { appDateFormatter, dateInputValue } from "@/lib/timezone";
-import { AdminNotifyButton } from "@/components/AdminNotifyButton";
-import { PushSubscriptionButton } from "@/components/PushSubscriptionButton";
-
-export const dynamic = "force-dynamic";
-
-const money = new Intl.NumberFormat("es-MX", { currency: "MXN", style: "currency" });
-const date = appDateFormatter({ dateStyle: "medium" });
-const time = appDateFormatter({ hour: "2-digit", minute: "2-digit" });
-const generatedAt = appDateFormatter({ dateStyle: "medium", timeStyle: "short" });
-const pageSize = 5;
-const ticketId = (id: number) => String(id).padStart(6, "0");
-const serialize = <T,>(x: T): T => JSON.parse(JSON.stringify(x));
-
-export default async function EstadoPublicoPage({ params, searchParams }: { params: Promise<{ token: string }>; searchParams: Promise<{ page?: string }> }) {
-  const { token } = await params;
-  const { page: pageParam } = await searchParams;
-  const page = Math.max(1, Number(pageParam) || 1);
-  const [cliente, config, pushSubs] = await Promise.all([
-    db.cliente.findUnique({
-      where: { estadoToken: token },
-      include: {
-        ventas: {
-          where: { estado: { not: "CANCELADA" } },
-          include: { detalles: { include: { producto: true } }, pagos: true },
-          orderBy: { fecha: "asc" }
-        }
-      }
-    }),
-    getConfiguracion(),
-    db.pushSubscription.findMany({ where: { cliente: { estadoToken: token } } })
-  ]);
-
-  if (!cliente) notFound();
-
-  const clienteSerialized = serialize(cliente);
-  const configSerialized = serialize(config);
-
-  const pagos = await db.pago.findMany({
-    where: { venta: { clienteId: cliente.id } },
-    include: { venta: { include: { detalles: { include: { producto: true } } } } },
-    orderBy: { fecha: "asc" }
-  });
-  const deudas = cliente.ventas
-    .map((venta) => {
-      const pagado = venta.pagos.reduce((sum, pago) => sum + Number(pago.monto), 0);
-      return { ...venta, pagado, pendiente: Number(venta.total) - pagado };
-    })
-    .filter((venta) => venta.pendiente > 0);
-  const saldo = deudas.reduce((sum, venta) => sum + venta.pendiente, 0);
-  const movimientos = [
-    ...cliente.ventas.map((venta) => ({
-      id: `venta-${venta.id}`,
-      fecha: venta.fecha,
-      folio: `Ticket ID ${ticketId(venta.id)}`,
-      concepto: venta.detalles[0] ? `${venta.detalles[0].producto.nombre} x ${venta.detalles[0].cantidad}` : venta.observaciones || "Venta",
-      detalle: `Cargo - ${venta.estado.toLowerCase()}`,
-      monto: Number(venta.total),
-      tipo: "cargo" as const
-    })),
-    ...pagos.map((pago) => ({
-      id: `pago-${pago.id}`,
-      fecha: pago.fecha,
-      folio: `Ref. pago ID ${ticketId(pago.id)} - ticket ID ${ticketId(pago.ventaId)}`,
-      concepto: pago.venta.detalles[0]?.producto.nombre || pago.venta.observaciones || "Pago",
-      detalle: `Abono - ${pago.metodo.toLowerCase()}`,
-      monto: -Number(pago.monto),
-      tipo: "abono" as const
-    }))
-  ].sort((a, b) => a.fecha.getTime() - b.fecha.getTime() || a.id.localeCompare(b.id));
-  const gruposMap = new Map<
-    string,
-    {
-      cargos: number;
-      fecha: string;
-      key: string;
-      movimientos: { concepto: string; detalle: string; folio: string; hora: string; id: string; importe: string; tipo: "abono" | "cargo" }[];
-      pagos: number;
-    }
-  >();
-
-  for (const movimiento of movimientos) {
-    const key = dateInputValue(movimiento.fecha);
-    const grupo = gruposMap.get(key) || { cargos: 0, fecha: date.format(movimiento.fecha), key, movimientos: [], pagos: 0 };
-    grupo.cargos += movimiento.tipo === "cargo" ? movimiento.monto : 0;
-    grupo.pagos += movimiento.tipo === "abono" ? Math.abs(movimiento.monto) : 0;
-    grupo.movimientos.push({
-      concepto: movimiento.concepto,
-      detalle: movimiento.detalle,
-      folio: movimiento.folio,
-      hora: time.format(movimiento.fecha),
-      id: movimiento.id,
-      importe: money.format(Math.abs(movimiento.monto)),
-      tipo: movimiento.tipo
-    });
-    gruposMap.set(key, grupo);
-  }
-
-  const gruposMovimientos = Array.from(gruposMap.values())
-    .sort((a, b) => b.key.localeCompare(a.key))
-    .map((grupo) => ({
-      ...grupo,
-      cargos: money.format(grupo.cargos),
-      pagos: money.format(grupo.pagos),
-      saldo: money.format(grupo.cargos - grupo.pagos)
-    }));
-  const totalPages = Math.max(1, Math.ceil(gruposMovimientos.length / pageSize));
-  const currentPage = Math.min(page, totalPages);
-  const pageGruposMovimientos = gruposMovimientos.slice((currentPage - 1) * pageSize, currentPage * pageSize);
-  const isAdmin = await isValidSessionToken((await cookies()).get(SESSION_COOKIE)?.value);
-  const fechaGenerado = generatedAt.format(new Date());
-
-  return (
-    <main className="app-page">
-      <header className="rounded-[2rem] bg-white p-5 shadow-sm">
-        <div className="flex items-start gap-4">
-          <div className="flex min-w-0 items-center gap-3">
-            {config.logoDataUrl ? (
-              <Image alt={config.negocioNombre} className="size-16 shrink-0 rounded-3xl object-cover" height={64} src={config.logoDataUrl} unoptimized width={64} />
-            ) : (
-              <span className="grid size-16 shrink-0 place-items-center rounded-3xl bg-[var(--primary-soft)] text-[var(--primary)]" aria-hidden="true">
-                <Store className="size-8" />
-              </span>
-            )}
-            <div className="min-w-0">
-              <p className="ui-label">Estado de cuenta</p>
-              <h1 className="break-words text-3xl font-bold text-[var(--brand)]">{cliente.nombre}</h1>
-              <p className="ui-label mt-1">{config.negocioNombre}</p>
-              <p className="ui-label mt-1">Generado el {fechaGenerado}</p>
-            </div>
-          </div>
-        </div>
-        <div className="mt-5 flex items-center justify-between gap-4 rounded-[1.75rem] bg-[var(--app-bg)] p-4">
-          <div className="min-w-0">
-            <p className="ui-label">Crédito por cobrar</p>
-            <p className="mt-1 text-4xl font-bold text-[var(--brand)]">{money.format(saldo)}</p>
-            {cliente.telefono ? <p className="mt-2 text-sm text-[var(--text-muted)]">Teléfono: {cliente.telefono}</p> : null}
-          </div>
-          <span className="grid size-12 shrink-0 place-items-center rounded-2xl bg-[var(--primary-soft)] text-[var(--primary)]" aria-hidden="true">
-            <Wallet className="size-6" />
-          </span>
-        </div>
-        {isAdmin ? (
-          <div className="mt-4 flex flex-wrap gap-2 no-print">
-            <ShareStatementButton cliente={cliente.nombre} telefono={cliente.telefono} />
-            <DownloadStatementButton
-              cliente={clienteSerialized}
-              grupos={gruposMovimientos}
-              saldo={saldo}
-              config={configSerialized}
-              fechaGenerado={fechaGenerado}
-            />
-            {pushSubs.length > 0 ? <AdminNotifyButton clienteId={cliente.id} /> : null}
-            <Link className="ui-button-compact" href="/clientes">
-              Volver
-            </Link>
-          </div>
-        ) : <PushSubscriptionButton clienteId={cliente.id} />}
-      </header>
-
-      <section className="rounded-[2rem] bg-white p-5 shadow-sm">
-        <div className="flex items-start gap-3">
-          <span className="grid size-12 shrink-0 place-items-center rounded-2xl bg-[var(--primary-soft)] text-[var(--primary)]" aria-hidden="true">
-            <Landmark className="size-6" />
-          </span>
-          <div>
-            <p className="ui-label">Datos para depósito</p>
-            <h2 className="mt-1 text-2xl font-semibold text-[var(--brand)]">{config.banco}</h2>
-          </div>
-        </div>
-        {[
-          ["A nombre de", config.titular],
-          ["CLABE", config.clabe],
-          ["Cuenta", config.cuenta]
-        ].map(([label, value]) => (
-          <div className="mt-3 flex items-center justify-between gap-3 rounded-2xl bg-[var(--app-bg)] px-4 py-3" key={label}>
-            <div className="min-w-0">
-              <p className="text-sm font-bold text-[var(--brand)]">{label}</p>
-              <p className="break-words text-base text-[var(--text-main)]">{value}</p>
-            </div>
-            <span className="no-print">
-              <CopyButton value={value} />
-            </span>
-          </div>
-        ))}
-      </section>
-
-      <section className="grid gap-3">
-        <div>
-          <p className="ui-label">Estado de cuenta</p>
-          <div className="flex flex-wrap items-center justify-between gap-3">
-            <h2 className="inline-flex items-center gap-2 text-2xl font-bold text-[var(--brand)]">
-              <ClipboardList aria-hidden="true" className="size-6 text-[var(--primary)]" />
-              Movimientos
-            </h2>
-            <div className="flex gap-3 text-xs font-bold">
-              <span className="text-green-700">Verde: pagos</span>
-              <span className="text-red-700">Rojo: crédito</span>
-            </div>
-          </div>
-        </div>
-        {gruposMovimientos.length === 0 ? (
-          <p className="rounded-[1.75rem] bg-white p-4 text-[var(--text-muted)] shadow-sm">Todavía no hay movimientos registrados.</p>
-        ) : (
-          <>
-            <EstadoMovimientosAccordion grupos={pageGruposMovimientos} />
-            <div className="no-print">
-              <Pagination basePath={`/estado/${token}`} page={currentPage} q="" totalPages={totalPages} />
-            </div>
-          </>
-        )}
-      </section>
-    </main>
-  );
-}
-</file>
-
 <file path="app/clientes/page.tsx">
 import Link from "next/link";
 import { ChartNoAxesColumnIncreasing, FileText, Home, Pencil, Phone, Save, Search, User, Users } from "@/components/AppIcon";
@@ -7591,6 +8155,257 @@ export default async function ClientesPage({ searchParams }: { searchParams: Pro
           })
         )}
         <Pagination basePath="/clientes" page={page} q={q} totalPages={totalPages} />
+      </section>
+    </main>
+  );
+}
+</file>
+
+<file path="app/estado/[token]/page.tsx">
+import { cookies } from "next/headers";
+import Image from "next/image";
+import Link from "next/link";
+import { notFound } from "next/navigation";
+import { ClipboardList, Landmark, Store, Wallet } from "@/components/AppIcon";
+import { CopyButton } from "@/components/CopyButton";
+import { EstadoMovimientosAccordion } from "@/components/EstadoMovimientosAccordion";
+import { Pagination } from "@/components/Pagination";
+import { DownloadStatementButton } from "@/components/DownloadStatementButton";
+import { ShareStatementButton } from "@/components/ShareStatementButton";
+import { getConfiguracion } from "@/lib/configuracion";
+import { db } from "@/lib/db";
+import { publicEstadoUrl } from "@/lib/public-url";
+import { isValidSessionToken, SESSION_COOKIE } from "@/lib/session";
+import { appDateFormatter, dateInputValue } from "@/lib/timezone";
+import { AdminNotifyButton } from "@/components/AdminNotifyButton";
+import { PushSubscriptionButton } from "@/components/PushSubscriptionButton";
+
+export const dynamic = "force-dynamic";
+
+const money = new Intl.NumberFormat("es-MX", { currency: "MXN", style: "currency" });
+const date = appDateFormatter({ dateStyle: "medium" });
+const time = appDateFormatter({ hour: "2-digit", minute: "2-digit" });
+const generatedAt = appDateFormatter({ dateStyle: "medium", timeStyle: "short" });
+const pageSize = 5;
+const ticketId = (id: number) => String(id).padStart(6, "0");
+const serialize = <T,>(x: T): T => JSON.parse(JSON.stringify(x));
+
+export default async function EstadoPublicoPage({ params, searchParams }: { params: Promise<{ token: string }>; searchParams: Promise<{ page?: string }> }) {
+  const { token } = await params;
+  const { page: pageParam } = await searchParams;
+  const page = Math.max(1, Number(pageParam) || 1);
+  const [cliente, config, pushSubs] = await Promise.all([
+    db.cliente.findUnique({
+      where: { estadoToken: token },
+      include: {
+        ventas: {
+          where: { estado: { not: "CANCELADA" } },
+          include: { detalles: { include: { producto: true } }, pagos: true },
+          orderBy: { fecha: "asc" }
+        }
+      }
+    }),
+    getConfiguracion(),
+    db.pushSubscription.findMany({ where: { cliente: { estadoToken: token } } })
+  ]);
+
+  if (!cliente) notFound();
+
+  const clienteSerialized = serialize(cliente);
+  const configSerialized = serialize(config);
+
+  const pagos = await db.pago.findMany({
+    where: { venta: { clienteId: cliente.id } },
+    include: { venta: { include: { detalles: { include: { producto: true } } } } },
+    orderBy: { fecha: "asc" }
+  });
+  const deudas = cliente.ventas
+    .map((venta) => {
+      const pagado = venta.pagos.reduce((sum, pago) => sum + Number(pago.monto), 0);
+      return { ...venta, pagado, pendiente: Number(venta.total) - pagado };
+    })
+    .filter((venta) => venta.pendiente > 0);
+  const saldo = deudas.reduce((sum, venta) => sum + venta.pendiente, 0);
+  const movimientos = [
+    ...cliente.ventas.map((venta) => ({
+      id: `venta-${venta.id}`,
+      fecha: venta.fecha,
+      folio: `Ticket ID ${ticketId(venta.id)}`,
+      concepto: venta.detalles[0] ? `${venta.detalles[0].producto.nombre} x ${venta.detalles[0].cantidad}` : venta.observaciones || "Venta",
+      detalle: `Cargo - ${venta.estado.toLowerCase()}`,
+      monto: Number(venta.total),
+      tipo: "cargo" as const
+    })),
+    ...pagos.map((pago) => ({
+      id: `pago-${pago.id}`,
+      fecha: pago.fecha,
+      folio: `Ref. pago ID ${ticketId(pago.id)} - ticket ID ${ticketId(pago.ventaId)}`,
+      concepto: pago.venta.detalles[0]?.producto.nombre || pago.venta.observaciones || "Pago",
+      detalle: `Abono - ${pago.metodo.toLowerCase()}`,
+      monto: -Number(pago.monto),
+      tipo: "abono" as const
+    })),
+    ...cliente.ventas
+      .filter((venta) => venta.cambioPendiente && Number(venta.cambioMonto) > 0)
+      .map((venta) => ({
+        id: `cambio-${venta.id}`,
+        fecha: venta.fecha,
+        folio: `Ticket ID ${ticketId(venta.id)}`,
+        concepto: "Cambio pendiente",
+        detalle: "Cambio por entregar al cliente",
+        monto: -Number(venta.cambioMonto),
+        tipo: "cambio" as const
+    }))
+  ].sort((a, b) => a.fecha.getTime() - b.fecha.getTime() || a.id.localeCompare(b.id));
+  const gruposMap = new Map<
+    string,
+    {
+      cargos: number;
+      cambios: number;
+      fecha: string;
+      key: string;
+      movimientos: { concepto: string; detalle: string; folio: string; hora: string; id: string; importe: string; tipo: "abono" | "cargo" | "cambio" }[];
+      pagos: number;
+    }
+  >();
+
+  for (const movimiento of movimientos) {
+    const key = dateInputValue(movimiento.fecha);
+    const grupo = gruposMap.get(key) || { cargos: 0, cambios: 0, fecha: date.format(movimiento.fecha), key, movimientos: [], pagos: 0 };
+    grupo.cargos += movimiento.tipo === "cargo" ? movimiento.monto : 0;
+    grupo.pagos += movimiento.tipo === "abono" ? Math.abs(movimiento.monto) : 0;
+    grupo.cambios += movimiento.tipo === "cambio" ? Math.abs(movimiento.monto) : 0;
+    grupo.movimientos.push({
+      concepto: movimiento.concepto,
+      detalle: movimiento.detalle,
+      folio: movimiento.folio,
+      hora: time.format(movimiento.fecha),
+      id: movimiento.id,
+      importe: movimiento.tipo === "cambio" ? `-${money.format(Math.abs(movimiento.monto))}` : money.format(Math.abs(movimiento.monto)),
+      tipo: movimiento.tipo
+    });
+    gruposMap.set(key, grupo);
+  }
+
+  const gruposMovimientos = Array.from(gruposMap.values())
+    .sort((a, b) => b.key.localeCompare(a.key))
+    .map((grupo) => ({
+      ...grupo,
+      cargos: money.format(grupo.cargos),
+      cambios: grupo.cambios > 0 ? `-${money.format(grupo.cambios)}` : money.format(0),
+      pagos: money.format(grupo.pagos),
+      saldo: money.format(grupo.cargos - grupo.pagos - grupo.cambios)
+    }));
+  const totalPages = Math.max(1, Math.ceil(gruposMovimientos.length / pageSize));
+  const currentPage = Math.min(page, totalPages);
+  const pageGruposMovimientos = gruposMovimientos.slice((currentPage - 1) * pageSize, currentPage * pageSize);
+  const isAdmin = await isValidSessionToken((await cookies()).get(SESSION_COOKIE)?.value);
+  const fechaGenerado = generatedAt.format(new Date());
+  const estadoUrl = publicEstadoUrl(token);
+
+  return (
+    <main className="app-page">
+      <header className="rounded-[2rem] bg-white p-5 shadow-sm">
+        <div className="flex items-start gap-4">
+          <div className="flex min-w-0 items-center gap-3">
+            {config.logoDataUrl ? (
+              <Image alt={config.negocioNombre} className="size-16 shrink-0 rounded-3xl object-cover" height={64} src={config.logoDataUrl} unoptimized width={64} />
+            ) : (
+              <span className="grid size-16 shrink-0 place-items-center rounded-3xl bg-[var(--primary-soft)] text-[var(--primary)]" aria-hidden="true">
+                <Store className="size-8" />
+              </span>
+            )}
+            <div className="min-w-0">
+              <p className="ui-label">Estado de cuenta</p>
+              <h1 className="break-words text-3xl font-bold text-[var(--brand)]">{cliente.nombre}</h1>
+              <p className="ui-label mt-1">{config.negocioNombre}</p>
+              <p className="ui-label mt-1">Generado el {fechaGenerado}</p>
+            </div>
+          </div>
+        </div>
+        <div className="mt-5 flex items-center justify-between gap-4 rounded-[1.75rem] bg-[var(--app-bg)] p-4">
+          <div className="min-w-0">
+            <p className="ui-label">Crédito por cobrar</p>
+            <p className="mt-1 text-4xl font-bold text-[var(--brand)]">{money.format(saldo)}</p>
+            {cliente.telefono ? <p className="mt-2 text-sm text-[var(--text-muted)]">Teléfono: {cliente.telefono}</p> : null}
+          </div>
+          <span className="grid size-12 shrink-0 place-items-center rounded-2xl bg-[var(--primary-soft)] text-[var(--primary)]" aria-hidden="true">
+            <Wallet className="size-6" />
+          </span>
+        </div>
+        <div className="mt-4 flex flex-wrap gap-2 no-print">
+          {!isAdmin ? <PushSubscriptionButton clienteId={cliente.id} /> : null}
+          {isAdmin ? (
+            <>
+              <ShareStatementButton cliente={cliente.nombre} telefono={cliente.telefono} url={estadoUrl} />
+              <DownloadStatementButton
+                cliente={clienteSerialized}
+                grupos={gruposMovimientos}
+                saldo={saldo}
+                config={configSerialized}
+                fechaGenerado={fechaGenerado}
+              />
+              {saldo > 0 ? <AdminNotifyButton clienteId={cliente.id} disabled={pushSubs.length === 0} /> : null}
+              <Link className="ui-button-compact" href="/clientes">
+                Volver
+              </Link>
+            </>
+          ) : null}
+        </div>
+      </header>
+
+      <section className="rounded-[2rem] bg-white p-5 shadow-sm">
+        <div className="flex items-start gap-3">
+          <span className="grid size-12 shrink-0 place-items-center rounded-2xl bg-[var(--primary-soft)] text-[var(--primary)]" aria-hidden="true">
+            <Landmark className="size-6" />
+          </span>
+          <div>
+            <p className="ui-label">Datos para depósito</p>
+            <h2 className="mt-1 text-2xl font-semibold text-[var(--brand)]">{config.banco}</h2>
+          </div>
+        </div>
+        {[
+          ["A nombre de", config.titular],
+          ["CLABE", config.clabe],
+          ["Cuenta", config.cuenta]
+        ].map(([label, value]) => (
+          <div className="mt-3 flex items-center justify-between gap-3 rounded-2xl bg-[var(--app-bg)] px-4 py-3" key={label}>
+            <div className="min-w-0">
+              <p className="text-sm font-bold text-[var(--brand)]">{label}</p>
+              <p className="break-words text-base text-[var(--text-main)]">{value}</p>
+            </div>
+            <span className="no-print">
+              <CopyButton value={value} />
+            </span>
+          </div>
+        ))}
+      </section>
+
+      <section className="grid gap-3">
+        <div>
+          <p className="ui-label">Estado de cuenta</p>
+          <div className="flex flex-wrap items-center justify-between gap-3">
+            <h2 className="inline-flex items-center gap-2 text-2xl font-bold text-[var(--brand)]">
+              <ClipboardList aria-hidden="true" className="size-6 text-[var(--primary)]" />
+              Movimientos
+            </h2>
+            <div className="flex gap-3 text-xs font-bold">
+              <span className="text-green-700">Verde: pagos</span>
+              <span className="text-red-700">Rojo: crédito</span>
+              <span className="text-amber-700">Ámbar: cambio</span>
+            </div>
+          </div>
+        </div>
+        {gruposMovimientos.length === 0 ? (
+          <p className="rounded-[1.75rem] bg-white p-4 text-[var(--text-muted)] shadow-sm">Todavía no hay movimientos registrados.</p>
+        ) : (
+          <>
+            <EstadoMovimientosAccordion grupos={pageGruposMovimientos} />
+            <div className="no-print">
+              <Pagination basePath={`/estado/${token}`} page={currentPage} q="" totalPages={totalPages} />
+            </div>
+          </>
+        )}
       </section>
     </main>
   );
