@@ -4,7 +4,7 @@
 
 Aplicación web privada para administrar cobros, ventas, créditos, clientes, productos, pedidos y reportes financieros de Delicias Lia. Está construida como una PWA con Next.js, React, Prisma y SQLite.
 
-La app incluye login de administrador, tablero inicial, registro de ventas rápidas, control de fiados y pagos parciales, estados de cuenta públicos por cliente, catálogo de productos, pedidos pendientes, configuración del negocio y reportes financieros con métricas listas para tomar decisiones sin depender de una descarga a Excel.
+La app incluye login de administrador, tablero inicial, registro de ventas rápidas, control de créditos y pagos parciales, cambios pendientes por entregar, estados de cuenta públicos por cliente, catálogo de productos, pedidos pendientes, configuración del negocio, reportes financieros y APIs para automatizaciones con N8N/Evolution API.
 
 ## Objetivo
 
@@ -49,6 +49,10 @@ ADMIN_PASSWORD="cambiar-esta-contrasena"
 AUTH_SECRET="cambiar-por-un-secreto-largo"
 AUTH_SECURE_COOKIE="false"
 PORT="3000"
+TZ="America/Mexico_City"
+NEXT_PUBLIC_BASE_URL="https://tu-dominio.com"
+TUNNEL_URL="https://tu-tunnel.trycloudflare.com"
+N8N_API_KEY="cambiar-por-un-token-largo"
 ```
 
 Preparar base de datos:
@@ -80,15 +84,42 @@ Rutas principales:
 - `/`: tablero inicial con créditos por cobrar, cambios pendientes, clientes, productos y accesos rápidos.
 - `/ventas`: registro de venta rápida, ventas pagadas, fiadas o parciales y cambio pendiente.
 - `/fiados`: registro, búsqueda, pago, liquidación y eliminación con confirmación sostenida.
+- `/cambios`: lista de cambios pendientes por entregar y marcado de cambio entregado.
 - `/clientes`: alta, búsqueda, edición, historial y estado de cuenta.
-- `/estado/[token]`: estado de cuenta público por cliente con pagos en verde y cargos/deuda en rojo.
+- `/estado/[token]`: estado de cuenta público por cliente con pagos en verde, crédito en rojo y cambios en ámbar.
 - `/productos`: alta y búsqueda de productos.
 - `/pedidos`: alta, búsqueda, conversión a venta/crédito y cancelación de pedidos.
 - `/reportes`: ventas, utilidad, margen, cobros, deuda, inventario, pedidos, top clientes, productos rentables, formas de pago y tipo de venta.
 - `/configuracion`: logo, nombre del negocio y datos bancarios.
 - `/api/health`: verificación simple de salud.
+- `/api/n8n/deudores`: API protegida para N8N con clientes que deben y monto pendiente.
+- `/api/n8n/corte-dia`: API protegida para N8N con corte de caja digital del día.
 
 La interfaz usa iconos de Lucide y animaciones sutiles con Motion en las rutas.
+
+## APIs para N8N
+
+Las APIs de N8N usan `N8N_API_KEY` y requieren:
+
+```http
+Authorization: Bearer TU_N8N_API_KEY
+```
+
+Deudores para recordatorios por WhatsApp:
+
+```bash
+curl -H "Authorization: Bearer $N8N_API_KEY" https://tu-dominio.com/api/n8n/deudores
+```
+
+Devuelve clientes activos con saldo pendiente, teléfono, saldo y link público del estado de cuenta.
+
+Corte digital del día:
+
+```bash
+curl -H "Authorization: Bearer $N8N_API_KEY" https://tu-dominio.com/api/n8n/corte-dia
+```
+
+Devuelve ventas del día, piezas vendidas, cobrado, efectivo, transferencia, crédito generado, cambios pendientes y un campo `mensaje` listo para enviarse por WhatsApp al admin desde Evolution API.
 
 ## Despliegue
 
@@ -126,6 +157,8 @@ Variables aceptadas por los scripts:
 - `PORT`: puerto de Next.js; por defecto `3000`.
 - `SERVICE_NAME`: nombre del servicio systemd; por defecto `delicias-lia`.
 - `NODE_MAJOR`: versión mayor de Node.js a instalar; por defecto `22`.
+- `TUNNEL_URL`: URL pública del túnel para links externos.
+- `N8N_API_KEY`: token para APIs de N8N; si falta, los scripts generan uno con `openssl`.
 
 ## Variables de entorno
 
@@ -133,6 +166,12 @@ Variables aceptadas por los scripts:
 - `ADMIN_PASSWORD`: contraseña inicial del usuario `admin` durante `npm run prisma:seed`. Si falta, se genera una temporal y se imprime en consola.
 - `AUTH_SECRET`: secreto para firmar la cookie de sesión. Si falta, el código usa `delicias-lia-dev-secret`, solo adecuado para desarrollo.
 - `AUTH_SECURE_COOKIE`: usa cookie segura cuando vale `true`.
+- `TZ`: zona horaria de la app; recomendado `America/Mexico_City`.
+- `NEXT_PUBLIC_BASE_URL`: URL pública base para links de estado de cuenta.
+- `TUNNEL_URL`: URL pública preferida cuando se usa Cloudflare Tunnel; tiene prioridad para links externos.
+- `NEXT_PUBLIC_TUNNEL_URL`: alias público opcional para el túnel.
+- `N8N_API_KEY`: token Bearer para consumir `/api/n8n/deudores` y `/api/n8n/corte-dia`.
+- `NEXT_PUBLIC_VAPID_PUBLIC_KEY`, `VAPID_PUBLIC_KEY`, `VAPID_PRIVATE_KEY`, `VAPID_SUBJECT`: llaves y subject para notificaciones push.
 - `ALLOW_DEMO_RESET`: requerida con valor `1` para ejecutar `prisma/demo-seed.ts`; el script demo la escribe automáticamente.
 - `NODE_ENV`: usado por Next.js y para desactivar PWA en desarrollo.
 - `PORT`: usado por Next.js y por los servicios de producción en los scripts de despliegue.
