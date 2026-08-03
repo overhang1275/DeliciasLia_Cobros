@@ -1,7 +1,8 @@
 import { db } from "@/lib/db";
+import { formatTicketId, moneyFormatter } from "@/lib/formatters";
 
-export const auditMoney = new Intl.NumberFormat("es-MX", { currency: "MXN", style: "currency" });
-export const auditTicketId = (id: number) => String(id).padStart(6, "0");
+export const auditMoney = moneyFormatter;
+export const auditTicketId = formatTicketId;
 
 export async function registrarLog({ accion, detalle, entidad, entidadId }: { accion: string; detalle?: string; entidad: string; entidadId?: number }) {
   await db.auditLog.create({

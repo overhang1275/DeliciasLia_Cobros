@@ -1,6 +1,8 @@
 export const APP_TIME_ZONE = "America/Mexico_City";
 
-process.env.TZ ||= APP_TIME_ZONE;
+if (typeof process !== "undefined" && process.env) {
+  process.env.TZ ||= APP_TIME_ZONE;
+}
 
 export function appDateFormatter(options: Intl.DateTimeFormatOptions) {
   return new Intl.DateTimeFormat("es-MX", { timeZone: APP_TIME_ZONE, ...options });

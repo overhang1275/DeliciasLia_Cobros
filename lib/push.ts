@@ -1,16 +1,11 @@
 import { db } from "@/lib/db";
+import { moneyFormatter } from "@/lib/formatters";
 import { publicEstadoUrl } from "@/lib/public-url";
+import { saldoVentas } from "@/lib/saldos";
 
 type ReminderTarget = { clienteId: number } | { token: string };
 
-const money = new Intl.NumberFormat("es-MX", { currency: "MXN", style: "currency" });
-
-function saldoPendiente(ventas: { total: unknown; pagos: { monto: unknown }[] }[]) {
-  return ventas.reduce((sum, venta) => {
-    const pagado = venta.pagos.reduce((subtotal, pago) => subtotal + Number(pago.monto), 0);
-    return sum + Math.max(0, Number(venta.total) - pagado);
-  }, 0);
-}
+const money = moneyFormatter;
 
 export async function enviarRecordatorioPago(target: ReminderTarget) {
   const cliente = await db.cliente.findFirst({
@@ -23,7 +18,7 @@ export async function enviarRecordatorioPago(target: ReminderTarget) {
 
   if (!cliente?.estadoToken) return { error: "Cliente no encontrado", sent: 0, status: 404 };
 
-  const saldo = saldoPendiente(cliente.ventas);
+  const saldo = saldoVentas(cliente.ventas);
   if (saldo <= 0) return { error: "Sin saldo pendiente", sent: 0, status: 400 };
   if (cliente.pushSubscriptions.length === 0) return { error: "Sin suscripciones", sent: 0, status: 404 };
   if (!process.env.VAPID_SUBJECT || !process.env.VAPID_PUBLIC_KEY || !process.env.VAPID_PRIVATE_KEY) {

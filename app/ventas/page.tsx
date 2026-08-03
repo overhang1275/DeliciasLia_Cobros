@@ -5,12 +5,13 @@ import { DarCambioButton } from "./DarCambioButton";
 import { Home, Package, ReceiptText, Save, ShoppingBag } from "@/components/AppIcon";
 import { ClienteSearchField } from "@/components/ClienteSearchField";
 import { listarClientesActivos } from "@/lib/clientes";
+import { moneyFormatter } from "@/lib/formatters";
 import { listarProductosActivos } from "@/lib/productos";
 import { obtenerUltimasVentas } from "@/lib/ventas";
 
 export const dynamic = "force-dynamic";
 
-const money = new Intl.NumberFormat("es-MX", { currency: "MXN", style: "currency" });
+const money = moneyFormatter;
 
 export default async function VentasPage({ searchParams }: { searchParams: Promise<{ clienteId?: string; guardado?: string; productoId?: string; piezas?: string }> }) {
   const params = await searchParams;

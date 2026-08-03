@@ -11,20 +11,14 @@ import {
   Trophy,
   Wallet
 } from "@/components/AppIcon";
+import { formatMoney, formatPercent, formatTicketId } from "@/lib/formatters";
 import { obtenerReporteData } from "@/lib/reportes";
 import { dateInputValue } from "@/lib/timezone";
 
 export const dynamic = "force-dynamic";
 
-const money = new Intl.NumberFormat("es-MX", { currency: "MXN", style: "currency" });
-const percent = new Intl.NumberFormat("es-MX", { maximumFractionDigits: 1, style: "percent" });
-
 function barWidth(value: number, max: number) {
   return `${max > 0 ? Math.max(6, Math.round((value / max) * 100)) : 0}%`;
-}
-
-function percentText(value: number, total: number) {
-  return total > 0 ? percent.format(value / total) : "0%";
 }
 
 export default async function ReportesPage({ searchParams }: { searchParams: Promise<{ desde?: string; hasta?: string }> }) {
@@ -56,10 +50,10 @@ export default async function ReportesPage({ searchParams }: { searchParams: Pro
   } = await obtenerReporteData(params);
 
   const corte = [
-    ["Ventas registradas", money.format(totalVentas)],
-    ["Pagos recibidos", money.format(cobrado)],
-    ["Crédito generado", money.format(creditoGenerado)],
-    ["Cambios pendientes", money.format(totalCambiosPendientes)]
+    ["Ventas registradas", formatMoney(totalVentas)],
+    ["Pagos recibidos", formatMoney(cobrado)],
+    ["Crédito generado", formatMoney(creditoGenerado)],
+    ["Cambios pendientes", formatMoney(totalCambiosPendientes)]
   ];
 
   return (
@@ -100,25 +94,25 @@ export default async function ReportesPage({ searchParams }: { searchParams: Pro
         <article className="rounded-[1.75rem] bg-white p-4 shadow-sm">
           <ReceiptText aria-hidden="true" className="size-6 text-[var(--primary)]" />
           <p className="ui-label">Ventas</p>
-          <p className="mt-2 text-2xl font-bold text-[var(--brand)]">{money.format(totalVentas)}</p>
+          <p className="mt-2 text-2xl font-bold text-[var(--brand)]">{formatMoney(totalVentas)}</p>
           <p className="ui-label">{ventas.length} tickets · {piezasVendidas} piezas</p>
         </article>
         <article className="rounded-[1.75rem] bg-white p-4 shadow-sm">
           <Banknote aria-hidden="true" className="size-6 text-[var(--primary)]" />
           <p className="ui-label">Cobrado</p>
-          <p className="mt-2 text-2xl font-bold text-[var(--brand)]">{money.format(cobrado)}</p>
-          <p className="ui-label">{percentText(cobrado, totalVentas)} del rango</p>
+          <p className="mt-2 text-2xl font-bold text-[var(--brand)]">{formatMoney(cobrado)}</p>
+          <p className="ui-label">{formatPercent(cobrado, totalVentas)} del rango</p>
         </article>
         <article className="rounded-[1.75rem] bg-white p-4 shadow-sm">
           <Wallet aria-hidden="true" className="size-6 text-red-700" />
           <p className="ui-label">Crédito</p>
-          <p className="mt-2 text-2xl font-bold text-[var(--brand)]">{money.format(creditoGenerado)}</p>
-          <p className="ui-label">Total por cobrar {money.format(deudaTotal)}</p>
+          <p className="mt-2 text-2xl font-bold text-[var(--brand)]">{formatMoney(creditoGenerado)}</p>
+          <p className="ui-label">Total por cobrar {formatMoney(deudaTotal)}</p>
         </article>
         <article className="rounded-[1.75rem] bg-white p-4 shadow-sm">
           <HandCoins aria-hidden="true" className="size-6 text-amber-700" />
           <p className="ui-label">Cambios</p>
-          <p className="mt-2 text-2xl font-bold text-[var(--brand)]">{money.format(totalCambiosPendientes)}</p>
+          <p className="mt-2 text-2xl font-bold text-[var(--brand)]">{formatMoney(totalCambiosPendientes)}</p>
           <p className="ui-label">Pendientes por entregar</p>
         </article>
       </section>
@@ -131,16 +125,16 @@ export default async function ReportesPage({ searchParams }: { searchParams: Pro
         <div className="grid gap-3 sm:grid-cols-3">
           <div className="rounded-2xl bg-[var(--app-bg)] p-4">
             <p className="ui-label">Ticket promedio</p>
-            <p className="text-xl font-bold text-[var(--brand)]">{money.format(ticketPromedio)}</p>
+            <p className="text-xl font-bold text-[var(--brand)]">{formatMoney(ticketPromedio)}</p>
           </div>
           <div className="rounded-2xl bg-emerald-50 p-4 dark:bg-emerald-950/30">
             <p className="ui-label">Pagos recibidos</p>
-            <p className="text-xl font-bold text-emerald-700 dark:text-emerald-300">{money.format(cobrado)}</p>
+            <p className="text-xl font-bold text-emerald-700 dark:text-emerald-300">{formatMoney(cobrado)}</p>
           </div>
           <div className="rounded-2xl bg-red-50 p-4 dark:bg-red-950/30">
             <p className="ui-label">Tickets a crédito</p>
             <p className="text-xl font-bold text-red-700 dark:text-red-300">{ventasConCredito.length}</p>
-            <p className="text-sm text-[var(--text-muted)]">{percentText(ventasConCredito.length, ventas.length)} del rango</p>
+            <p className="text-sm text-[var(--text-muted)]">{formatPercent(ventasConCredito.length, ventas.length)} del rango</p>
           </div>
         </div>
       </section>
@@ -157,7 +151,7 @@ export default async function ReportesPage({ searchParams }: { searchParams: Pro
             <div className="grid gap-1" key={item.label}>
               <div className="flex justify-between gap-3 text-sm">
                 <span className="text-[var(--text-muted)]">{item.label}</span>
-                <strong>{money.format(item.total)}</strong>
+                <strong>{formatMoney(item.total)}</strong>
               </div>
               <div className="h-3 rounded-full bg-[var(--primary-soft)]">
                 <div className="h-3 rounded-full bg-[var(--primary)]" style={{ width: barWidth(item.total, maxDia) }} />
@@ -179,7 +173,7 @@ export default async function ReportesPage({ searchParams }: { searchParams: Pro
             <div className="grid gap-1" key={item.label}>
               <div className="flex justify-between gap-3 text-sm">
                 <span className="text-[var(--text-muted)]">{item.label}</span>
-                <strong>{money.format(item.total)}</strong>
+                <strong>{formatMoney(item.total)}</strong>
               </div>
               <div className="h-3 rounded-full bg-emerald-100 dark:bg-emerald-950/40">
                 <div className="h-3 rounded-full bg-emerald-600" style={{ width: barWidth(item.total, maxPagoDia) }} />
@@ -205,9 +199,9 @@ export default async function ReportesPage({ searchParams }: { searchParams: Pro
                     <strong className="text-[var(--text-main)]">
                       {index + 1}. {cliente.nombre}
                     </strong>
-                    <span className="ui-label block">{cliente.compras} compras · ticket {money.format(cliente.promedio)}</span>
+                    <span className="ui-label block">{cliente.compras} compras · ticket {formatMoney(cliente.promedio)}</span>
                   </span>
-                  <strong>{money.format(cliente.total)}</strong>
+                  <strong>{formatMoney(cliente.total)}</strong>
                 </div>
                 <div className="h-3 rounded-full bg-[var(--primary-soft)]">
                   <div className="h-3 rounded-full bg-[var(--primary)]" style={{ width: barWidth(cliente.total, maxCliente) }} />
@@ -228,7 +222,7 @@ export default async function ReportesPage({ searchParams }: { searchParams: Pro
             listaDeudores.map((cliente) => (
               <div className="flex items-center justify-between gap-3 border-b border-[var(--border)] py-2 last:border-b-0" key={cliente.nombre}>
                 <span className="font-bold text-[var(--text-main)]">{cliente.nombre}</span>
-                <strong className="rounded-full bg-red-50 px-3 py-1 text-red-700 dark:bg-red-950/30 dark:text-red-300">{money.format(cliente.total)}</strong>
+                <strong className="rounded-full bg-red-50 px-3 py-1 text-red-700 dark:bg-red-950/30 dark:text-red-300">{formatMoney(cliente.total)}</strong>
               </div>
             ))
           )}
@@ -248,11 +242,11 @@ export default async function ReportesPage({ searchParams }: { searchParams: Pro
               <div
                 className="mx-auto grid size-36 place-items-center rounded-full"
                 style={{ background: `conic-gradient(var(--primary) 0 ${efectivoPct}%, var(--brand) ${efectivoPct}% 100%)` }}
-                aria-label={`Efectivo ${percentText(efectivo, totalPorMetodo)}, transferencia ${percentText(totalPorMetodo - efectivo, totalPorMetodo)}`}
+                aria-label={`Efectivo ${formatPercent(efectivo, totalPorMetodo)}, transferencia ${formatPercent(totalPorMetodo - efectivo, totalPorMetodo)}`}
               >
                 <div className="grid size-24 place-items-center rounded-full bg-white text-center shadow-sm">
                   <span>
-                    <strong className="block text-xl text-[var(--brand)]">{percentText(efectivo, totalPorMetodo)}</strong>
+                    <strong className="block text-xl text-[var(--brand)]">{formatPercent(efectivo, totalPorMetodo)}</strong>
                     <span className="ui-label">Efectivo</span>
                   </span>
                 </div>
@@ -265,8 +259,8 @@ export default async function ReportesPage({ searchParams }: { searchParams: Pro
                       {item.metodo === "EFECTIVO" ? "Efectivo" : "Transferencia"}
                     </span>
                     <span className="text-right text-sm">
-                      <strong className="block">{money.format(item.total)}</strong>
-                      <span className="ui-label">{percentText(item.total, totalPorMetodo)}</span>
+                      <strong className="block">{formatMoney(item.total)}</strong>
+                      <span className="ui-label">{formatPercent(item.total, totalPorMetodo)}</span>
                     </span>
                   </div>
                 ))}
@@ -287,10 +281,10 @@ export default async function ReportesPage({ searchParams }: { searchParams: Pro
               <div className="flex items-center justify-between gap-3 border-b border-[var(--border)] py-2 last:border-b-0" key={venta.id}>
                 <span>
                   <strong className="block text-[var(--text-main)]">{venta.cliente.nombre}</strong>
-                  <span className="ui-label">Ticket {String(venta.id).padStart(6, "0")}</span>
+                  <span className="ui-label">Ticket {formatTicketId(venta.id)}</span>
                 </span>
                 <strong className="rounded-full bg-amber-50 px-3 py-1 text-amber-700 dark:bg-amber-950/30 dark:text-amber-300">
-                  {money.format(Number(venta.cambioMonto))}
+                  {formatMoney(venta.cambioMonto)}
                 </strong>
               </div>
             ))

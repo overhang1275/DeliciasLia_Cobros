@@ -1,4 +1,5 @@
 import { db } from "./db";
+import { cambioPendienteVentas, fechaSaldoMasViejo, saldoVentas } from "./saldos";
 
 export function listarClientesActivos() {
   return db.cliente.findMany({ where: { activo: true }, orderBy: { nombre: "asc" } });
@@ -26,14 +27,9 @@ export async function listarClientesConEstado(q: string) {
 
   return clientes
     .map((cliente) => {
-      const saldo = cliente.ventas.reduce((total, venta) => {
-        const pagado = venta.pagos.reduce((sum, pago) => sum + Number(pago.monto), 0);
-        return total + Math.max(0, Number(venta.total) - pagado);
-      }, 0);
-      const cambioPendiente = cliente.ventas.reduce((total, venta) => total + (venta.cambioPendiente ? Number(venta.cambioMonto) : 0), 0);
-      const deudaMasVieja = cliente.ventas
-        .filter((venta) => Number(venta.total) - venta.pagos.reduce((sum, pago) => sum + Number(pago.monto), 0) > 0)
-        .sort((a, b) => a.fecha.getTime() - b.fecha.getTime())[0]?.fecha;
+      const saldo = saldoVentas(cliente.ventas);
+      const cambioPendiente = cambioPendienteVentas(cliente.ventas);
+      const deudaMasVieja = fechaSaldoMasViejo(cliente.ventas);
       return { ...cliente, cambioPendiente, deudaMasVieja, saldo };
     })
     .sort((a, b) => {

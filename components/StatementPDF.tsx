@@ -1,6 +1,7 @@
 "use client";
 
 import { Document, Image, Page, StyleSheet, Text, View } from "@react-pdf/renderer";
+import { moneyFormatter } from "@/lib/formatters";
 
 export interface StatementData {
   cliente: {
@@ -218,7 +219,7 @@ const styles = StyleSheet.create({
   },
 });
 
-const money = new Intl.NumberFormat("es-MX", { currency: "MXN", style: "currency" });
+const money = moneyFormatter;
 
 export function StatementPDF({ cliente, grupos, saldo, config, fechaGenerado }: StatementData) {
   const movimientos = grupos.flatMap((grupo) => grupo.movimientos.map((mov) => ({ ...mov, fecha: grupo.fecha })));

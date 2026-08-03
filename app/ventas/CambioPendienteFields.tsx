@@ -4,6 +4,7 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useMemo, useState } from "react";
 import { Banknote, Landmark, Package, ReceiptText, Wallet } from "@/components/AppIcon";
+import { moneyFormatter } from "@/lib/formatters";
 
 type ProductoOption = {
   id: number;
@@ -11,7 +12,7 @@ type ProductoOption = {
   precioVenta: number;
 };
 
-const money = new Intl.NumberFormat("es-MX", { currency: "MXN", style: "currency" });
+const money = moneyFormatter;
 
 export function CambioPendienteFields({ productos, defaultProductoId, defaultPiezas = 1 }: { productos: ProductoOption[]; defaultProductoId?: number; defaultPiezas?: number }) {
   const router = useRouter();

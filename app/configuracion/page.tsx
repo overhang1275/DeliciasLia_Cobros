@@ -5,7 +5,7 @@ import { cambiarPasswordAdmin, guardarConfiguracion } from "./actions";
 import { ClipboardList, CreditCard, Hash, Home, ImageIcon, KeyRound, Landmark, Save, Settings, Store, Tags, User } from "@/components/AppIcon";
 import { getConfiguracion } from "@/lib/configuracion";
 import { db } from "@/lib/db";
-import { appDateFormatter } from "@/lib/timezone";
+import { shortDateTimeFormatter } from "@/lib/formatters";
 
 export const dynamic = "force-dynamic";
 
@@ -23,7 +23,7 @@ const accionesLog: Record<string, string> = {
   eliminar: "Eliminó",
   liquidar: "Liquidó"
 };
-const fechaLog = appDateFormatter({ dateStyle: "medium", timeStyle: "short" });
+const fechaLog = shortDateTimeFormatter;
 
 export default async function ConfiguracionPage({ searchParams }: { searchParams: Promise<{ guardado?: string; password?: string }> }) {
   const [config, params, logs] = await Promise.all([getConfiguracion(), searchParams, db.auditLog.findMany({ orderBy: { creadoEn: "desc" }, take: 8 })]);

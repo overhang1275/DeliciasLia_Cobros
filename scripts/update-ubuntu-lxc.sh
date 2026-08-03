@@ -48,6 +48,12 @@ fi
 if ! grep -q '^TZ=' "$APP_DIR/.env"; then
   echo "TZ=\"${APP_TZ}\"" >> "$APP_DIR/.env"
 fi
+if ! grep -q '^AUTH_SECRET=' "$APP_DIR/.env"; then
+  echo "AUTH_SECRET=\"$(openssl rand -hex 32)\"" >> "$APP_DIR/.env"
+fi
+if ! grep -q '^AUTH_SECURE_COOKIE=' "$APP_DIR/.env"; then
+  echo "AUTH_SECURE_COOKIE=\"${AUTH_SECURE_COOKIE:-false}\"" >> "$APP_DIR/.env"
+fi
 if ! grep -q '^NEXT_PUBLIC_BASE_URL=' "$APP_DIR/.env"; then
   echo "NEXT_PUBLIC_BASE_URL=\"${NEXT_PUBLIC_BASE_URL:-${TUNNEL_URL:-http://localhost:3000}}\"" >> "$APP_DIR/.env"
 fi
@@ -83,6 +89,8 @@ fi
 if ! grep -q '^N8N_API_KEY=' "$APP_DIR/.env"; then
   echo "N8N_API_KEY=\"${N8N_API_KEY:-$(openssl rand -hex 32)}\"" >> "$APP_DIR/.env"
 fi
+chown "$APP_USER:$APP_USER" "$APP_DIR/.env"
+chmod 600 "$APP_DIR/.env"
 
 if [ "$HAS_UPDATE" = "0" ]; then
   echo "No hay actualizaciones disponibles. Variables faltantes revisadas."

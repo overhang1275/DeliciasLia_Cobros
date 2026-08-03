@@ -3,13 +3,13 @@ import { entregarCambio } from "./actions";
 import { CalendarDays, Home, ReceiptText, Wallet } from "@/components/AppIcon";
 import { ConfirmSubmitButton } from "@/components/ConfirmSubmitButton";
 import { db } from "@/lib/db";
-import { appDateFormatter } from "@/lib/timezone";
+import { formatTicketId, mediumDateFormatter, moneyFormatter } from "@/lib/formatters";
 
 export const dynamic = "force-dynamic";
 
-const money = new Intl.NumberFormat("es-MX", { currency: "MXN", style: "currency" });
-const date = appDateFormatter({ dateStyle: "medium" });
-const ticketId = (id: number) => String(id).padStart(6, "0");
+const money = moneyFormatter;
+const date = mediumDateFormatter;
+const ticketId = formatTicketId;
 
 export default async function CambiosPage() {
   const cambios = await db.venta.findMany({

@@ -1,7 +1,11 @@
 export const SESSION_COOKIE = "delicias_lia_session";
 export const SESSION_TTL_SECONDS = 60 * 60 * 24 * 7;
 
-const SECRET = process.env.AUTH_SECRET || "delicias-lia-dev-secret";
+function sessionSecret() {
+  if (process.env.AUTH_SECRET) return process.env.AUTH_SECRET;
+  if (process.env.NODE_ENV === "production") throw new Error("AUTH_SECRET es obligatorio en produccion.");
+  return "delicias-lia-dev-secret";
+}
 
 function base64url(bytes: Uint8Array) {
   return btoa(String.fromCharCode(...bytes)).replaceAll("+", "-").replaceAll("/", "_").replaceAll("=", "");
@@ -17,7 +21,7 @@ async function digest(value: string) {
 }
 
 async function sign(value: string) {
-  const key = await crypto.subtle.importKey("raw", new TextEncoder().encode(SECRET), { hash: "SHA-256", name: "HMAC" }, false, ["sign"]);
+  const key = await crypto.subtle.importKey("raw", new TextEncoder().encode(sessionSecret()), { hash: "SHA-256", name: "HMAC" }, false, ["sign"]);
   return base64url(new Uint8Array(await crypto.subtle.sign("HMAC", key, new TextEncoder().encode(value))));
 }
 

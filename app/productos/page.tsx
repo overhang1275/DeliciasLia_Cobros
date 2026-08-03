@@ -3,11 +3,12 @@ import { crearProducto } from "./actions";
 import { HandCoins, Home, Package, Save, Search, Tags } from "@/components/AppIcon";
 import { Pagination } from "@/components/Pagination";
 import { db } from "@/lib/db";
+import { moneyFormatter } from "@/lib/formatters";
 
 export const dynamic = "force-dynamic";
 const pageSize = 6;
 
-const money = new Intl.NumberFormat("es-MX", { currency: "MXN", style: "currency" });
+const money = moneyFormatter;
 
 export default async function ProductosPage({ searchParams }: { searchParams: Promise<{ guardado?: string; page?: string; q?: string }> }) {
   const params = await searchParams;

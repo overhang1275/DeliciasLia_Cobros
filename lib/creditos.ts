@@ -1,5 +1,6 @@
 import { EstadoVenta } from "@prisma/client";
 import { db } from "./db";
+import { saldoVenta } from "./saldos";
 
 export async function obtenerCreditosPage(q: string, page: number, pageSize: number) {
   const where = {
@@ -28,8 +29,7 @@ export async function obtenerCreditosPage(q: string, page: number, pageSize: num
 
   const pendientes = ventasFiadas
     .map((venta) => {
-      const pagado = venta.pagos.reduce((total, pago) => total + Number(pago.monto), 0);
-      return { ...venta, pendiente: Number(venta.total) - pagado };
+      return { ...venta, pendiente: saldoVenta(venta) };
     })
     .filter((venta) => venta.pendiente > 0);
   const clienteIds = [...new Set(pendientes.map((venta) => venta.clienteId))];
@@ -42,9 +42,7 @@ export async function obtenerCreditosPage(q: string, page: number, pageSize: num
       : [];
   const totalPorCliente = new Map<number, number>();
   for (const venta of ventasPendientesPorCliente) {
-    const pagado = venta.pagos.reduce((total, pago) => total + Number(pago.monto), 0);
-    const pendiente = Math.max(0, Number(venta.total) - pagado);
-    totalPorCliente.set(venta.clienteId, (totalPorCliente.get(venta.clienteId) || 0) + pendiente);
+    totalPorCliente.set(venta.clienteId, (totalPorCliente.get(venta.clienteId) || 0) + saldoVenta(venta));
   }
 
   return { pendientes, total, totalPorCliente };

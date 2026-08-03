@@ -45,7 +45,7 @@ export default async function RootLayout({ children }: Readonly<{ children: Reac
   const tema = ["system", "light", "dark"].includes(config.tema) ? config.tema : "system";
 
   return (
-    <html lang="es" data-theme={tema}>
+    <html lang="es" data-theme={tema} suppressHydrationWarning>
       <body>
         <RouteMotion>{children}</RouteMotion>
         <Suspense fallback={null}>

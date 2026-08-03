@@ -4,6 +4,7 @@ import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { auditMoney, auditTicketId, registrarLog } from "@/lib/audit";
 import { db } from "@/lib/db";
+import { saldoVenta } from "@/lib/saldos";
 import { registrarVenta } from "@/lib/ventas";
 import { fiadoSchema, pagoFiadoSchema } from "@/lib/validators/fiados";
 
@@ -48,8 +49,7 @@ export async function registrarPagoFiado(formData: FormData) {
     where: { id: pago.ventaId },
     include: { cliente: true, detalles: { include: { producto: true } }, pagos: true }
   });
-  const pagado = venta.pagos.reduce((total, item) => total + Number(item.monto), 0);
-  const pendiente = Number(venta.total) - pagado;
+  const pendiente = saldoVenta(venta);
   const monto = Math.min(pago.monto, pendiente);
   const cambioMonto = pago.metodo === "EFECTIVO" && pago.cambioPendiente ? Math.max(0, pago.montoRecibido - monto) : 0;
 
@@ -87,8 +87,7 @@ export async function liquidarDeudaCliente(formData: FormData) {
   });
   let totalLiquidado = 0;
   const operaciones = ventas.flatMap((venta) => {
-    const pagado = venta.pagos.reduce((total, pago) => total + Number(pago.monto), 0);
-    const pendiente = Number(venta.total) - pagado;
+    const pendiente = saldoVenta(venta);
     if (pendiente <= 0) return [];
     totalLiquidado += pendiente;
     return [

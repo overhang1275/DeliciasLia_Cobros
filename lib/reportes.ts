@@ -1,7 +1,7 @@
 import { db } from "./db";
-import { appDateFormatter, dateInputValue, parseDateInput } from "./timezone";
-
-const day = appDateFormatter({ day: "2-digit", month: "short" });
+import { shortDayFormatter } from "./formatters";
+import { saldoVenta, saldoVentas } from "./saldos";
+import { dateInputValue, parseDateInput } from "./timezone";
 
 export async function obtenerReporteData(params: { desde?: string; hasta?: string }) {
   const defaultHasta = new Date();
@@ -38,14 +38,8 @@ export async function obtenerReporteData(params: { desde?: string; hasta?: strin
   const totalVentas = ventas.reduce((sum, venta) => sum + Number(venta.total), 0);
   const cobrado = pagos.reduce((sum, pago) => sum + Number(pago.monto), 0);
   const piezasVendidas = detalles.reduce((sum, detalle) => sum + detalle.cantidad, 0);
-  const creditoGenerado = ventas.reduce((sum, venta) => {
-    const pagado = venta.pagos.reduce((subtotal, pago) => subtotal + Number(pago.monto), 0);
-    return sum + Math.max(0, Number(venta.total) - pagado);
-  }, 0);
-  const deudaTotal = ventasPendientes.reduce((sum, venta) => {
-    const pagado = venta.pagos.reduce((subtotal, pago) => subtotal + Number(pago.monto), 0);
-    return sum + Math.max(0, Number(venta.total) - pagado);
-  }, 0);
+  const creditoGenerado = saldoVentas(ventas);
+  const deudaTotal = saldoVentas(ventasPendientes);
   const totalCambiosPendientes = cambiosPendientes.reduce((sum, venta) => sum + Number(venta.cambioMonto), 0);
   const ticketPromedio = ventas.length ? totalVentas / ventas.length : 0;
   const ventasConCredito = ventas.filter((venta) => venta.estado === "FIADA" || venta.estado === "PARCIAL");
@@ -56,7 +50,7 @@ export async function obtenerReporteData(params: { desde?: string; hasta?: strin
     const key = dateInputValue(date);
     const ventasDia = ventas.filter((venta) => dateInputValue(venta.fecha) === key);
     const total = ventasDia.reduce((sum, venta) => sum + Number(venta.total), 0);
-    return { label: day.format(date), total };
+    return { label: shortDayFormatter.format(date), total };
   }).filter((item) => item.total > 0);
   const maxDia = Math.max(...ventasPorDia.map((item) => item.total), 0);
 
@@ -66,7 +60,7 @@ export async function obtenerReporteData(params: { desde?: string; hasta?: strin
     const key = dateInputValue(date);
     const pagosDia = pagos.filter((pago) => dateInputValue(pago.fecha) === key);
     const total = pagosDia.reduce((sum, pago) => sum + Number(pago.monto), 0);
-    return { label: day.format(date), total };
+    return { label: shortDayFormatter.format(date), total };
   }).filter((item) => item.total > 0);
   const maxPagoDia = Math.max(...pagosPorDia.map((item) => item.total), 0);
 
@@ -95,8 +89,7 @@ export async function obtenerReporteData(params: { desde?: string; hasta?: strin
 
   const deudores = new Map<string, number>();
   for (const venta of ventasPendientes) {
-    const pagado = venta.pagos.reduce((sum, pago) => sum + Number(pago.monto), 0);
-    const pendiente = Math.max(0, Number(venta.total) - pagado);
+    const pendiente = saldoVenta(venta);
     if (pendiente > 0) deudores.set(venta.cliente.nombre, (deudores.get(venta.cliente.nombre) || 0) + pendiente);
   }
   const listaDeudores = [...deudores.entries()]

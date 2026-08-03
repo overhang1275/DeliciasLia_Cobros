@@ -2,8 +2,9 @@
 
 import { useMemo, useState } from "react";
 import { Banknote, CreditCard, HandCoins, Landmark, Wallet } from "@/components/AppIcon";
+import { moneyFormatter } from "@/lib/formatters";
 
-const money = new Intl.NumberFormat("es-MX", { currency: "MXN", style: "currency" });
+const money = moneyFormatter;
 
 export function PagoFiadoCambioFields({ pendiente }: { pendiente: number }) {
   const [monto, setMonto] = useState(0);

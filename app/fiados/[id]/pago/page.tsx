@@ -4,10 +4,12 @@ import { PagoFiadoCambioFields } from "./PagoFiadoCambioFields";
 import { registrarPagoFiado } from "../../actions";
 import { ArrowLeft, Banknote, ReceiptText, Save } from "@/components/AppIcon";
 import { db } from "@/lib/db";
+import { moneyFormatter } from "@/lib/formatters";
+import { saldoVenta } from "@/lib/saldos";
 
 export const dynamic = "force-dynamic";
 
-const money = new Intl.NumberFormat("es-MX", { currency: "MXN", style: "currency" });
+const money = moneyFormatter;
 
 export default async function PagoFiadoPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
@@ -21,8 +23,7 @@ export default async function PagoFiadoPage({ params }: { params: Promise<{ id: 
 
   if (!venta) notFound();
 
-  const pagado = venta.pagos.reduce((total, pago) => total + Number(pago.monto), 0);
-  const pendiente = Number(venta.total) - pagado;
+  const pendiente = saldoVenta(venta);
   const detalle = venta.detalles[0];
 
   return (

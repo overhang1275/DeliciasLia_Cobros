@@ -5,14 +5,15 @@ import { ClienteSearchField } from "@/components/ClienteSearchField";
 import { ConfirmSubmitButton } from "@/components/ConfirmSubmitButton";
 import { Pagination } from "@/components/Pagination";
 import { listarClientesActivos } from "@/lib/clientes";
+import { dayMonthYearFormatter } from "@/lib/formatters";
 import { obtenerPedidosPage } from "@/lib/pedidos";
 import { listarProductosActivos } from "@/lib/productos";
-import { appDateFormatter, dateInputValue } from "@/lib/timezone";
+import { dateInputValue } from "@/lib/timezone";
 
 export const dynamic = "force-dynamic";
 const pageSize = 6;
 
-const date = appDateFormatter({ day: "2-digit", month: "short", year: "numeric" });
+const date = dayMonthYearFormatter;
 const today = dateInputValue();
 
 function orderLink(path: string, pedido: { clienteId: number; productoId: number; piezas: number }) {

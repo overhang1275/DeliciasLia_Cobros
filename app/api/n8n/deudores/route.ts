@@ -1,10 +1,12 @@
 import { NextRequest, NextResponse } from "next/server";
 import { db } from "@/lib/db";
+import { moneyFormatter } from "@/lib/formatters";
 import { publicEstadoUrl } from "@/lib/public-url";
+import { saldoVentas } from "@/lib/saldos";
 
 export const dynamic = "force-dynamic";
 
-const money = new Intl.NumberFormat("es-MX", { currency: "MXN", style: "currency" });
+const money = moneyFormatter;
 
 function autorizado(request: NextRequest) {
   const key = process.env.N8N_API_KEY;
@@ -28,10 +30,7 @@ export async function GET(request: NextRequest) {
 
   const deudores = clientes
     .map((cliente) => {
-      const saldo = cliente.ventas.reduce((sum, venta) => {
-        const pagado = venta.pagos.reduce((subtotal, pago) => subtotal + Number(pago.monto), 0);
-        return sum + Math.max(0, Number(venta.total) - pagado);
-      }, 0);
+      const saldo = saldoVentas(cliente.ventas);
 
       return {
         clienteId: cliente.id,

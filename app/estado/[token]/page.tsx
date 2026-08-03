@@ -10,20 +10,22 @@ import { DownloadStatementButton } from "@/components/DownloadStatementButton";
 import { ShareStatementButton } from "@/components/ShareStatementButton";
 import { getConfiguracion } from "@/lib/configuracion";
 import { db } from "@/lib/db";
+import { formatTicketId, mediumDateFormatter, moneyFormatter, shortDateTimeFormatter, timeFormatter } from "@/lib/formatters";
 import { publicEstadoUrl } from "@/lib/public-url";
+import { saldoVentas } from "@/lib/saldos";
 import { isValidSessionToken, SESSION_COOKIE } from "@/lib/session";
-import { appDateFormatter, dateInputValue } from "@/lib/timezone";
+import { dateInputValue } from "@/lib/timezone";
 import { AdminNotifyButton } from "@/components/AdminNotifyButton";
 import { PushSubscriptionButton } from "@/components/PushSubscriptionButton";
 
 export const dynamic = "force-dynamic";
 
-const money = new Intl.NumberFormat("es-MX", { currency: "MXN", style: "currency" });
-const date = appDateFormatter({ dateStyle: "medium" });
-const time = appDateFormatter({ hour: "2-digit", minute: "2-digit" });
-const generatedAt = appDateFormatter({ dateStyle: "medium", timeStyle: "short" });
+const money = moneyFormatter;
+const date = mediumDateFormatter;
+const time = timeFormatter;
+const generatedAt = shortDateTimeFormatter;
 const pageSize = 5;
-const ticketId = (id: number) => String(id).padStart(6, "0");
+const ticketId = formatTicketId;
 const serialize = <T,>(x: T): T => JSON.parse(JSON.stringify(x));
 
 export default async function EstadoPublicoPage({ params, searchParams }: { params: Promise<{ token: string }>; searchParams: Promise<{ page?: string }> }) {
@@ -55,13 +57,7 @@ export default async function EstadoPublicoPage({ params, searchParams }: { para
     include: { venta: { include: { detalles: { include: { producto: true } } } } },
     orderBy: { fecha: "asc" }
   });
-  const deudas = cliente.ventas
-    .map((venta) => {
-      const pagado = venta.pagos.reduce((sum, pago) => sum + Number(pago.monto), 0);
-      return { ...venta, pagado, pendiente: Number(venta.total) - pagado };
-    })
-    .filter((venta) => venta.pendiente > 0);
-  const saldo = deudas.reduce((sum, venta) => sum + venta.pendiente, 0);
+  const saldo = saldoVentas(cliente.ventas);
   const movimientos = [
     ...cliente.ventas.map((venta) => ({
       id: `venta-${venta.id}`,

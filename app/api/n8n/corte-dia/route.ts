@@ -1,11 +1,12 @@
 import { NextRequest, NextResponse } from "next/server";
 import { db } from "@/lib/db";
-import { appDateFormatter, todayRange } from "@/lib/timezone";
+import { fullDateFormatter, moneyFormatter } from "@/lib/formatters";
+import { todayRange } from "@/lib/timezone";
 
 export const dynamic = "force-dynamic";
 
-const money = new Intl.NumberFormat("es-MX", { currency: "MXN", style: "currency" });
-const date = appDateFormatter({ dateStyle: "full" });
+const money = moneyFormatter;
+const date = fullDateFormatter;
 
 function autorizado(request: NextRequest) {
   const key = process.env.N8N_API_KEY;

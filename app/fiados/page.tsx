@@ -8,14 +8,15 @@ import { LiquidarDeudaForm } from "@/components/LiquidarDeudaForm";
 import { Pagination } from "@/components/Pagination";
 import { listarClientesActivos } from "@/lib/clientes";
 import { obtenerCreditosPage } from "@/lib/creditos";
+import { dayMonthYearFormatter, moneyFormatter } from "@/lib/formatters";
 import { listarProductosActivos } from "@/lib/productos";
-import { appDateFormatter, dateInputValue } from "@/lib/timezone";
+import { dateInputValue } from "@/lib/timezone";
 
 export const dynamic = "force-dynamic";
 const pageSize = 6;
 
-const money = new Intl.NumberFormat("es-MX", { currency: "MXN", style: "currency" });
-const date = appDateFormatter({ day: "2-digit", month: "short", year: "numeric" });
+const money = moneyFormatter;
+const date = dayMonthYearFormatter;
 const today = dateInputValue();
 
 export default async function FiadosPage({ searchParams }: { searchParams: Promise<{ page?: string; q?: string; clienteId?: string; guardado?: string; productoId?: string; piezas?: string }> }) {

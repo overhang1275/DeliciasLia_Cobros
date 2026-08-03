@@ -3,13 +3,14 @@ import { notFound } from "next/navigation";
 import type { LucideIcon } from "lucide-react";
 import { ArrowLeft, Banknote, CalendarDays, Check, ReceiptText, TrendingUp, Wallet } from "@/components/AppIcon";
 import { db } from "@/lib/db";
-import { appDateFormatter } from "@/lib/timezone";
+import { formatTicketId, mediumDateFormatter, moneyFormatter } from "@/lib/formatters";
+import { cambioPendienteVentas, saldoVenta, saldoVentas } from "@/lib/saldos";
 
 export const dynamic = "force-dynamic";
 
-const money = new Intl.NumberFormat("es-MX", { currency: "MXN", style: "currency" });
-const date = appDateFormatter({ dateStyle: "medium" });
-const ticketId = (id: number) => String(id).padStart(6, "0");
+const money = moneyFormatter;
+const date = mediumDateFormatter;
+const ticketId = formatTicketId;
 
 export default async function HistorialClientePage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
@@ -40,11 +41,8 @@ export default async function HistorialClientePage({ params }: { params: Promise
   });
   const totalComprado = cliente.ventas.reduce((sum, venta) => sum + Number(venta.total), 0);
   const totalPagado = pagos.reduce((sum, pago) => sum + Number(pago.monto), 0);
-  const creditoPendiente = cliente.ventas.reduce((sum, venta) => {
-    const pagado = venta.pagos.reduce((subtotal, pago) => subtotal + Number(pago.monto), 0);
-    return sum + Math.max(0, Number(venta.total) - pagado);
-  }, 0);
-  const cambiosPendientes = cliente.ventas.reduce((sum, venta) => sum + (venta.cambioPendiente ? Number(venta.cambioMonto) : 0), 0);
+  const creditoPendiente = saldoVentas(cliente.ventas);
+  const cambiosPendientes = cambioPendienteVentas(cliente.ventas);
   const pedidosPendientes = cliente.pedidos.filter((pedido) => pedido.estado === "PENDIENTE").length;
   const movimientos: {
     id: string;
@@ -66,7 +64,7 @@ export default async function HistorialClientePage({ params }: { params: Promise
       titulo: `${venta.estado === "PAGADA" ? "Venta" : "Crédito"} ticket ID ${ticketId(venta.id)}`,
       detalle: venta.detalles[0] ? `${venta.detalles[0].producto.nombre} x ${venta.detalles[0].cantidad}` : venta.observaciones || "Venta",
       monto: Number(venta.total),
-      pendiente: Math.max(0, Number(venta.total) - venta.pagos.reduce((sum, pago) => sum + Number(pago.monto), 0)),
+      pendiente: saldoVenta(venta),
       mostrarNegativo: false,
       tono: venta.estado === "PAGADA" ? "text-[var(--primary)]" : "text-red-700"
     })),

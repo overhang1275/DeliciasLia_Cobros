@@ -6,11 +6,11 @@ import { ConfigAccordionItem } from "@/app/configuracion/ConfigAccordionItem";
 import { ChevronRight, CreditCard, HandCoins, LogOut, Package, Plus, ReceiptText, Store, User, Users, Wallet } from "@/components/AppIcon";
 import { getConfiguracion } from "@/lib/configuracion";
 import { db } from "@/lib/db";
+import { formatMoney, formatPercent } from "@/lib/formatters";
+import { saldoVentas } from "@/lib/saldos";
 import { todayRange } from "@/lib/timezone";
 
 export const dynamic = "force-dynamic";
-
-const money = new Intl.NumberFormat("es-MX", { currency: "MXN", style: "currency" });
 
 export default async function HomePage() {
   const rangoHoy = todayRange();
@@ -45,14 +45,11 @@ export default async function HomePage() {
     })
   ]);
 
-  const porCobrar = ventasFiadas.reduce((total, venta) => {
-    const pagado = venta.pagos.reduce((suma, pago) => suma + Number(pago.monto), 0);
-    return total + Math.max(0, Number(venta.total) - pagado);
-  }, 0);
+  const porCobrar = saldoVentas(ventasFiadas);
 
   const metrics: [LucideIcon, string, string, string][] = [
-    [HandCoins, "Crédito por cobrar", money.format(porCobrar), "Dinero pendiente por cobrar"],
-    [Wallet, "Cambios que debo", money.format(Number(cambiosPendientes._sum.cambioMonto || 0)), "Cambio pendiente por entregar"]
+    [HandCoins, "Crédito por cobrar", formatMoney(porCobrar), "Dinero pendiente por cobrar"],
+    [Wallet, "Cambios que debo", formatMoney(Number(cambiosPendientes._sum.cambioMonto || 0)), "Cambio pendiente por entregar"]
   ];
   const resumenCatalogo: [LucideIcon, string, string][] = [
     [Users, "Clientes", clientes.toString()],
@@ -64,8 +61,8 @@ export default async function HomePage() {
   ];
   const ventasHoy: [LucideIcon, string, string][] = [
     [Package, "Piezas vendidas", String(piezasHoy._sum.cantidad || 0)],
-    [HandCoins, "Cobrado", money.format(Number(cobradoHoy._sum.monto || 0))],
-    [ReceiptText, "Crédito", money.format(Number(creditoHoy._sum.total || 0))]
+    [HandCoins, "Cobrado", formatMoney(Number(cobradoHoy._sum.monto || 0))],
+    [ReceiptText, "Crédito", formatMoney(Number(creditoHoy._sum.total || 0))]
   ];
 
   const pagosHoyPorMetodo = pagosHoy.map((item) => ({
@@ -76,9 +73,7 @@ export default async function HomePage() {
   const efectivo = pagosHoyPorMetodo.find((item) => item.metodo === "EFECTIVO")?.total || 0;
   const efectivoPct = totalHoyPorMetodo > 0 ? Math.round((efectivo / totalHoyPorMetodo) * 100) : 0;
 
-  function percentText(value: number, total: number) {
-    return total > 0 ? new Intl.NumberFormat("es-MX", { maximumFractionDigits: 1, style: "percent" }).format(value / total) : "0%";
-  }
+  const percentText = formatPercent;
 
   return (
     <main className="app-page">
@@ -191,7 +186,7 @@ export default async function HomePage() {
                       {item.metodo === "EFECTIVO" ? "Efectivo" : "Transferencia"}
                     </span>
                     <span className="text-right text-sm">
-                      <strong className="block">{money.format(item.total)}</strong>
+                      <strong className="block">{formatMoney(item.total)}</strong>
                       <span className="ui-label">{percentText(item.total, totalHoyPorMetodo)}</span>
                     </span>
                   </div>

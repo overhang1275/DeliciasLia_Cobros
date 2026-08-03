@@ -1,9 +1,10 @@
 import { db } from "@/lib/db";
-import { appDateFormatter, dateInputValue } from "@/lib/timezone";
+import { shortDateTimeFormatter } from "@/lib/formatters";
+import { dateInputValue } from "@/lib/timezone";
 
 export const dynamic = "force-dynamic";
 
-const fecha = appDateFormatter({ dateStyle: "medium", timeStyle: "short" });
+const fecha = shortDateTimeFormatter;
 const acciones: Record<string, string> = {
   actualizar: "Actualizó",
   cancelar: "Canceló",
