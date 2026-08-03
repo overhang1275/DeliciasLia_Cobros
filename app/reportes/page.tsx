@@ -3,10 +3,9 @@ import {
   Banknote,
   CalendarDays,
   ChartNoAxesColumnIncreasing,
-  ClipboardList,
   CreditCard,
+  HandCoins,
   Home,
-  Package,
   ReceiptText,
   Search,
   Trophy,
@@ -40,7 +39,7 @@ export default async function ReportesPage({ searchParams }: { searchParams: Pro
   const days = Math.max(1, Math.min(60, Math.ceil((until.getTime() - since.getTime()) / 86400000) + 1));
   const range = { gte: since, lte: until };
 
-  const [ventas, pagos, detalles, ventasPendientes, pedidosPendientes] = await Promise.all([
+  const [ventas, pagos, detalles, ventasPendientes, cambiosPendientes] = await Promise.all([
     db.venta.findMany({
       where: { fecha: range, estado: { not: "CANCELADA" } },
       include: { cliente: true, pagos: true },
@@ -48,24 +47,24 @@ export default async function ReportesPage({ searchParams }: { searchParams: Pro
     }),
     db.pago.findMany({ where: { fecha: range }, orderBy: { fecha: "asc" } }),
     db.detalleVenta.findMany({
-      where: { venta: { fecha: range, estado: { not: "CANCELADA" } } },
-      include: { producto: true }
+      where: { venta: { fecha: range, estado: { not: "CANCELADA" } } }
     }),
     db.venta.findMany({
       where: { estado: { in: ["FIADA", "PARCIAL"] } },
       include: { cliente: true, pagos: true }
     }),
-    db.pedido.findMany({
-      where: { estado: "PENDIENTE" },
-      include: { producto: true },
-      orderBy: { fechaEntrega: "asc" }
+    db.venta.findMany({
+      where: { cambioPendiente: true, cambioMonto: { gt: 0 } },
+      include: { cliente: true },
+      orderBy: { fecha: "asc" },
+      take: 8
     })
   ]);
 
   const totalVentas = ventas.reduce((sum, venta) => sum + Number(venta.total), 0);
   const cobrado = pagos.reduce((sum, pago) => sum + Number(pago.monto), 0);
   const piezasVendidas = detalles.reduce((sum, detalle) => sum + detalle.cantidad, 0);
-  const porCobrar = ventas.reduce((sum, venta) => {
+  const creditoGenerado = ventas.reduce((sum, venta) => {
     const pagado = venta.pagos.reduce((subtotal, pago) => subtotal + Number(pago.monto), 0);
     return sum + Math.max(0, Number(venta.total) - pagado);
   }, 0);
@@ -73,8 +72,8 @@ export default async function ReportesPage({ searchParams }: { searchParams: Pro
     const pagado = venta.pagos.reduce((subtotal, pago) => subtotal + Number(pago.monto), 0);
     return sum + Math.max(0, Number(venta.total) - pagado);
   }, 0);
+  const totalCambiosPendientes = cambiosPendientes.reduce((sum, venta) => sum + Number(venta.cambioMonto), 0);
   const ticketPromedio = ventas.length ? totalVentas / ventas.length : 0;
-  const piezasPedidos = pedidosPendientes.reduce((sum, pedido) => sum + pedido.piezas, 0);
   const ventasConCredito = ventas.filter((venta) => venta.estado === "FIADA" || venta.estado === "PARCIAL");
 
   const ventasPorDia = Array.from({ length: days }, (_, i) => {
@@ -87,15 +86,23 @@ export default async function ReportesPage({ searchParams }: { searchParams: Pro
   }).filter((item) => item.total > 0);
   const maxDia = Math.max(...ventasPorDia.map((item) => item.total), 0);
 
-  const clientes = new Map<number, { nombre: string; compras: number; total: number; pendiente: number }>();
+  const pagosPorDia = Array.from({ length: days }, (_, i) => {
+    const date = new Date(since);
+    date.setDate(since.getDate() + i);
+    const key = dateInputValue(date);
+    const pagosDia = pagos.filter((pago) => dateInputValue(pago.fecha) === key);
+    const total = pagosDia.reduce((sum, pago) => sum + Number(pago.monto), 0);
+    return { label: day.format(date), total };
+  }).filter((item) => item.total > 0);
+  const maxPagoDia = Math.max(...pagosPorDia.map((item) => item.total), 0);
+
+  const clientes = new Map<number, { nombre: string; compras: number; total: number }>();
   for (const venta of ventas) {
-    const actual = clientes.get(venta.clienteId) || { nombre: venta.cliente.nombre, compras: 0, total: 0, pendiente: 0 };
-    const pagado = venta.pagos.reduce((sum, pago) => sum + Number(pago.monto), 0);
+    const actual = clientes.get(venta.clienteId) || { nombre: venta.cliente.nombre, compras: 0, total: 0 };
     clientes.set(venta.clienteId, {
       nombre: actual.nombre,
       compras: actual.compras + 1,
-      total: actual.total + Number(venta.total),
-      pendiente: actual.pendiente + Math.max(0, Number(venta.total) - pagado)
+      total: actual.total + Number(venta.total)
     });
   }
   const topClientes = [...clientes.values()]
@@ -103,26 +110,6 @@ export default async function ReportesPage({ searchParams }: { searchParams: Pro
     .sort((a, b) => b.total - a.total)
     .slice(0, 5);
   const maxCliente = Math.max(...topClientes.map((item) => item.total), 0);
-
-  const productos = new Map<string, { piezas: number; total: number }>();
-  for (const detalle of detalles) {
-    const actual = productos.get(detalle.producto.nombre) || { piezas: 0, total: 0 };
-    const total = Number(detalle.subtotal);
-    productos.set(detalle.producto.nombre, {
-      piezas: actual.piezas + detalle.cantidad,
-      total: actual.total + total
-    });
-  }
-  const topProductosPiezas = [...productos.entries()]
-    .map(([nombre, data]) => ({ nombre, ...data }))
-    .sort((a, b) => b.piezas - a.piezas || b.total - a.total)
-    .slice(0, 8);
-  const maxProductoPiezas = Math.max(...topProductosPiezas.map((item) => item.piezas), 0);
-  const topProductosMonto = [...productos.entries()]
-    .map(([nombre, data]) => ({ nombre, ...data }))
-    .sort((a, b) => b.total - a.total || b.piezas - a.piezas)
-    .slice(0, 8);
-  const maxProductoMonto = Math.max(...topProductosMonto.map((item) => item.total), 0);
 
   const pagosPorMetodo = ["EFECTIVO", "TRANSFERENCIA"].map((metodo) => ({
     metodo,
@@ -142,6 +129,13 @@ export default async function ReportesPage({ searchParams }: { searchParams: Pro
     .map(([nombre, total]) => ({ nombre, total }))
     .sort((a, b) => b.total - a.total)
     .slice(0, 8);
+
+  const corte = [
+    ["Ventas registradas", money.format(totalVentas)],
+    ["Pagos recibidos", money.format(cobrado)],
+    ["Crédito generado", money.format(creditoGenerado)],
+    ["Cambios pendientes", money.format(totalCambiosPendientes)]
+  ];
 
   return (
     <main className="app-page">
@@ -188,36 +182,39 @@ export default async function ReportesPage({ searchParams }: { searchParams: Pro
           <Banknote aria-hidden="true" className="size-6 text-[var(--primary)]" />
           <p className="ui-label">Cobrado</p>
           <p className="mt-2 text-2xl font-bold text-[var(--brand)]">{money.format(cobrado)}</p>
-          <p className="ui-label">{percentText(cobrado, totalVentas)} de ventas del rango</p>
+          <p className="ui-label">{percentText(cobrado, totalVentas)} del rango</p>
         </article>
         <article className="rounded-[1.75rem] bg-white p-4 shadow-sm">
-          <Wallet aria-hidden="true" className="size-6 text-[var(--primary)]" />
-          <p className="ui-label">Por cobrar</p>
-          <p className="mt-2 text-2xl font-bold text-[var(--brand)]">{money.format(porCobrar)}</p>
-          <p className="ui-label">Crédito total {money.format(deudaTotal)}</p>
+          <Wallet aria-hidden="true" className="size-6 text-red-700" />
+          <p className="ui-label">Crédito</p>
+          <p className="mt-2 text-2xl font-bold text-[var(--brand)]">{money.format(creditoGenerado)}</p>
+          <p className="ui-label">Total por cobrar {money.format(deudaTotal)}</p>
         </article>
         <article className="rounded-[1.75rem] bg-white p-4 shadow-sm">
-          <ClipboardList aria-hidden="true" className="size-6 text-[var(--primary)]" />
-          <p className="ui-label">Pedidos pendientes</p>
-          <p className="mt-2 text-2xl font-bold text-[var(--brand)]">{pedidosPendientes.length}</p>
-          <p className="ui-label">{piezasPedidos} piezas comprometidas</p>
+          <HandCoins aria-hidden="true" className="size-6 text-amber-700" />
+          <p className="ui-label">Cambios</p>
+          <p className="mt-2 text-2xl font-bold text-[var(--brand)]">{money.format(totalCambiosPendientes)}</p>
+          <p className="ui-label">Pendientes por entregar</p>
         </article>
       </section>
 
       <section className="grid gap-3 rounded-[1.75rem] bg-white p-4 shadow-sm">
         <h2 className="inline-flex items-center gap-2 text-xl font-bold text-[var(--brand)]">
-          <ClipboardList aria-hidden="true" className="size-5 text-[var(--primary)]" />
-          Indicadores para decidir
+          <CreditCard aria-hidden="true" className="size-5 text-[var(--primary)]" />
+          Cobrado vs crédito
         </h2>
-        <div className="grid gap-3 sm:grid-cols-2">
+        <div className="grid gap-3 sm:grid-cols-3">
           <div className="rounded-2xl bg-[var(--app-bg)] p-4">
             <p className="ui-label">Ticket promedio</p>
             <p className="text-xl font-bold text-[var(--brand)]">{money.format(ticketPromedio)}</p>
-            <p className="text-sm text-[var(--text-muted)]">Promedio por ticket vendido</p>
           </div>
-          <div className="rounded-2xl bg-[var(--app-bg)] p-4">
-            <p className="ui-label">Tickets con crédito</p>
-            <p className="text-xl font-bold text-[var(--brand)]">{ventasConCredito.length}</p>
+          <div className="rounded-2xl bg-emerald-50 p-4 dark:bg-emerald-950/30">
+            <p className="ui-label">Pagos recibidos</p>
+            <p className="text-xl font-bold text-emerald-700 dark:text-emerald-300">{money.format(cobrado)}</p>
+          </div>
+          <div className="rounded-2xl bg-red-50 p-4 dark:bg-red-950/30">
+            <p className="ui-label">Tickets a crédito</p>
+            <p className="text-xl font-bold text-red-700 dark:text-red-300">{ventasConCredito.length}</p>
             <p className="text-sm text-[var(--text-muted)]">{percentText(ventasConCredito.length, ventas.length)} del rango</p>
           </div>
         </div>
@@ -245,11 +242,33 @@ export default async function ReportesPage({ searchParams }: { searchParams: Pro
         )}
       </section>
 
+      <section className="grid gap-3 rounded-[1.75rem] bg-white p-4 shadow-sm">
+        <h2 className="inline-flex items-center gap-2 text-xl font-bold text-[var(--brand)]">
+          <Banknote aria-hidden="true" className="size-5 text-[var(--primary)]" />
+          Pagos recibidos por periodo
+        </h2>
+        {pagosPorDia.length === 0 ? (
+          <p className="ui-label">No hubo pagos en este rango.</p>
+        ) : (
+          pagosPorDia.map((item) => (
+            <div className="grid gap-1" key={item.label}>
+              <div className="flex justify-between gap-3 text-sm">
+                <span className="text-[var(--text-muted)]">{item.label}</span>
+                <strong>{money.format(item.total)}</strong>
+              </div>
+              <div className="h-3 rounded-full bg-emerald-100 dark:bg-emerald-950/40">
+                <div className="h-3 rounded-full bg-emerald-600" style={{ width: barWidth(item.total, maxPagoDia) }} />
+              </div>
+            </div>
+          ))
+        )}
+      </section>
+
       <section className="grid gap-3 md:grid-cols-2">
         <article className="grid gap-3 rounded-[1.75rem] bg-white p-4 shadow-sm">
           <h2 className="inline-flex items-center gap-2 text-xl font-bold text-[var(--brand)]">
             <Trophy aria-hidden="true" className="size-5 text-[var(--primary)]" />
-            Top clientes
+            Clientes que más compran
           </h2>
           {topClientes.length === 0 ? (
             <p className="ui-label">Todavía no hay ventas en este rango.</p>
@@ -275,56 +294,23 @@ export default async function ReportesPage({ searchParams }: { searchParams: Pro
 
         <article className="grid gap-3 rounded-[1.75rem] bg-white p-4 shadow-sm">
           <h2 className="inline-flex items-center gap-2 text-xl font-bold text-[var(--brand)]">
-            <Package aria-hidden="true" className="size-5 text-[var(--primary)]" />
-            Productos más vendidos
+            <Wallet aria-hidden="true" className="size-5 text-red-700" />
+            Clientes que más deben
           </h2>
-          {topProductosPiezas.length === 0 ? (
-            <p className="ui-label">Todavía no hay ventas.</p>
+          {listaDeudores.length === 0 ? (
+            <p className="ui-label">No hay clientes con crédito pendiente.</p>
           ) : (
-            topProductosPiezas.map((item) => (
-              <div className="grid gap-1" key={item.nombre}>
-                <div className="flex justify-between gap-3 text-sm">
-                  <span>
-                    <strong>{item.nombre}</strong>
-                    <span className="ui-label block">{money.format(item.total)}</span>
-                  </span>
-                  <strong>{item.piezas} pz</strong>
-                </div>
-                <div className="h-3 rounded-full bg-[var(--primary-soft)]">
-                  <div className="h-3 rounded-full bg-[var(--primary)]" style={{ width: barWidth(item.piezas, maxProductoPiezas) }} />
-                </div>
-              </div>
-            ))
-          )}
-        </article>
-
-        <article className="grid gap-3 rounded-[1.75rem] bg-white p-4 shadow-sm">
-          <h2 className="inline-flex items-center gap-2 text-xl font-bold text-[var(--brand)]">
-            <Package aria-hidden="true" className="size-5 text-[var(--primary)]" />
-            Productos con más venta
-          </h2>
-          {topProductosMonto.length === 0 ? (
-            <p className="ui-label">Todavía no hay ventas.</p>
-          ) : (
-            topProductosMonto.map((item) => (
-              <div className="grid gap-1" key={item.nombre}>
-                <div className="flex justify-between gap-3 text-sm">
-                  <span>
-                    <strong>{item.nombre}</strong>
-                    <span className="ui-label block">{item.piezas} piezas</span>
-                  </span>
-                  <strong>{money.format(item.total)}</strong>
-                </div>
-                <div className="h-3 rounded-full bg-[var(--primary-soft)]">
-                  <div className="h-3 rounded-full bg-[var(--primary)]" style={{ width: barWidth(item.total, maxProductoMonto) }} />
-                </div>
+            listaDeudores.map((cliente) => (
+              <div className="flex items-center justify-between gap-3 border-b border-[var(--border)] py-2 last:border-b-0" key={cliente.nombre}>
+                <span className="font-bold text-[var(--text-main)]">{cliente.nombre}</span>
+                <strong className="rounded-full bg-red-50 px-3 py-1 text-red-700 dark:bg-red-950/30 dark:text-red-300">{money.format(cliente.total)}</strong>
               </div>
             ))
           )}
         </article>
       </section>
 
-      <section className="grid gap-3">
+      <section className="grid gap-3 md:grid-cols-2">
         <article className="grid gap-3 rounded-[1.75rem] bg-white p-4 shadow-sm">
           <h2 className="inline-flex items-center gap-2 text-xl font-bold text-[var(--brand)]">
             <CreditCard aria-hidden="true" className="size-5 text-[var(--primary)]" />
@@ -363,26 +349,43 @@ export default async function ReportesPage({ searchParams }: { searchParams: Pro
             </div>
           )}
         </article>
-      </section>
 
-      <section className="grid gap-3 md:grid-cols-2">
         <article className="grid gap-3 rounded-[1.75rem] bg-white p-4 shadow-sm">
           <h2 className="inline-flex items-center gap-2 text-xl font-bold text-[var(--brand)]">
-            <Wallet aria-hidden="true" className="size-5 text-[var(--primary)]" />
-            Clientes con crédito
+            <HandCoins aria-hidden="true" className="size-5 text-amber-700" />
+            Cambios pendientes
           </h2>
-          {listaDeudores.length === 0 ? (
-            <p className="ui-label">No hay clientes con crédito pendiente.</p>
+          {cambiosPendientes.length === 0 ? (
+            <p className="ui-label">No tienes cambios pendientes por entregar.</p>
           ) : (
-            listaDeudores.map((cliente) => (
-              <div className="flex items-center justify-between gap-3 border-b border-[var(--border)] py-2 last:border-b-0" key={cliente.nombre}>
-                <span className="font-bold text-[var(--text-main)]">{cliente.nombre}</span>
-                <strong className="rounded-full bg-red-50 px-3 py-1 text-red-700">{money.format(cliente.total)}</strong>
+            cambiosPendientes.map((venta) => (
+              <div className="flex items-center justify-between gap-3 border-b border-[var(--border)] py-2 last:border-b-0" key={venta.id}>
+                <span>
+                  <strong className="block text-[var(--text-main)]">{venta.cliente.nombre}</strong>
+                  <span className="ui-label">Ticket {String(venta.id).padStart(6, "0")}</span>
+                </span>
+                <strong className="rounded-full bg-amber-50 px-3 py-1 text-amber-700 dark:bg-amber-950/30 dark:text-amber-300">
+                  {money.format(Number(venta.cambioMonto))}
+                </strong>
               </div>
             ))
           )}
         </article>
+      </section>
 
+      <section className="grid gap-3 rounded-[1.75rem] bg-white p-4 shadow-sm">
+        <h2 className="inline-flex items-center gap-2 text-xl font-bold text-[var(--brand)]">
+          <ReceiptText aria-hidden="true" className="size-5 text-[var(--primary)]" />
+          Corte del periodo
+        </h2>
+        <div className="grid gap-2">
+          {corte.map(([label, value]) => (
+            <div className="flex items-center justify-between gap-3 rounded-2xl bg-[var(--app-bg)] px-4 py-3" key={label}>
+              <span className="text-sm font-bold text-[var(--text-main)]">{label}</span>
+              <strong className="text-right text-[var(--brand)]">{value}</strong>
+            </div>
+          ))}
+        </div>
       </section>
     </main>
   );
