@@ -4,7 +4,9 @@ import { CambioPendienteFields } from "./CambioPendienteFields";
 import { DarCambioButton } from "./DarCambioButton";
 import { Home, Package, ReceiptText, Save, ShoppingBag } from "@/components/AppIcon";
 import { ClienteSearchField } from "@/components/ClienteSearchField";
-import { db } from "@/lib/db";
+import { listarClientesActivos } from "@/lib/clientes";
+import { listarProductosActivos } from "@/lib/productos";
+import { obtenerUltimasVentas } from "@/lib/ventas";
 
 export const dynamic = "force-dynamic";
 
@@ -15,15 +17,7 @@ export default async function VentasPage({ searchParams }: { searchParams: Promi
   const defaultClienteId = Number(params.clienteId) || undefined;
   const defaultProductoId = Number(params.productoId) || undefined;
   const defaultPiezas = Math.max(1, Number(params.piezas) || 1);
-  const [clientes, productos, ventas] = await Promise.all([
-    db.cliente.findMany({ where: { activo: true }, orderBy: { nombre: "asc" } }),
-    db.producto.findMany({ where: { activo: true }, orderBy: { nombre: "asc" } }),
-    db.venta.findMany({
-      include: { cliente: true, detalles: { include: { producto: true } } },
-      orderBy: { fecha: "desc" },
-      take: 8
-    })
-  ]);
+  const [clientes, productos, ventas] = await Promise.all([listarClientesActivos(), listarProductosActivos(), obtenerUltimasVentas()]);
   const productosOptions = productos.map((producto) => ({
     id: producto.id,
     label: `${producto.nombre} - ${money.format(Number(producto.precioVenta))}`,

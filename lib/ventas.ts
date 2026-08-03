@@ -53,3 +53,11 @@ export async function registrarVenta({ clienteId, productoId, piezas, estado, me
     }
   });
 }
+
+export function obtenerUltimasVentas(take = 8) {
+  return db.venta.findMany({
+    include: { cliente: true, detalles: { include: { producto: true } } },
+    orderBy: { fecha: "desc" },
+    take
+  });
+}

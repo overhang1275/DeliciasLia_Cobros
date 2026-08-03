@@ -1,11 +1,12 @@
 import Link from "next/link";
-import { EstadoPedido } from "@prisma/client";
 import { cancelarPedido, crearPedido } from "./actions";
 import { Banknote, CalendarDays, ClipboardList, Hash, Home, Package, ReceiptText, Save, Search, X } from "@/components/AppIcon";
 import { ClienteSearchField } from "@/components/ClienteSearchField";
 import { ConfirmSubmitButton } from "@/components/ConfirmSubmitButton";
 import { Pagination } from "@/components/Pagination";
-import { db } from "@/lib/db";
+import { listarClientesActivos } from "@/lib/clientes";
+import { obtenerPedidosPage } from "@/lib/pedidos";
+import { listarProductosActivos } from "@/lib/productos";
 import { appDateFormatter, dateInputValue } from "@/lib/timezone";
 
 export const dynamic = "force-dynamic";
@@ -27,26 +28,7 @@ export default async function PedidosPage({ searchParams }: { searchParams: Prom
   const params = await searchParams;
   const q = (params.q || "").trim();
   const page = Math.max(1, Number(params.page) || 1);
-  const where = {
-    estado: EstadoPedido.PENDIENTE,
-    ...(q
-      ? {
-          OR: [{ cliente: { nombre: { contains: q } } }, { producto: { nombre: { contains: q } } }, { notas: { contains: q } }]
-        }
-      : {})
-  };
-  const [clientes, productos, pedidos, total] = await Promise.all([
-    db.cliente.findMany({ where: { activo: true }, orderBy: { nombre: "asc" } }),
-    db.producto.findMany({ where: { activo: true }, orderBy: { nombre: "asc" } }),
-    db.pedido.findMany({
-      where,
-      include: { cliente: true, producto: true },
-      orderBy: [{ fechaEntrega: "asc" }, { fechaPedido: "asc" }],
-      skip: (page - 1) * pageSize,
-      take: pageSize
-    }),
-    db.pedido.count({ where })
-  ]);
+  const [clientes, productos, [pedidos, total]] = await Promise.all([listarClientesActivos(), listarProductosActivos(), obtenerPedidosPage(q, page, pageSize)]);
   const totalPages = Math.max(1, Math.ceil(total / pageSize));
 
   return (

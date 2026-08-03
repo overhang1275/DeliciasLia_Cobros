@@ -3,7 +3,7 @@ import { ChartNoAxesColumnIncreasing, FileText, Home, Pencil, Phone, Save, Searc
 import { crearCliente } from "./actions";
 import { EliminarClienteButton } from "@/components/EliminarClienteButton";
 import { Pagination } from "@/components/Pagination";
-import { db } from "@/lib/db";
+import { listarClientesConEstado } from "@/lib/clientes";
 
 export const dynamic = "force-dynamic";
 const pageSize = 6;
@@ -12,44 +12,7 @@ export default async function ClientesPage({ searchParams }: { searchParams: Pro
   const params = await searchParams;
   const q = (params.q || "").trim();
   const page = Math.max(1, Number(params.page) || 1);
-  const where = {
-    activo: true,
-    ...(q
-      ? {
-          OR: [{ nombre: { contains: q } }, { telefono: { contains: q } }]
-        }
-      : {})
-  };
-  const clientesOrdenados = (
-    await db.cliente.findMany({
-      where,
-      orderBy: [{ nombre: "asc" }],
-      include: {
-        _count: { select: { ventas: true } },
-        ventas: {
-          where: {
-            OR: [{ estado: { in: ["FIADA", "PARCIAL"] } }, { cambioPendiente: true }]
-          },
-          include: { pagos: true }
-        }
-      }
-    })
-  )
-    .map((cliente) => {
-      const saldo = cliente.ventas.reduce((total, venta) => {
-        const pagado = venta.pagos.reduce((sum, pago) => sum + Number(pago.monto), 0);
-        return total + Math.max(0, Number(venta.total) - pagado);
-      }, 0);
-      const cambioPendiente = cliente.ventas.reduce((total, venta) => total + (venta.cambioPendiente ? Number(venta.cambioMonto) : 0), 0);
-      const deudaMasVieja = cliente.ventas.filter((venta) => Number(venta.total) - venta.pagos.reduce((sum, pago) => sum + Number(pago.monto), 0) > 0).sort((a, b) => a.fecha.getTime() - b.fecha.getTime())[0]?.fecha;
-      return { ...cliente, cambioPendiente, deudaMasVieja, saldo };
-    })
-    .sort((a, b) => {
-      if (a.saldo > 0 && b.saldo <= 0) return -1;
-      if (a.saldo <= 0 && b.saldo > 0) return 1;
-      if (a.deudaMasVieja && b.deudaMasVieja) return a.deudaMasVieja.getTime() - b.deudaMasVieja.getTime();
-      return a.nombre.localeCompare(b.nombre);
-    });
+  const clientesOrdenados = await listarClientesConEstado(q);
   const totalPages = Math.max(1, Math.ceil(clientesOrdenados.length / pageSize));
   const clientes = clientesOrdenados.slice((Math.min(page, totalPages) - 1) * pageSize, Math.min(page, totalPages) * pageSize);
 

@@ -1,13 +1,14 @@
 import Link from "next/link";
 import React from "react";
-import { EstadoVenta } from "@prisma/client";
 import { registrarFiado } from "./actions";
 import { Banknote, CalendarDays, FileText, HandCoins, Home, Package, ReceiptText, Save, Search } from "@/components/AppIcon";
 import { ClienteSearchField } from "@/components/ClienteSearchField";
 import { EliminarFiadoForm } from "@/components/EliminarFiadoForm";
 import { LiquidarDeudaForm } from "@/components/LiquidarDeudaForm";
 import { Pagination } from "@/components/Pagination";
-import { db } from "@/lib/db";
+import { listarClientesActivos } from "@/lib/clientes";
+import { obtenerCreditosPage } from "@/lib/creditos";
+import { listarProductosActivos } from "@/lib/productos";
 import { appDateFormatter, dateInputValue } from "@/lib/timezone";
 
 export const dynamic = "force-dynamic";
@@ -24,51 +25,8 @@ export default async function FiadosPage({ searchParams }: { searchParams: Promi
   const defaultClienteId = Number(params.clienteId) || undefined;
   const defaultProductoId = Number(params.productoId) || undefined;
   const defaultPiezas = Math.max(1, Number(params.piezas) || 1);
-  const where = {
-    estado: { in: [EstadoVenta.FIADA, EstadoVenta.PARCIAL] },
-    ...(q
-      ? {
-          OR: [
-            { cliente: { nombre: { contains: q } } },
-            { detalles: { some: { producto: { nombre: { contains: q } } } } },
-            { observaciones: { contains: q } }
-          ]
-        }
-      : {})
-  };
-  const [clientes, productos, ventasFiadas, total] = await Promise.all([
-    db.cliente.findMany({ where: { activo: true }, orderBy: { nombre: "asc" } }),
-    db.producto.findMany({ where: { activo: true }, orderBy: { nombre: "asc" } }),
-    db.venta.findMany({
-      where,
-      include: { cliente: true, detalles: { include: { producto: true } }, pagos: true },
-      orderBy: { fecha: "desc" },
-      skip: (page - 1) * pageSize,
-      take: pageSize
-    }),
-    db.venta.count({ where })
-  ]);
-
-  const pendientes = ventasFiadas
-    .map((venta) => {
-      const pagado = venta.pagos.reduce((total, pago) => total + Number(pago.monto), 0);
-      return { ...venta, pendiente: Number(venta.total) - pagado };
-    })
-    .filter((venta) => venta.pendiente > 0);
-  const clienteIds = [...new Set(pendientes.map((venta) => venta.clienteId))];
-  const ventasPendientesPorCliente =
-    clienteIds.length > 0
-      ? await db.venta.findMany({
-          where: { clienteId: { in: clienteIds }, estado: { in: [EstadoVenta.FIADA, EstadoVenta.PARCIAL] } },
-          include: { pagos: true }
-        })
-      : [];
-  const totalPorCliente = new Map<number, number>();
-  for (const venta of ventasPendientesPorCliente) {
-    const pagado = venta.pagos.reduce((total, pago) => total + Number(pago.monto), 0);
-    const pendiente = Math.max(0, Number(venta.total) - pagado);
-    totalPorCliente.set(venta.clienteId, (totalPorCliente.get(venta.clienteId) || 0) + pendiente);
-  }
+  const [clientes, productos, creditos] = await Promise.all([listarClientesActivos(), listarProductosActivos(), obtenerCreditosPage(q, page, pageSize)]);
+  const { pendientes, total, totalPorCliente } = creditos;
   const totalPages = Math.max(1, Math.ceil(total / pageSize));
 
   return (
