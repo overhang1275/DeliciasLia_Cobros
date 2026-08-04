@@ -10,5 +10,4 @@ public/workbox-*.js
 opencode.json
 docs/*
 !docs/roadmap-notificaciones.md
-AGENTS.md
-graphify-out/
+
