@@ -8,6 +8,7 @@ node_modules
 public/sw.js
 public/workbox-*.js
 opencode.json
-docs/
+docs/*
+!docs/roadmap-notificaciones.md
 AGENTS.md
 graphify-out/

@@ -1,39 +1,63 @@
 # Delicias Lia Cobros
 
-## Descripción
+Aplicacion web privada para administrar ventas, credito, pagos, clientes, productos, pedidos, cambios pendientes y estados de cuenta. Esta pensada para negocios pequenos que venden productos por pieza, registran ventas de contado o a credito y necesitan saber rapidamente quien debe, cuanto debe y que se cobro en el dia.
 
-Aplicación web privada para administrar cobros, ventas, créditos, clientes, productos, pedidos y reportes financieros de Delicias Lia. Está construida como una PWA con Next.js, React, Prisma y SQLite.
+La app esta construida como PWA con Next.js, React, Prisma y SQLite. El acceso administrativo esta protegido por usuario y contrasena; los clientes solo pueden consultar su estado de cuenta mediante un enlace publico con token.
 
-La app incluye login de administrador, tablero inicial, registro de ventas rápidas, control de créditos y pagos parciales, cambios pendientes por entregar, estados de cuenta públicos por cliente, catálogo de productos, pedidos pendientes, configuración del negocio, reportes financieros y APIs para automatizaciones con N8N/Evolution API.
+## Funciones principales
 
-## Objetivo
+- **Inicio:** resumen operativo con credito por cobrar, cambios pendientes, ventas del dia, clientes y productos.
+- **Ventas:** registro de ventas de contado o credito, forma de pago, piezas, producto y cambio pendiente por entregar.
+- **Credito:** registro manual de deuda, pago por ticket, liquidacion de deuda, eliminacion con confirmacion y filtros.
+- **Cambios:** listado de cambios pendientes por entregar y marcado de cambio entregado.
+- **Clientes:** alta, busqueda, edicion, historial, estado de cuenta y eliminacion.
+- **Productos:** catalogo simple de productos vendidos, con precio de venta.
+- **Pedidos:** registro de encargos por cliente, producto, piezas y fecha de entrega; pueden convertirse despues en venta o credito.
+- **Estado de cuenta:** vista publica por token, movimientos agrupados por fecha, pagos, creditos, cambios pendientes, deposito y exportacion.
+- **Reportes:** ventas por dia, cobrado vs credito, cambios pendientes, clientes que mas compran, clientes que mas deben, pagos por periodo, forma de pago y corte del periodo.
+- **Configuracion:** datos del negocio, logo, datos bancarios, tema claro/oscuro/sistema, seguridad, notificaciones y auditoria.
+- **Notificaciones:** push web para recordatorios de saldo pendiente.
+- **APIs para automatizacion:** endpoints protegidos para N8N/Evolution API.
 
-Centralizar la operación diaria del negocio: vender, cobrar, registrar deuda, dar seguimiento a clientes, revisar inventario, convertir pedidos en ventas o créditos y consultar indicadores financieros claros para decidir qué cobrar, qué producto reponer y qué margen está dejando la operación.
+## Arquitectura
 
-## Tecnologías
+- **Framework:** Next.js 15 con App Router.
+- **UI:** React 19, Tailwind CSS, Motion y Lucide React.
+- **Datos:** Prisma 6 con SQLite.
+- **Validacion:** Zod y React Hook Form.
+- **PWA:** `next-pwa`, manifest dinamico, logo desde configuracion y `robots.txt` bloqueando indexacion.
+- **Sesion:** cookie firmada propia para usuario admin.
+- **Estado publico:** acceso por token unico en `/estado/[token]`.
+- **Auditoria:** eventos importantes guardados en `AuditLog`.
 
-- Next.js 15
-- React 19
-- TypeScript
-- Prisma 6
-- SQLite
-- Tailwind CSS 3
-- Motion
-- Lucide React
-- next-pwa
-- React Hook Form
-- Zod
-- Chart.js
-- ESLint
+La mayor parte del acceso a datos pasa por Prisma desde Server Components, Server Actions y API routes. El cliente publico no recibe secretos ni llaves privadas.
+
+## Modelo de datos
+
+Modelos principales en `prisma/schema.prisma`:
+
+- `Cliente`: datos del cliente, telefono, notas, token publico y relaciones con ventas, pedidos y suscripciones push.
+- `Producto`: catalogo de productos y precio.
+- `Venta`: venta pagada, a credito, parcial o cancelada; incluye total, estado y cambio pendiente.
+- `DetalleVenta`: productos y cantidades de cada venta.
+- `Pago`: abonos asociados a una venta.
+- `Pedido`: encargos pendientes o cancelados.
+- `Configuracion`: nombre del negocio, logo, tema y datos de deposito.
+- `Usuario`: usuario admin y hash de contrasena.
+- `AuditLog`: registro de acciones relevantes.
+- `PushSubscription`: suscripciones push por cliente.
 
 ## Requisitos
 
-- Node.js 20 o superior; los scripts de Ubuntu/LXC instalan Node.js 22 por defecto.
-- npm
-- SQLite mediante Prisma
-- En despliegue Ubuntu/LXC: `bash`, `git`, `curl`, `build-essential`, `openssl` y `systemd`
+- Node.js 20 o superior.
+- npm.
+- Prisma CLI mediante dependencias del proyecto.
+- SQLite.
+- Para Ubuntu/LXC: `bash`, `git`, `curl`, `build-essential`, `openssl` y `systemd`.
 
-## Uso
+Los scripts de instalacion para Ubuntu/LXC instalan Node.js 22 por defecto si el servidor no tiene una version compatible.
+
+## Instalacion local
 
 Instalar dependencias:
 
@@ -41,7 +65,7 @@ Instalar dependencias:
 npm install
 ```
 
-Crear `.env` tomando como base `.env.example`:
+Crear `.env` desde `.env.example`:
 
 ```env
 DATABASE_URL="file:../database/database.sqlite"
@@ -52,10 +76,15 @@ PORT="3000"
 TZ="America/Mexico_City"
 NEXT_PUBLIC_BASE_URL="https://tu-dominio.com"
 TUNNEL_URL="https://tu-tunnel.trycloudflare.com"
+NEXT_PUBLIC_TUNNEL_URL="https://tu-tunnel.trycloudflare.com"
+NEXT_PUBLIC_VAPID_PUBLIC_KEY=""
+VAPID_PUBLIC_KEY=""
+VAPID_PRIVATE_KEY=""
+VAPID_SUBJECT="mailto:admin@tu-dominio.com"
 N8N_API_KEY="cambiar-por-un-token-largo"
 ```
 
-Preparar base de datos:
+Preparar Prisma y base de datos:
 
 ```bash
 npm run prisma:generate
@@ -63,124 +92,268 @@ npm run prisma:migrate
 npm run prisma:seed
 ```
 
-Iniciar en desarrollo:
+Levantar desarrollo:
 
 ```bash
 npm run dev
 ```
 
-Construir y ejecutar en producción:
+Construir y ejecutar produccion local:
 
 ```bash
 npm run build
 npm run start
 ```
 
-El usuario inicial es `admin`. La contraseña se toma de `ADMIN_PASSWORD` durante el seed; si falta, el seed genera una contraseña temporal y la imprime en consola.
+Usuario inicial:
 
-Rutas principales:
+- Usuario: `admin`
+- Password: el valor de `ADMIN_PASSWORD` usado durante el seed.
 
-- `/login`: acceso de administrador.
-- `/`: tablero inicial con créditos por cobrar, cambios pendientes, clientes, productos y accesos rápidos.
-- `/ventas`: registro de venta rápida, ventas pagadas, fiadas o parciales y cambio pendiente.
-- `/fiados`: registro, búsqueda, pago, liquidación y eliminación con confirmación sostenida.
-- `/cambios`: lista de cambios pendientes por entregar y marcado de cambio entregado.
-- `/clientes`: alta, búsqueda, edición, historial y estado de cuenta.
-- `/estado/[token]`: estado de cuenta público por cliente con pagos en verde, crédito en rojo y cambios en ámbar.
-- `/productos`: alta y búsqueda de productos.
-- `/pedidos`: alta, búsqueda, conversión a venta/crédito y cancelación de pedidos.
-- `/reportes`: ventas, utilidad, margen, cobros, deuda, inventario, pedidos, top clientes, productos rentables, formas de pago y tipo de venta.
-- `/configuracion`: logo, nombre del negocio y datos bancarios.
-- `/api/health`: verificación simple de salud.
-- `/api/n8n/deudores`: API protegida para N8N con clientes que deben y monto pendiente.
-- `/api/n8n/corte-dia`: API protegida para N8N con corte de caja digital del día.
+## Comandos utiles
 
-La interfaz usa iconos de Lucide y animaciones sutiles con Motion en las rutas.
+```bash
+npm run dev                  # servidor de desarrollo
+npm run build                # build de produccion
+npm run start                # inicia build de produccion
+npm run lint                 # eslint
+npm run prisma:generate      # genera Prisma Client
+npm run prisma:migrate       # migraciones en desarrollo
+npm run prisma:deploy        # migraciones en produccion
+npm run prisma:seed          # crea/configura usuario admin inicial
+npm run push:weekly          # envia recordatorios push semanales
+npm run admin:reset-password # genera nueva contrasena admin segura
+```
 
-## APIs para N8N
+Tambien existe:
 
-Las APIs de N8N usan `N8N_API_KEY` y requieren:
+```bash
+bash scripts/reset-admin-password.sh
+```
+
+Ese script sirve para restablecer la contrasena admin directamente en servidor.
+
+## Rutas principales
+
+| Ruta | Descripcion |
+| --- | --- |
+| `/login` | Acceso administrativo. |
+| `/` | Dashboard inicial. |
+| `/ventas` | Nueva venta. |
+| `/fiados` | Creditos y saldos pendientes. |
+| `/fiados/[id]/pago` | Registro de pago por ticket. |
+| `/cambios` | Cambios pendientes por entregar. |
+| `/clientes` | Clientes activos, busqueda y acciones. |
+| `/clientes/[id]/editar` | Edicion de cliente. |
+| `/clientes/[id]/estado` | Estado de cuenta visto por admin. |
+| `/clientes/[id]/historial` | Historial administrativo del cliente. |
+| `/estado/[token]` | Estado de cuenta publico para cliente. |
+| `/productos` | Catalogo de productos. |
+| `/pedidos` | Pedidos por entregar. |
+| `/reportes` | Analisis operativo y financiero. |
+| `/configuracion` | Configuracion del sistema. |
+| `/configuracion/log.txt` | Descarga de auditoria completa. |
+| `/mas` | Accesos secundarios. |
+
+## APIs
+
+### Salud
 
 ```http
+GET /api/health
+```
+
+Respuesta simple para verificar que la app responde.
+
+### Logo
+
+```http
+GET /api/logo
+```
+
+Devuelve el logo configurado. Se usa tambien para PWA e iconos.
+
+### N8N: deudores
+
+```http
+GET /api/n8n/deudores
 Authorization: Bearer TU_N8N_API_KEY
 ```
 
-Deudores para recordatorios por WhatsApp:
+Devuelve clientes activos con saldo pendiente, telefono y link publico de estado de cuenta. Pensado para flujos de recordatorio en N8N o Evolution API.
 
-```bash
-curl -H "Authorization: Bearer $N8N_API_KEY" https://tu-dominio.com/api/n8n/deudores
+### N8N: corte del dia
+
+```http
+GET /api/n8n/corte-dia
+Authorization: Bearer TU_N8N_API_KEY
 ```
 
-Devuelve clientes activos con saldo pendiente, teléfono, saldo y link público del estado de cuenta.
+Devuelve corte digital del dia: ventas, piezas, cobrado, efectivo, transferencia, credito generado, cambios pendientes y mensaje listo para enviar al admin.
 
-Corte digital del día:
+### Push
 
-```bash
-curl -H "Authorization: Bearer $N8N_API_KEY" https://tu-dominio.com/api/n8n/corte-dia
+```http
+GET  /api/push/public-key
+POST /api/push/subscribe
+POST /api/push/unsubscribe
+POST /api/push/send
 ```
 
-Devuelve ventas del día, piezas vendidas, cobrado, efectivo, transferencia, crédito generado, cambios pendientes y un campo `mensaje` listo para enviarse por WhatsApp al admin desde Evolution API.
+Permiten activar/desactivar notificaciones push y enviar recordatorios cuando existe suscripcion.
 
-## Despliegue
+## Variables de entorno
 
-El repositorio incluye scripts para instalar, actualizar y levantar un demo en Ubuntu/LXC con `systemd`.
+| Variable | Requerida | Descripcion |
+| --- | --- | --- |
+| `DATABASE_URL` | Si | Conexion Prisma. Por defecto SQLite: `file:../database/database.sqlite`. |
+| `ADMIN_PASSWORD` | Seed | Contrasena inicial del usuario `admin`. |
+| `AUTH_SECRET` | Produccion | Secreto para firmar cookies de sesion. Obligatorio en produccion. |
+| `AUTH_SECURE_COOKIE` | No | Usar `true` cuando la app se publica por HTTPS. |
+| `PORT` | No | Puerto de Next.js. |
+| `TZ` | Recomendado | Zona horaria. Recomendado: `America/Mexico_City`. |
+| `NEXT_PUBLIC_BASE_URL` | Recomendado | URL publica base para links. |
+| `TUNNEL_URL` | Recomendado | URL publica preferente si se usa Cloudflare Tunnel. |
+| `NEXT_PUBLIC_TUNNEL_URL` | No | Alias publico opcional del tunnel. |
+| `NEXT_PUBLIC_VAPID_PUBLIC_KEY` | Push | Llave publica VAPID para navegador. |
+| `VAPID_PUBLIC_KEY` | Push | Llave publica VAPID server-side. |
+| `VAPID_PRIVATE_KEY` | Push | Llave privada VAPID server-side. |
+| `VAPID_SUBJECT` | Push | Contacto VAPID, por ejemplo `mailto:admin@dominio.com`. |
+| `N8N_API_KEY` | APIs N8N | Token Bearer para endpoints de automatizacion. |
+| `ALLOW_DEMO_RESET` | Demo | Permite resetear base demo cuando vale `1`. |
+| `NODE_ENV` | Runtime | Usado por Next.js y PWA. |
 
-Instalación inicial:
+## Despliegue Ubuntu/LXC
+
+El repositorio incluye scripts para instalar, actualizar y levantar un demo con `systemd`.
+
+### Instalacion inicial
 
 ```bash
 sudo ADMIN_PASSWORD="cambiar-esta-contrasena" bash scripts/install-ubuntu-lxc.sh
 ```
 
-El script clona o actualiza el repo en `/opt/delicias-lia`, crea el usuario de sistema `deliciaslia`, escribe `.env`, ejecuta `npm ci`, genera Prisma Client, aplica migraciones, ejecuta seed, construye la app y crea el servicio `delicias-lia`.
+Por defecto:
 
-Actualizar una instalación existente:
+- Directorio: `/opt/delicias-lia`
+- Usuario de sistema: `deliciaslia`
+- Servicio: `delicias-lia`
+- Puerto: `3000`
+
+El script:
+
+- instala dependencias del sistema;
+- clona el repositorio;
+- crea `.env`;
+- instala paquetes con `npm ci`;
+- genera Prisma Client;
+- aplica migraciones;
+- ejecuta seed;
+- construye la app;
+- registra el servicio systemd.
+
+### Actualizacion
 
 ```bash
 sudo bash scripts/update-ubuntu-lxc.sh
 ```
 
-Antes de actualizar, el script respalda `database/database.sqlite` si existe. Después ejecuta `npm ci`, `prisma generate`, `prisma migrate deploy`, `npm run build` y reinicia el servicio.
+El script valida si hay cambios remotos. Si no hay cambios, cancela la actualizacion de build y solo revisa variables faltantes. Si hay cambios:
 
-Levantar un demo separado:
+- respalda SQLite antes de actualizar;
+- hace `git pull --ff-only`;
+- instala dependencias;
+- ejecuta `prisma generate`;
+- ejecuta `prisma migrate deploy`;
+- construye la app;
+- reinicia el servicio.
+
+### Demo
 
 ```bash
 sudo bash scripts/demo-ubuntu-lxc.sh
 ```
 
-El demo usa `/opt/delicias-lia-demo`, servicio `delicias-lia-demo`, puerto `3001`, usuario `admin` y password `demo12345` por defecto. Este script borra y vuelve a crear solo la base del demo.
+Por defecto:
 
-Variables aceptadas por los scripts:
+- Directorio: `/opt/delicias-lia-demo`
+- Servicio: `delicias-lia-demo`
+- Puerto: `3001`
+- Usuario: `admin`
+- Password: `demo12345`
 
-- `REPO_URL`: repositorio a clonar; por defecto `https://github.com/overhang1275/DeliciasLia_Cobros.git`.
-- `APP_DIR`: ruta de instalación; por defecto `/opt/delicias-lia`.
-- `APP_USER`: usuario del servicio; por defecto `deliciaslia`.
-- `PORT`: puerto de Next.js; por defecto `3000`.
-- `SERVICE_NAME`: nombre del servicio systemd; por defecto `delicias-lia`.
-- `NODE_MAJOR`: versión mayor de Node.js a instalar; por defecto `22`.
-- `TUNNEL_URL`: URL pública del túnel para links externos.
-- `N8N_API_KEY`: token para APIs de N8N; si falta, los scripts generan uno con `openssl`.
+El demo borra y recrea solo su propia base de datos.
 
-## Variables de entorno
+## Seguridad
 
-- `DATABASE_URL`: requerida por Prisma. En el repo se usa `file:../database/database.sqlite`.
-- `ADMIN_PASSWORD`: contraseña inicial del usuario `admin` durante `npm run prisma:seed`. Si falta, se genera una temporal y se imprime en consola.
-- `AUTH_SECRET`: secreto para firmar la cookie de sesión. Si falta, el código usa `delicias-lia-dev-secret`, solo adecuado para desarrollo.
-- `AUTH_SECURE_COOKIE`: usa cookie segura cuando vale `true`.
-- `TZ`: zona horaria de la app; recomendado `America/Mexico_City`.
-- `NEXT_PUBLIC_BASE_URL`: URL pública base para links de estado de cuenta.
-- `TUNNEL_URL`: URL pública preferida cuando se usa Cloudflare Tunnel; tiene prioridad para links externos.
-- `NEXT_PUBLIC_TUNNEL_URL`: alias público opcional para el túnel.
-- `N8N_API_KEY`: token Bearer para consumir `/api/n8n/deudores` y `/api/n8n/corte-dia`.
-- `NEXT_PUBLIC_VAPID_PUBLIC_KEY`, `VAPID_PUBLIC_KEY`, `VAPID_PRIVATE_KEY`, `VAPID_SUBJECT`: llaves y subject para notificaciones push.
-- `ALLOW_DEMO_RESET`: requerida con valor `1` para ejecutar `prisma/demo-seed.ts`; el script demo la escribe automáticamente.
-- `NODE_ENV`: usado por Next.js y para desactivar PWA en desarrollo.
-- `PORT`: usado por Next.js y por los servicios de producción en los scripts de despliegue.
+- La app administrativa requiere sesion.
+- La cookie se firma con `AUTH_SECRET`.
+- En produccion, `AUTH_SECRET` es obligatorio.
+- El estado de cuenta publico usa token unico por cliente.
+- Los endpoints N8N requieren `Authorization: Bearer`.
+- Las llaves privadas VAPID no se exponen al frontend.
+- `robots.txt` bloquea indexacion.
+- La ruta publica de estado de cuenta no permite volver a la app admin si no hay sesion.
+
+## Notificaciones
+
+La estrategia completa esta documentada en:
+
+[docs/roadmap-notificaciones.md](docs/roadmap-notificaciones.md)
+
+Estado actual:
+
+- Push web con `web-push`.
+- Suscripciones por cliente.
+- Recordatorio manual desde admin cuando aplica.
+- Script semanal `npm run push:weekly`.
+- Evolution API queda documentado como roadmap, no como integracion final obligatoria.
+
+## Roadmaps
+
+- [docs/roadmap-notificaciones.md](docs/roadmap-notificaciones.md): push, WhatsApp, Evolution API y recordatorios.
+- [docs/ROADMAP.md](docs/ROADMAP.md): roadmap general de evolucion a Supabase.
+- [docs/supabase-roadmap.md](docs/supabase-roadmap.md): plan especifico de migracion a Supabase.
+- [docs/ui-ux-analysis.md](docs/ui-ux-analysis.md): criterios de UI/UX.
+
+## Validacion antes de produccion
+
+Comandos recomendados:
+
+```bash
+npx tsc --noEmit
+npm run lint
+npm run build
+```
+
+Smoke test recomendado:
+
+- abrir `/login`;
+- entrar como admin;
+- revisar `/`, `/ventas`, `/fiados`, `/clientes`, `/productos`, `/pedidos`, `/reportes`, `/configuracion`;
+- abrir un estado publico `/estado/[token]`;
+- verificar que sin sesion las rutas admin redirigen a `/login`;
+- verificar que `/api/n8n/deudores` y `/api/n8n/corte-dia` respondan `401` sin token.
+
+## Estado del proyecto
+
+Proyecto privado en version `0.1.0`.
+
+Incluye:
+
+- migraciones Prisma;
+- seed inicial;
+- seed demo;
+- scripts de instalacion, actualizacion y demo para Ubuntu/LXC;
+- PWA;
+- APIs para automatizacion;
+- notificaciones push;
+- auditoria basica.
+
+No hay suite formal de pruebas automatizadas configurada todavia. La validacion actual se basa en TypeScript, ESLint, build de Next.js y smoke tests manuales.
 
 ## Responsable
-Este proyecto es desarrollado y mantenido por:
 
-- **GitHub:** [@overhang1275](https://github.com/overhang1275)
+Desarrollado y mantenido por:
 
-## Estado
-
-Proyecto privado en versión `0.1.0`. Cuenta con migraciones Prisma, seed inicial, seed demo, scripts de desarrollo, build, lint, migración, despliegue Ubuntu/LXC y demo Ubuntu/LXC. No se encontraron scripts de pruebas automatizadas.
+- GitHub: [@overhang1275](https://github.com/overhang1275)
